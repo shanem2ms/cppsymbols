@@ -1,0 +1,48 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "symbols.exe",
+      "name": "symbols.exe",
+      "args": [
+        "-DBGFX_CONFIG_DEBUG_ANNOTATION=1",
+        "-DBGFX_CONFIG_MULTITHREADED=1",
+        "-DBX_CONFIG_DEBUG=1",
+        "-DFMT_SHARED",
+        "-DUSING_UV_SHARED=1",
+        "-D__STDC_CONSTANT_MACROS",
+        "-D__STDC_FORMAT_MACROS",
+        "-D__STDC_LIMIT_MACROS",
+        "-IC:\\PROGRA~1\\MICROS~1\\2022\\PROFES~1\\VC\\Tools\\MSVC\\14.34.31933\\include",
+        "-ID:\\vq\\flash\\src\\win",
+        "-ID:\\vq\\flash\\src\\core\\.",
+        "-ID:\\vq\\flash\\..\\vcpkg\\installed\\x64-windows\\include",
+        "-ID:\\vq\\flash\\src\\engine\\.",
+        "-ID:\\vq\\flash\\src\\engine\\imgui\\.",
+        "-ID:\\vq\\flash\\src\\engine\\..\\core",
+        "-ID:\\vq\\flash\\src\\engine\\..\\core\\leveldb\\include",
+        "-ID:\\vq\\flash\\..\\vcpkg\\installed\\x64-windows\\include\\bullet",
+        "-ID:\\vq\\flash\\install\\x64-Release\\include",
+        "-ID:\\vq\\flash\\install\\x64-Release\\include\\compat\\msvc",
+        "/DWIN32",
+        "/D_WINDOWS",
+        "/GR",
+        "/EHsc",
+        "/Zi",
+        "/Ob0",
+        "/Od",
+        "/RTC1",
+        "-MDd",
+        "/await:strict",
+        "/Zc:__cplusplus",
+        "-std:c++17",
+        "/Fosrc\\win\\CMakeFiles\\flash.dir\\main.cpp.obj",
+        "/FdTARGET_COMPILE_PDB",
+        "-cD:\\vq\\flash\\src\\win\\main.cpp"
+      ]
+    }
+  ]
+}
