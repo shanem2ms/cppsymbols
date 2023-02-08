@@ -17,8 +17,6 @@ class VSProject;
 class VisitContext;
 typedef VisitContext* VisitContextPtr;
 
-co::static_thread_pool g_threadPool(8);
-
 extern bool g_fullDbRebuild;
 int main(int argc, char* argv[])
 {
@@ -59,8 +57,6 @@ int main(int argc, char* argv[])
     DbMgr::Instance()->Initialize();
 
     
-
-    std::vector<co::task<>> tasks;
     
     Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, true, "", "", false);
 

@@ -12,8 +12,6 @@
 #include <sstream>
 #include <mutex>
 #include <ranges>
-#define SQLITE_ORM_OMITS_CODECVT 1
-#include "sqlite_orm/sqlite_orm.h"
 
 class VSProject;
 typedef VSProject* VSProjectPtr;

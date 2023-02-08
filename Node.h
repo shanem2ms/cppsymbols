@@ -8,7 +8,6 @@
 #include <map>
 #include <set>
 #include <sstream>
-#include "Shlobj_core.h"
 #include "clang-c/BuildSystem.h"
 #include "clang-c/Index.h"
 

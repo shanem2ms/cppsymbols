@@ -30,6 +30,6 @@ public:
     const std::string& BuildFolder() { return m_buildFolder; }
     const std::vector<std::string> AdditionalDefines() { return m_additionalDefines; }
     void Parse(const std::filesystem::path&solutionDir);
-    co::task<> CompileAll(const std::string &filter, bool doPrecomp, const std::string& rootdir);
-    co::task<> GenerateCompileList(const std::string& filter, bool doPrecomp, const std::string& rootdir);
+    void CompileAll(const std::string &filter, bool doPrecomp, const std::string& rootdir);
+    void GenerateCompileList(const std::string& filter, bool doPrecomp, const std::string& rootdir);
 };

@@ -6,6 +6,7 @@
 #include "Compiler.h"
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
+#include <unordered_map>
 
 Compiler *Compiler::m_sInstance = nullptr;
 
@@ -22,9 +23,10 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
     bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
 {
     
+    ProjectCache projectCache;
     std::vector<std::string> clgargs =
         GenerateCompileArgs(fname, outpath, includes, defines,
-            ProjectCache(), buildPch, pchfile, rootdir, dolog);
+            projectCache, buildPch, pchfile, rootdir, dolog);
   
     CXUnsavedFile unsavedFile;
     CXTranslationUnit translationUnit;
@@ -312,14 +314,14 @@ CXTranslationUnit Compiler::CompileInternal(const std::string& fname,
     return translationUnit;
 }
 
-co::task<bool> Compiler::CompilePch(VCProjectPtr project, ProjectCache& pc)
+bool Compiler::CompilePch(VCProjectPtr project, ProjectCache& pc)
 {
 
     //std::cout << "Pch: " << project->PrecompSrc() << std::endl;
     CXTranslationUnit translationUnit = CompileInternal(project->PrecompSrc(), "", project->Includes(),
         project->AdditionalDefines(), pc, true, "", "", false);
     if (translationUnit == nullptr)
-        co_return false;
+        return false;
 
     std::cout << "Writing " << project->PrecompBin() << std::endl;
     CXSaveError saveError = (CXSaveError)clang_saveTranslationUnit(translationUnit, project->PrecompBin().c_str(), clang_defaultSaveOptions(translationUnit));
@@ -328,10 +330,10 @@ co::task<bool> Compiler::CompilePch(VCProjectPtr project, ProjectCache& pc)
         std::cout << "Save Error: " << saveError << std::endl;
     }
     clang_disposeTranslationUnit(translationUnit);
-    co_return true;
+    return true;
 }
 
-co::task<bool> Compiler::CompileSrc(VCProjectPtr project, const std::string &srcFile, 
+bool Compiler::CompileSrc(VCProjectPtr project, const std::string &srcFile, 
     const std::string& outPath, const std::string& rootdir, ProjectCache& pc, bool doPrecomp, bool dolog) noexcept
 {
     //std::cout << "  Src: " << srcFile << std::endl;    
@@ -339,9 +341,9 @@ co::task<bool> Compiler::CompileSrc(VCProjectPtr project, const std::string &src
         project->Includes(), project->AdditionalDefines(), pc, false, doPrecomp ? project->PrecompBin() : std::string(),
         rootdir, dolog);
     if (translationUnit == nullptr)
-        co_return false;
+        return false;
     clang_disposeTranslationUnit(translationUnit);
-    co_return true;
+    return true;
 }
 
 std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
@@ -351,48 +353,8 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
 {
     std::cout << "Compiling " << fname << std::endl;
 
-    char pf[MAX_PATH];
-    SHGetSpecialFolderPathA(
-        0,
-        pf,
-        CSIDL_PROGRAM_FILESX86,
-        FALSE);
-
 
     std::vector<std::string> vcincludes;
-
-    std::string pgfiles(pf);
-    std::string vcdir = pf + std::string("\\Microsoft Visual Studio\\2019\\Professional\\VC\\");
-    std::string vcstdlibdir;
-    {
-        std::string vcverdir = vcdir + "Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt";
-        std::ifstream vsverfile(vcverdir);
-        std::string vcstdlibver;
-        std::getline(vsverfile, vcstdlibver);
-        vcstdlibdir = vcdir + std::string("Tools\\MSVC\\") + vcstdlibver;
-
-        vcincludes.push_back(vcstdlibdir + std::string("\\include"));
-        vcincludes.push_back(vcstdlibdir + std::string("\\atlmfc\\include"));
-    }
-
-    {
-        std::string wkitsdir = pgfiles + std::string("\\Windows Kits\\10\\Include");
-        std::string kitver;
-        for (const auto& entry : std::filesystem::directory_iterator(wkitsdir))
-        {
-            std::string vername = entry.path().filename().string();
-            if (kitver.length() == 0 || vername > kitver)
-            {
-                kitver = vername;
-            }
-        }
-        std::string wskitinc = wkitsdir + "\\" + kitver;
-        vcincludes.push_back(wskitinc + "\\ucrt");
-        vcincludes.push_back(wskitinc + "\\um");
-        vcincludes.push_back(wskitinc + "\\shared");
-        vcincludes.push_back(wskitinc + "\\winrt");
-        vcincludes.push_back(wskitinc + "\\cppwinrt");
-    }
 
     vcincludes.insert(vcincludes.end(), includes.begin(), includes.end());
 

@@ -1,0 +1,31 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 15,
+      "patch": 0
+    },
+    "configurePresets": [
+      {
+        "name": "debug",
+        "displayName": "Debug",
+        "binaryDir": "${sourceDir}/build/debug",
+        "generator": "Unix Makefiles",
+        "cacheVariables": {
+          "VCPKG_DIR": {
+            "type": "FILEPATH",
+            "value": "${sourceDir}/../vcpkg"
+          },
+          "VCPKG_TARGET_TRIPLET" : {
+            "type": "string",
+            "value": "arm64-osx"
+          },
+          "PROJ_INSTALL_PATH": { 
+            "type": "FILEPATH",
+            "value": "${sourceDir}/install"
+        },
+        "CMAKE_BUILD_TYPE": "Debug"
+    }
+      }
+      ]
+}

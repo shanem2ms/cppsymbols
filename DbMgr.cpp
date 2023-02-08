@@ -3,6 +3,7 @@
 #include "DbMgr.h"
 #include "Node.h"
 #include "sqlite3.h"
+#include "sqlite_orm/sqlite_orm.h"
 
 using namespace sqlite_orm;
 
