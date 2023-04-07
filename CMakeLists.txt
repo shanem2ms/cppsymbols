@@ -15,9 +15,11 @@ set(PROJECT_NAME symbols)
 set(CMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${BUNDLE_ID})
 set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "73CP3TPHE9")
 
-find_package(Clang CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SqliteOrm CONFIG REQUIRED)
+find_file(CLANGDLL libclang.dll REQUIRED)
+find_file(CLANGLIB libclang.lib REQUIRED HINTS "${LLVM_DIR}/lib")
+find_file(CLANGHDR BuildSystem.h REQUIRED HINTS "${LLVM_DIR}/include/clang-c")
 
 set(Main_Files
 	Compiler.cpp
@@ -28,6 +30,7 @@ set(Main_Files
 	symbols.cpp
 )
 
+add_compile_options(/Od)
 add_executable(${PROJECT_NAME} ${Main_Files})
 
 #string(REPLACE "/O2" "/O10" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
@@ -38,8 +41,9 @@ add_executable(${PROJECT_NAME} ${Main_Files})
 set(VCPKG_INSTALL_PATH ${VCPKG_DIR}/installed/${VCPKG_TARGET_TRIPLET})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    "${VCPKG_INSTALL_PATH}/include")
+    "${VCPKG_INSTALL_PATH}/include"
+	"${LLVM_DIR}/include")
     
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC 
-       libclang
+       ${CLANGLIB}
 	   sqlite_orm::sqlite_orm)

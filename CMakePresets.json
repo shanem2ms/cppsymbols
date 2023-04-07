@@ -1,31 +1,96 @@
 {
-    "version": 6,
-    "cmakeMinimumRequired": {
-      "major": 3,
-      "minor": 15,
-      "patch": 0
-    },
-    "configurePresets": [
-      {
-        "name": "debug",
-        "displayName": "Debug",
-        "binaryDir": "${sourceDir}/build/debug",
-        "generator": "Unix Makefiles",
-        "cacheVariables": {
-          "VCPKG_DIR": {
-            "type": "FILEPATH",
-            "value": "${sourceDir}/../vcpkg"
-          },
-          "VCPKG_TARGET_TRIPLET" : {
-            "type": "string",
-            "value": "arm64-osx"
-          },
-          "PROJ_INSTALL_PATH": { 
-            "type": "FILEPATH",
-            "value": "${sourceDir}/install"
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 15,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "debug",
+      "displayName": "Debug Windows",
+      "binaryDir": "${sourceDir}/build/debug",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "LLVM_DIR": "c:/Program Files/LLVM",
+        "VCPKG_DIR": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/../vq/vcpkg"
+        },
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "string",
+          "value": "x64-windows"
+        },
+        "PROJ_INSTALL_PATH": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/install/x64-debug"
         },
         "CMAKE_BUILD_TYPE": "Debug"
-    }
       }
-      ]
+    },
+    {
+      "name": "release",
+      "displayName": "Release Windows",
+      "binaryDir": "${sourceDir}/build/release",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "VCPKG_DIR": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/../vq/vcpkg"
+        },
+        "LLVM_DIR": "c:/Program Files/LLVM",
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "string",
+          "value": "x64-windows"
+        },
+        "PROJ_INSTALL_PATH": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/install/x64-Release"
+        },
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "debug-macos",
+      "displayName": "Debug Macos",
+      "binaryDir": "${sourceDir}/build/debug-macos",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "VCPKG_DIR": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/../vcpkg"
+        },
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "string",
+          "value": "arm64-osx"
+        },
+        "PROJ_INSTALL_PATH": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/install/debug-macos"
+        },
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release-macos",
+      "displayName": "Release Macos",
+      "binaryDir": "${sourceDir}/build/release",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "VCPKG_DIR": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/../vcpkg"
+        },
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "string",
+          "value": "arm64-osx"
+        },
+        "PROJ_INSTALL_PATH": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/install/release"
+        },
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    }
+  ]
 }
