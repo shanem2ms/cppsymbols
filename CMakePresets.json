@@ -21,10 +21,6 @@
           "type": "string",
           "value": "x64-windows"
         },
-        "PROJ_INSTALL_PATH": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/install/x64-debug"
-        },
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
@@ -36,18 +32,14 @@
       "cacheVariables": {
         "VCPKG_DIR": {
           "type": "FILEPATH",
-          "value": "${sourceDir}/../vq/vcpkg"
+          "value": "${sourceDir}/../vcpkg"
         },
         "LLVM_DIR": "c:/Program Files/LLVM",
         "VCPKG_TARGET_TRIPLET": {
           "type": "string",
           "value": "x64-windows"
         },
-        "PROJ_INSTALL_PATH": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/install/x64-Release"
-        },
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
     },
     {
@@ -84,10 +76,6 @@
         "VCPKG_TARGET_TRIPLET": {
           "type": "string",
           "value": "arm64-osx"
-        },
-        "PROJ_INSTALL_PATH": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/install/release"
         },
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }

@@ -335,9 +335,12 @@ namespace CppStream
         uint16_t len;
         data.ReadBytes((uint8_t*)&len, sizeof(len));
         std::vector<uint8_t> vec(len);
-        data.ReadBytes(&vec[0], vec.size());
-        string.assign((char*)&vec[0], (char*)&vec[0] + vec.size());
-        return len + vec.size();
+        if (len > 0)
+        {
+            data.ReadBytes(&vec[0], vec.size());
+            string.assign((char*)&vec[0], (char*)&vec[0] + vec.size());
+        }
+        return sizeof(len) + vec.size();
     }
 
     template<typename T> size_t Read(const ICppStreamReader& data, size_t offset, T& val)

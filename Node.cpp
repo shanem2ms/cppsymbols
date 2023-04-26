@@ -27,17 +27,6 @@ BaseNode::BaseNode() :
     numAlloc++;
 }
 
-#ifdef SQLITE
-void CommitToDb(SqlLiteDb db)
-{
-    db.AddRow(this);
-    foreach(Node childnode in Nodes)
-    {
-        if (childnode != nullptr)
-            childnode.CommitToDb(db);
-    }
-}
-#endif
 
 uint64_t BaseNode::RefHash()
 {
@@ -244,7 +233,6 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
             if (itPv != vc->fileStack.rend())
             {
                 vc->curNode = (*itPv)->node;
-
                 vc->fileStack.erase(std::next(itPv.base()), vc->fileStack.end());
             }
             else if (!vc->prevFileCommitName.empty())

@@ -3,14 +3,14 @@ set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "" FORCE)
 
 include(${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release") 
-project(symbols C CXX)
+project(cppsymbols C CXX)
 
-set(PROJECT_NAME symbols)
+set(PROJECT_NAME cppsymbols)
 
 set(CMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${BUNDLE_ID})
 set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "73CP3TPHE9")
@@ -30,7 +30,6 @@ set(Main_Files
 	symbols.cpp
 )
 
-add_compile_options(/Od)
 add_executable(${PROJECT_NAME} ${Main_Files})
 
 #string(REPLACE "/O2" "/O10" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")

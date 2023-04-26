@@ -2,7 +2,6 @@
 #include "CPPSourceFile.h"
 #include "DbMgr.h"
 #include "Node.h"
-#include "VCProject.h"
 #include "Compiler.h"
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
@@ -320,38 +319,6 @@ CXTranslationUnit Compiler::CompileInternal(const std::string& fname,
     return translationUnit;
 }
 
-bool Compiler::CompilePch(VCProjectPtr project, ProjectCache& pc)
-{
-
-    //std::cout << "Pch: " << project->PrecompSrc() << std::endl;
-    CXTranslationUnit translationUnit = CompileInternal(project->PrecompSrc(), "", project->Includes(),
-        project->AdditionalDefines(), std::vector<std::string>(), pc, true, "", "", false);
-    if (translationUnit == nullptr)
-        return false;
-
-    std::cout << "Writing " << project->PrecompBin() << std::endl;
-    CXSaveError saveError = (CXSaveError)clang_saveTranslationUnit(translationUnit, project->PrecompBin().c_str(), clang_defaultSaveOptions(translationUnit));
-    if (saveError != CXSaveError::CXSaveError_None)
-    {
-        std::cout << "Save Error: " << saveError << std::endl;
-    }
-    clang_disposeTranslationUnit(translationUnit);
-    return true;
-}
-
-bool Compiler::CompileSrc(VCProjectPtr project, const std::string &srcFile, 
-    const std::string& outPath, const std::string& rootdir, ProjectCache& pc, bool doPrecomp, bool dolog) noexcept
-{
-    //std::cout << "  Src: " << srcFile << std::endl;    
-    CXTranslationUnit translationUnit = CompileInternal(srcFile, outPath,
-        project->Includes(), project->AdditionalDefines(), std::vector<std::string>(), pc, false, doPrecomp ? project->PrecompBin() : std::string(),
-        rootdir, dolog);
-    if (translationUnit == nullptr)
-        return false;
-    clang_disposeTranslationUnit(translationUnit);
-    return true;
-}
-
 std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
     const std::string& outpath, const std::vector<std::string>& includes,
     const std::vector<std::string>& defines, const std::vector<std::string>& miscArgs,
@@ -364,7 +331,7 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
 
     vcincludes.insert(vcincludes.end(), includes.begin(), includes.end());
 
-    std::vector<std::string> clgargsBk = {
+    std::vector<std::string> clgargs = {
                 "-dI",
                 "--no-warnings",
                 "-g2",
@@ -382,8 +349,7 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
                 "-Wno-invalid-token-paste",
                 "-Wno-c++11-narrowing" };
 
-    std::vector<std::string> clgargs(miscArgs);
-    clgargs.insert(clgargs.end(), clgargsBk.begin(), clgargsBk.end());
+    clgargs.insert(clgargs.end(), miscArgs.begin(), miscArgs.end());
     for (auto define : defines)
     {
         clgargs.push_back(std::string("-D") + define);

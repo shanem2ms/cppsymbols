@@ -17,8 +17,6 @@ class CPPSourceFile;
 typedef CPPSourceFile *CPPSourceFilePtr;
 class VisitContext;
 typedef VisitContext *VisitContextPtr;
-class DbMgr;
-typedef DbMgr *DbMgrPtr;
 
 #define nulltoken (-1)
 struct Token

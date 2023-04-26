@@ -12,9 +12,6 @@
 #include "clang-c/BuildSystem.h"
 #include "clang-c/Index.h"
 
-class VCProject;
-typedef VCProject* VCProjectPtr;
-
 class Compiler
 {
     class Timer
@@ -52,11 +49,6 @@ private:
 public:
     static Compiler* Inst();
 
-    bool CompilePch(VCProjectPtr project, ProjectCache& pc);
-    bool CompileSrc(VCProjectPtr project, const std::string &srcFile, 
-        const std::string &outpath, 
-        const std::string &rootdir, ProjectCache& pc, bool doPrecomp,
-        bool dolog) noexcept;
     CXTranslationUnit Compile(const std::string& fname,
         const std::string& outpath, const std::vector<std::string>& includes,
         const std::vector<std::string>& defines,

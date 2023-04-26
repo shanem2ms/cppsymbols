@@ -43,13 +43,6 @@ std::time_t GetFileWriteTime(const std::filesystem::path& filename)
 #endif
 }
 
-void CPPSourceFile::CommitToDb(DbMgrPtr db)
-{
-    IsDirty = false;
-    //node->RemoveDuplicateNodes();
-    db->AddRow(this);
-}
-
 CPPSourceFile::CPPSourceFile(std::string fullPath)
 {
     FullPath = CPPSourceFile::FixPathSlashes(fullPath);

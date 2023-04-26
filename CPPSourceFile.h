@@ -10,8 +10,6 @@ class CPPSourceFile;
 typedef CPPSourceFile* CPPSourceFilePtr;
 class IncludeNode;
 typedef IncludeNode IncludeNodePtr;
-class DbMgr;
-typedef DbMgr* DbMgrPtr;
 
 class CPPSourceFile
 {
@@ -29,8 +27,6 @@ public:
 
     CPPSourceFile();
     CPPSourceFile(std::string fullPath);
-    void CommitToDb(DbMgrPtr db);    
-
     size_t Hash() const;
 
     static std::string FormatPath(std::string filepath);

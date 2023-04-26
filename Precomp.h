@@ -34,8 +34,6 @@ class CPPSourceFile;
 typedef CPPSourceFile* CPPSourceFilePtr;
 class VisitContext;
 typedef VisitContext* VisitContextPtr;
-class DbMgr;
-typedef DbMgr* DbMgrPtr;
 class Error;
 typedef Error* ErrorPtr;
 class DbFile;

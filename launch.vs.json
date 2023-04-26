@@ -5,66 +5,12 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "symbols.exe",
-      "name": "symbols.exe",
+      "projectTarget": "cppsymbols.exe",
+      "name": "cppsymbols.exe",
       "args": [
-        "-DDLLX=\"\"",
-        "-DPRId64=\"I64d\"",
-        "-IC:/flash/src/core/.",
-        "-IC:/flash/../vcpkg/installed/x64-windows/include",
-        "-O0",
-        "-g",
-        "-gcodeview",
-        "-D_DEBUG",
-        "-D_DLL",
-        "-D_MT",
-        "-std=c++20",
-        "-emit-pch",
-        "\"-xc++-header\"",
-        "-Pcore.pch",
-        "-ocmake_pch.osy",
-        "\"-cC:/flash/build/debugclg/src/core/CMakeFiles/core.dir/cmake_pch.hxx\""
-      ]
-    },
-    {
-      "type": "default",
-      "project": "CMakeLists.txt",
-      "projectTarget": "symbols.exe",
-      "name": "symbols.exe",
-      "args": [
-        "-DBGFX_CONFIG_DEBUG_ANNOTATION=1",
-        "-DBGFX_CONFIG_MULTITHREADED=1",
-        "-DBX_CONFIG_DEBUG=1",
-        "-DFMT_SHARED",
-        "-DLUA_BUILD_AS_DLL",
-        "-DUSING_UV_SHARED=1",
-        "-DXXH_EXPORT",
-        "-D__STDC_CONSTANT_MACROS",
-        "-D__STDC_FORMAT_MACROS",
-        "-D__STDC_LIMIT_MACROS",
-        "-IC:/flash/install/x64-debug/include",
-        "-IC:/flash/install/x64-debug/include/compat/msvc",
-        "-IC:/flash/src/core/.",
-        "-IC:/flash/../vcpkg/installed/x64-windows/include",
-        "\"-IC:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.35.32215/include\"",
-        "\"-IC:/Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/ucrt\"",
-        "-isystem",
-        "C:/flash/install/x64-Debug/include",
-        "-isystem",
-        "C:/flash/install/x64-Debug/include/compat/msvc",
-        "-isystem",
-        "C:/vcpkg/installed/x64-windows/include",
-        "-g",
-        "-Xclang",
-        "-gcodeview",
-        "-D_DEBUG",
-        "-D_DLL",
-        "-D_MT",
-        "-Xclang",
-        "--dependent-lib=msvcrtd",
-        "-std=c++20",
-        "-cC:/flash/src/core/geo/SphericalProjection.cpp",
-        "-O./SphericalProjection.osym"
+        //"-DDLLX= -DPRId64=\"I64d\" -ID:/vq/flash/src/core/. -ID:/vq/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -emit-pch -x c++-header -c D:/vq/flash/src/core/StdIncludes.h -P D:/vq/flash/build/debugclg/StdIncludes.h.pch -o D:/vq/flash/build/debugclg/StdIncludes.h.osy"
+        //"-DDLLX= -DPRId64=\"I64d\" -ID:/vq/flash/src/core/. -ID:/vq/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -c D:/vq/flash/src/core/geo/SphericalProjection.cpp -P D:/vq/flash/build/debugclg/StdIncludes.h.pch -o D:/vq/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
+        "-dump D:/vq/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
       ]
     }
   ]
