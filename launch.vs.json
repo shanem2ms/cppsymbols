@@ -8,6 +8,30 @@
       "projectTarget": "symbols.exe",
       "name": "symbols.exe",
       "args": [
+        "-DDLLX=\"\"",
+        "-DPRId64=\"I64d\"",
+        "-ID:/vq/flash/src/core/.",
+        "-ID:/vq/flash/../vcpkg/installed/x64-windows/include",
+        "-O0",
+        "-g",
+        "-gcodeview",
+        "-D_DEBUG",
+        "-D_DLL",
+        "-D_MT",
+        "-std=c++20",
+        "-emit-pch",
+        "\"-xc++-header\"",
+        "-Pcore.pch",
+        "-ocmake_pch.osy",
+        "\"-cD:/vq/flash/build/debugclg/src/core/CMakeFiles/core.dir/cmake_pch.hxx\""
+      ]
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "symbols.exe",
+      "name": "symbols.exe",
+      "args": [
         "-DBGFX_CONFIG_DEBUG_ANNOTATION=1",
         "-DBGFX_CONFIG_MULTITHREADED=1",
         "-DBX_CONFIG_DEBUG=1",
@@ -20,21 +44,16 @@
         "-D__STDC_LIMIT_MACROS",
         "-ID:/vq/flash/install/x64-debug/include",
         "-ID:/vq/flash/install/x64-debug/include/compat/msvc",
-        "-ID:/vq/flash/src/win/exe",
         "-ID:/vq/flash/src/core/.",
         "-ID:/vq/flash/../vcpkg/installed/x64-windows/include",
-        "-ID:/vq/flash/src/engine/.",
-        "-ID:/vq/flash/src/engine/imgui/.",
-        "-ID:/vq/flash/src/engine/../core",
-        "-ID:/vq/flash/src/engine/../core/leveldb/include",
-        "-ID:/vq/flash/../vcpkg/installed/x64-windows/include/bullet",
+        "\"-IC:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.35.32215/include\"",
+        "\"-IC:/Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/ucrt\"",
         "-isystem",
         "D:/vq/flash/install/x64-Debug/include",
         "-isystem",
         "D:/vq/flash/install/x64-Debug/include/compat/msvc",
         "-isystem",
         "D:/vq/vcpkg/installed/x64-windows/include",
-        "-O0",
         "-g",
         "-Xclang",
         "-gcodeview",
@@ -44,8 +63,11 @@
         "-Xclang",
         "--dependent-lib=msvcrtd",
         "-std=c++20",
-        "-cD:\\vq\\flash\\src\\win\\main.cpp"
+        "-cD:/vq/flash/src/core/geo/SphericalProjection.cpp",
+        "-O./SphericalProjection.osym"
       ]
     }
   ]
 }
+
+

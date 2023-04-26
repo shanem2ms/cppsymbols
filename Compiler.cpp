@@ -19,13 +19,13 @@ Compiler *Compiler::Inst()
 
 CXTranslationUnit Compiler::Compile(const std::string& fname, 
     const std::string &outpath, const std::vector<std::string>& includes,
-    const std::vector<std::string>& defines,
+    const std::vector<std::string>& defines, const std::vector<std::string> &miscArgs,
     bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
-{
-    
+{    
     ProjectCache projectCache;
     std::vector<std::string> clgargs =
         GenerateCompileArgs(fname, outpath, includes, defines,
+            miscArgs,
             projectCache, buildPch, pchfile, rootdir, dolog);
   
     CXUnsavedFile unsavedFile;
@@ -81,10 +81,7 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
         clang_disposeString(cxspell);
         clang_disposeDiagnostic(diagnostic);
     }
-    std::filesystem::path srcpath(fname);
     std::filesystem::path destpath(outpath);
-    std::filesystem::path dbname = srcpath.filename().replace_extension("db");
-    destpath = destpath / dbname;
     CXCursor startCursor = clang_getTranslationUnitCursor(translationUnit);
     VisitContext* vc = new VisitContext();
     vc->pchFiles = std::set<std::string>();
@@ -109,9 +106,6 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
     catch (std::system_error& error)
     {        
         std::cout << error.what();
-    }
-    if (buildPch)
-    {
     }
     
     std::vector<Token> tokens;
@@ -166,17 +160,29 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
         std::cout << "Nodes: " << vc->allocNodes.size() << std::endl;
         std::cout << "Tokens: " << tokens.size() << std::endl;
     }
+
+    vc->dbFile->Save();
     delete vc;
+
+    if (buildPch)
+    {
+        std::cout << "Saving " << pchfile << std::endl;
+        CXSaveError saveError = (CXSaveError)clang_saveTranslationUnit(translationUnit, pchfile.c_str(), clang_defaultSaveOptions(translationUnit));
+        if (saveError != CXSaveError::CXSaveError_None)
+        {
+            std::cout << "Save Error: " << saveError << std::endl;
+        }
+    }
     return translationUnit;
 }
 
 CXTranslationUnit Compiler::CompileInternal(const std::string& fname,
     const std::string& outpath, const std::vector<std::string>& includes,
-    const std::vector<std::string>& defines,
+    const std::vector<std::string>& defines, const std::vector<std::string>& miscArgs,
     ProjectCache& pc, bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
 {
     std::vector<std::string> clgargs =
-        GenerateCompileArgs(fname, outpath, includes, defines,
+        GenerateCompileArgs(fname, outpath, includes, defines, miscArgs,
             pc, buildPch, pchfile, rootdir, dolog);
 
     CXUnsavedFile unsavedFile;
@@ -319,7 +325,7 @@ bool Compiler::CompilePch(VCProjectPtr project, ProjectCache& pc)
 
     //std::cout << "Pch: " << project->PrecompSrc() << std::endl;
     CXTranslationUnit translationUnit = CompileInternal(project->PrecompSrc(), "", project->Includes(),
-        project->AdditionalDefines(), pc, true, "", "", false);
+        project->AdditionalDefines(), std::vector<std::string>(), pc, true, "", "", false);
     if (translationUnit == nullptr)
         return false;
 
@@ -338,7 +344,7 @@ bool Compiler::CompileSrc(VCProjectPtr project, const std::string &srcFile,
 {
     //std::cout << "  Src: " << srcFile << std::endl;    
     CXTranslationUnit translationUnit = CompileInternal(srcFile, outPath,
-        project->Includes(), project->AdditionalDefines(), pc, false, doPrecomp ? project->PrecompBin() : std::string(),
+        project->Includes(), project->AdditionalDefines(), std::vector<std::string>(), pc, false, doPrecomp ? project->PrecompBin() : std::string(),
         rootdir, dolog);
     if (translationUnit == nullptr)
         return false;
@@ -348,7 +354,7 @@ bool Compiler::CompileSrc(VCProjectPtr project, const std::string &srcFile,
 
 std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
     const std::string& outpath, const std::vector<std::string>& includes,
-    const std::vector<std::string>& defines,
+    const std::vector<std::string>& defines, const std::vector<std::string>& miscArgs,
     ProjectCache& pc, bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
 {
     std::cout << "Compiling " << fname << std::endl;
@@ -358,11 +364,9 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
 
     vcincludes.insert(vcincludes.end(), includes.begin(), includes.end());
 
-    std::vector<std::string> clgargs = {
+    std::vector<std::string> clgargsBk = {
                 "-dI",
-                "-xc++",
                 "--no-warnings",
-                "-fdiagnostics-format=msvc",
                 "-g2",
                 "-Wall",
                 "-O0",
@@ -375,15 +379,11 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
                 "-fms-extensions",
                 "-fno-delayed-template-parsing",
                 "-fsyntax-only",
-                "-D_CLANG",
-                "-D_LIB",
-                "-D_WIN32",
-                "-D_MT",
-                "-D_DLL",
                 "-Wno-invalid-token-paste",
-                "-Wno-c++11-narrowing",
-                "--no-standard-includes" };
+                "-Wno-c++11-narrowing" };
 
+    std::vector<std::string> clgargs(miscArgs);
+    clgargs.insert(clgargs.end(), clgargsBk.begin(), clgargsBk.end());
     for (auto define : defines)
     {
         clgargs.push_back(std::string("-D") + define);
@@ -393,7 +393,7 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
         clgargs.push_back(std::string("-I") + incdir);
     }
 
-    if (!pchfile.empty())
+    if (!pchfile.empty() && !buildPch)
     {
         clgargs.push_back("-include-pch");
         clgargs.push_back(pchfile);

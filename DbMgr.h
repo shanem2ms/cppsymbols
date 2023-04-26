@@ -12,6 +12,7 @@
 #include <sstream>
 #include <mutex>
 #include <ranges>
+#include "cppstream.h"
 
 class VSProject;
 typedef VSProject* VSProjectPtr;
@@ -28,18 +29,16 @@ class DbMgr
     std::map<std::string, CPPSourceFilePtr> m_sourceFiles;
     std::map<CPPSourceFilePtr, IncludeNode> cachedIncludeTree;
     std::map<std::string, TokenPtr> allTokenIds;
-    std::map<uint64_t, NodePtr> allNodes;
     std::mutex m_errorsMutex;
     std::vector<ErrorPtr> allErrors;
-    std::vector<std::vector<NodePtr>> m_nodelists;
-    static std::string dbname;
+    std::vector<Node> m_nodes;
+    std::string m_outfile;
     bool stgOnce;
 
-    auto& GetStorage(const std::string& dbname);
 public:
     CPPSourceFilePtr GetOrInsertFile(const std::string& commitName, const std::string& fileName);
     void AddPchFiles(const std::vector<std::string>& pchFiles);
-    DbMgr();
+    DbMgr(const std::string &outfile);
     template <class T> void AddRow(T node);
     template <class T> void AddRowsPtr(std::vector<T *>& range);
     template <class T> int64_t AddRows(std::vector<T>& range);
@@ -80,10 +79,27 @@ struct DbNode
     DbNode(const Node &);
 };
 
-struct DbToken
+struct DbToken : public CppStreamable
 {
     int64_t key;
     std::string text;
+
+    DbToken(int64_t _key, const std::string& _text) :
+        key(_key),
+        text(_text) {}
+
+    void WriteBinaryData(ICppStreamWriter& data, void* pUserContext) const override
+    {
+        CppStream::Write(data, key);
+        CppStream::Write(data, text);
+    }
+
+    size_t ReadBinaryData(const ICppStreamReader& data, size_t offset, void* pUserContext) override
+    {
+        offset = CppStream::Read(data, offset, key);
+        offset = CppStream::Read(data, offset, text);
+        return offset;
+    }
 };
 
 struct DbError
@@ -114,4 +130,5 @@ public:
     int64_t AddRows(std::vector<Token>& range);
     CPPSourceFilePtr GetOrInsertFile(const std::string& commitName, const std::string& fileName);
     void AddNodes(std::vector<Node>& range);
+    void Save();
 };
