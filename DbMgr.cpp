@@ -2,8 +2,8 @@
 #include "CPPSourceFile.h"
 #include "DbMgr.h"
 #include "Node.h"
-#include "zlib.h"
 #include "cppstream.h"
+#include "zlib.h"
 
 bool g_fullDbRebuild = false;
 bool g_doOptimizeOnStart = false;
@@ -183,8 +183,7 @@ void DbFile::AddNodes(std::vector<Node>& nodes)
 
 
 DbFile::DbFile(const std::string& outdbfile) :
-    m_dbfile(outdbfile),
-    m_ofstream(outdbfile, std::ios::out | std::ios::binary)
+    m_dbfile(outdbfile)
 {
 }
 
@@ -229,4 +228,24 @@ void DbFile::Save()
     CppStream::Write(vecWriter, m_dbTokens);
     CppStream::Write(vecWriter, m_dbNodes);
 
+
+    // Decoded data size (in bytes).
+    const uLongf decodedCnt = (uLongf)data.size();
+
+    static_assert(sizeof(uLongf) == sizeof(uint32_t));
+    std::vector<uint8_t> compressedData(data.size() + sizeof(uint32_t));
+    memcpy(compressedData.data(), &decodedCnt, sizeof(uint32_t));
+    // Encoded data size (in bytes).
+    uLongf encodedCnt = (uLongf)compressedData.size();
+
+    int compressStatus = compress2(
+        reinterpret_cast<Bytef*>(compressedData.data()),
+        &encodedCnt,
+        reinterpret_cast<const Bytef*>(data.data() + sizeof(uint32_t)),
+        decodedCnt,
+        Z_DEFAULT_COMPRESSION);
+
+    std::ofstream ofstream(m_dbfile, std::ios::out | std::ios::binary);
+    ofstream.write((const char*)compressedData.data(), encodedCnt + sizeof(uint32_t));
+    ofstream.close();
 }

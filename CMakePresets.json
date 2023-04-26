@@ -15,7 +15,7 @@
         "LLVM_DIR": "c:/Program Files/LLVM",
         "VCPKG_DIR": {
           "type": "FILEPATH",
-          "value": "${sourceDir}/../vq/vcpkg"
+          "value": "${sourceDir}/../vcpkg"
         },
         "VCPKG_TARGET_TRIPLET": {
           "type": "string",

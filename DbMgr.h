@@ -117,7 +117,6 @@ class DbFile
 {
     std::map<std::string, CPPSourceFilePtr> m_sourceFiles;
     std::string m_dbfile;
-    std::ofstream m_ofstream;
     bool stgOnce;
     std::vector<DbNode> m_dbNodes;
     std::vector<DbToken> m_dbTokens;
