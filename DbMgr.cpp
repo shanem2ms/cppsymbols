@@ -305,7 +305,8 @@ void DbFile::Load()
         typeKinds.insert(node.typeKind);
         if (node.sourceFile == 1)
         {
-            std::cout << node.line << sCursorKindMap[node.kind] << std::endl;
+            std::cout << node.line << " " << sCursorKindMap[node.kind] << " " 
+                << sTypeKindMap[node.typeKind] << std::endl;
         }
     }
 }
