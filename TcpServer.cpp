@@ -17,22 +17,34 @@ void TcpServer::Start()
     }
 #endif
     std::string addr = "0.0.0.0:9099";
+    evpp::Buffer buffer(1024);
     int thread_num = 4;
     evpp::EventLoop loop;
-    evpp::TCPServer server(&loop, addr, "TCPEchoServer", thread_num);
-    server.SetMessageCallback([](const evpp::TCPConnPtr& conn,
+    evpp::TCPServer server(&loop, addr, "CPPSymbols", thread_num);
+    server.SetMessageCallback([&buffer](const evpp::TCPConnPtr& conn,
         evpp::Buffer* msg) {
-            std::string str(msg->data(), msg->data() + msg->size());
-            
-            LOG_INFO << str << conn->remote_addr();
-            conn->Send(msg);
+            if (msg->data()[0] == 1)
+            {
+                std::string str(msg->data() + 1, msg->data() + msg->size());
+                LOG_INFO <<"command line: " << str << conn->remote_addr();
+
+                buffer.Reset();
+                int16_t val = 200;
+                buffer.Append(&val, sizeof(val));
+                conn->Send(&buffer);
+            }
+            else
+            {
+                std::string str(msg->data(), msg->data() + msg->size());
+                conn->Send(msg);
+            }
         });
     server.SetConnectionCallback([](const evpp::TCPConnPtr& conn) {
         if (conn->IsConnected()) {
-            LOG_INFO << "nc" << conn->remote_addr();
+            //LOG_INFO << "nc" << conn->remote_addr();
         }
         else {
-            LOG_INFO << "lc" << conn->remote_addr();
+            //LOG_INFO << "lc" << conn->remote_addr();
         }
         });
     server.Init();
