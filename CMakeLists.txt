@@ -32,6 +32,7 @@ set(Main_Files
 	Node.cpp
 	Precomp.cpp
 	symbols.cpp
+	TcpServer.cpp
 )
 
 add_executable(${PROJECT_NAME} ${Main_Files})
@@ -50,22 +51,14 @@ set(VCPKG_INSTALL_PATH ${VCPKG_DIR}/installed/${VCPKG_TARGET_TRIPLET})
 target_include_directories(${PROJECT_NAME} PUBLIC
     "${VCPKG_INSTALL_PATH}/include"
 	"${LLVM_DIR}/include")
+target_link_directories(${PROJECT_NAME} PUBLIC 
+	"${VCPKG_INSTALL_PATH}/lib")
     
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC 
+	   libevent::core
        ${CLANGLIB}
-	   unofficial::evpp::evmc_static
+	   unofficial::evpp::evpp_static
+	   ZLIB::ZLIB
 	   )
 
-set (LIBNAME lib${PROJECT_NAME})
-add_library(${LIBNAME} SHARED  ${Main_Files})
-
-target_include_directories(${LIBNAME} PUBLIC
-    "${VCPKG_INSTALL_PATH}/include"
-	"${LLVM_DIR}/include")
-
-target_link_options(${LIBNAME} PUBLIC /MAPINFO:EXPORTS /MAP)
-
-target_link_libraries(${LIBNAME} LINK_PUBLIC 
-    ${CLANGLIB}
-	ZLIB::ZLIB)
 find_file(CLANGDLL libclang.dll REQUIRED)

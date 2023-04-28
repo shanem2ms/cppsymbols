@@ -3,6 +3,7 @@
 #include "DbMgr.h"
 #include "Node.h"
 #include "Compiler.h"
+#include "TcpServer.h"
 
 #ifdef WIN32
 #define stat _stat
@@ -30,6 +31,11 @@ int main(int argc, char* argv[])
         std::cout << "Reading " << argv[2] << std::endl;
         DbFile dbFile(argv[2]);
         dbFile.Load();
+    }
+    else if (!strcmp(argv[1], "-host"))
+    {
+        TcpServer svr;
+        svr.Start();
     }
     else
     {
