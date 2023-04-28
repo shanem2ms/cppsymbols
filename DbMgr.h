@@ -86,7 +86,8 @@ struct DbError
 };
 
 class DbHandle;
-class DbFile
+
+class CPPEXPORT DbFile
 {
     std::map<std::string, CPPSourceFilePtr> m_sourceFiles;
     std::string m_dbfile;

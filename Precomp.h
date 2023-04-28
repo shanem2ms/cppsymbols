@@ -38,3 +38,5 @@ class Error;
 typedef Error* ErrorPtr;
 class DbFile;
 typedef DbFile* DbFilePtr;
+
+#define CPPEXPORT __declspec(dllexport)

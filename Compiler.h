@@ -28,7 +28,7 @@ public:
     struct ProjectCache
     {
         std::set<std::string> pchFiles;
-        std::mutex allNodesMtx;
+        //std::mutex allNodesMtx;
     };
 
 private:
