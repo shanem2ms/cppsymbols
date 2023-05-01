@@ -1,5 +1,6 @@
 #include "Precomp.h"
 #include "TcpServer.h"
+#include "cppstream.h"
 
 #include <evpp/tcp_server.h>
 #include <evpp/buffer.h>
@@ -23,12 +24,21 @@ void TcpServer::Start()
     evpp::TCPServer server(&loop, addr, "CPPSymbols", thread_num);
     server.SetMessageCallback([&buffer](const evpp::TCPConnPtr& conn,
         evpp::Buffer* msg) {
-            if (msg->data()[0] == 1)
+            if (msg->data()[0] == 1)  // Send command line
             {
-                std::string str(msg->data() + 1, msg->data() + msg->size());
-                LOG_INFO <<"command line: " << str << conn->remote_addr();
-
+                std::vector<uint8_t> data(msg->data() + 1, msg->data() + (msg->size() - 1));
+                CppVecStreamReader vecReader(data);
+                std::vector<std::string> args;
+                CppStream::Read(vecReader, 0, args);
                 buffer.Reset();
+                int16_t val = 200;
+                buffer.Append(&val, sizeof(val));
+                conn->Send(&buffer);
+            }
+            if (msg->data()[0] == 2) // send source filename
+            {
+                buffer.Reset();
+                std::string str(msg->data() + 1, msg->data() + msg->size());
                 int16_t val = 200;
                 buffer.Append(&val, sizeof(val));
                 conn->Send(&buffer);
@@ -41,10 +51,8 @@ void TcpServer::Start()
         });
     server.SetConnectionCallback([](const evpp::TCPConnPtr& conn) {
         if (conn->IsConnected()) {
-            //LOG_INFO << "nc" << conn->remote_addr();
         }
         else {
-            //LOG_INFO << "lc" << conn->remote_addr();
         }
         });
     server.Init();

@@ -16,6 +16,58 @@ Compiler *Compiler::Inst()
     return m_sInstance;
 }
 
+CXTranslationUnit Compiler::CompileArgs(const std::string& fname,
+    const std::vector<std::string>& args, bool dolog)
+{
+    std::vector<std::string> includeFiles;
+    std::vector<std::string> defines;
+    std::set<std::string> misc_args;
+    std::string srcFile;
+    std::string outFile;
+    std::string pchFile;
+
+    for (int i = 0; i < args.size(); ++i)
+    {
+        const std::string& str = args[i];
+        if (str.length() < 2)
+            continue;
+        if (str[0] == '-')
+        {
+            char cmd = str[1];// std::toupper(str[1]);
+            switch (cmd)
+            {
+            case 'I':
+                includeFiles.push_back(str.substr(2));
+                break;
+            case 'D':
+                defines.push_back(str.substr(2));
+                break;
+            case 'P':
+                i++;
+                pchFile = args[i];
+                break;
+            case 'c':
+                i++;
+                srcFile = args[i];
+                break;
+            case 'o':
+                i++;
+                outFile = args[i];
+                break;
+            default:
+                misc_args.insert(str);
+                break;
+            }
+        }
+        else
+            misc_args.insert(str);
+    }
+
+    bool doPch = misc_args.find("-emit-pch") != misc_args.end();
+    std::vector<std::string> misc(misc_args.begin(), misc_args.end());
+    return Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, misc, doPch, pchFile, "", false);
+}
+
 CXTranslationUnit Compiler::Compile(const std::string& fname, 
     const std::string &outpath, const std::vector<std::string>& includes,
     const std::vector<std::string>& defines, const std::vector<std::string> &miscArgs,

@@ -25,7 +25,7 @@ CPPSourceFilePtr DbFile::GetOrInsertFile(const std::string& commitName, const st
             sf = itSrcFile->second;
     }
     return sf;
-}
+} 
 
 DbNode::DbNode(const Node &n) :
     key(n.Key),
