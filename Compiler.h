@@ -49,7 +49,7 @@ private:
 public:
     static Compiler* Inst();
 
-    CXTranslationUnit CompileArgs(const std::string& fname,        
+    CXTranslationUnit CompileWithArgs(const std::string& fname,        
         const std::vector<std::string>& args, bool dolog);
 
     CXTranslationUnit Compile(const std::string& fname,

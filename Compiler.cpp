@@ -16,13 +16,13 @@ Compiler *Compiler::Inst()
     return m_sInstance;
 }
 
-CXTranslationUnit Compiler::CompileArgs(const std::string& fname,
+CXTranslationUnit Compiler::CompileWithArgs(const std::string& fname,
     const std::vector<std::string>& args, bool dolog)
 {
     std::vector<std::string> includeFiles;
     std::vector<std::string> defines;
     std::set<std::string> misc_args;
-    std::string srcFile;
+    std::string srcFile = fname;
     std::string outFile;
     std::string pchFile;
 

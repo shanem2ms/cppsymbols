@@ -23,15 +23,20 @@ namespace cppsymview
     public partial class MainWindow : Window
     {
         CPPEngine engine = new CPPEngine();
+        CPPTextEditor cppTextEditor;
         public MainWindow()
         {
             InitializeComponent();
 
             //ConnectTcp();
             engine.RunServer();
-            CPPTextEditor cppTextEditor = new CPPTextEditor(@"D:\vq\flash\src\core\geo\SphericalProjection.cpp", engine);
+            cppTextEditor = new CPPTextEditor(@"D:\vq\flash\src\core\geo\SphericalProjection.cpp", engine);
             Editors.Children.Add(cppTextEditor);
         }
-        
+
+        private void ParseButton_Click(object sender, RoutedEventArgs e)
+        {
+            cppTextEditor.Reparse();
+        }
     }
 }

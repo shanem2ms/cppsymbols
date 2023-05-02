@@ -11,6 +11,15 @@
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
-        <Grid x:Name="Editors" />
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <Button Width="100" Click="ParseButton_Click">Parse</Button>
+            </StackPanel>
+            <Grid Grid.Row="1" x:Name="Editors" />
+        </Grid>
     </Grid>
 </Window>

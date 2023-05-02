@@ -16,7 +16,14 @@ namespace cppsymview
 
         public void RunServer()
         {
-            Task.Run(async () => { await ConnectTcp(); });
+            Task.Run(async () => {
+                bool done = false;
+                while (!done)
+                {
+                    done = await ConnectTcp();
+                    await Task.Delay(1000);
+                }
+            });
         }
 
         SemaphoreSlim sendEvent = new SemaphoreSlim(0, 1);
@@ -31,7 +38,7 @@ namespace cppsymview
         DataType dataType;
         string sourceCode = string.Empty;
         string[] commandArgs = { "-DDLLX=",
-                                "-DPRId64=\"I64d\"",
+                                "-DPRId64=I64d",
                                 "-ID:/vq/flash/src/core/.",
                                 "-ID:/vq/flash/../vcpkg/installed/x64-windows/include",
                                 "-O0",
@@ -69,6 +76,23 @@ namespace cppsymview
             return outbytes;
         }
 
+        async Task<bool> SendCommandline(Socket client)
+        {
+            // Send command line
+            byte[] data = SerializeStringArray(this.commandArgs);
+            byte[] fullBytes = new byte[data.Length + 1];
+            fullBytes[0] = (int)DataType.CommandLineArgs;
+            Buffer.BlockCopy(data, 0, fullBytes, 1, data.Length);
+            _ = await client.SendAsync(fullBytes, SocketFlags.None);
+
+            // Receive ack.
+            var buffer = new byte[2];
+            var received = await client.ReceiveAsync(buffer, SocketFlags.None);
+            UInt16 response = BitConverter.ToUInt16(buffer);
+            if (response != 200)
+                throw new Exception("Command line error");
+            return true;
+        }
 
         async Task<bool> ConnectTcp()
         {
@@ -80,45 +104,40 @@ namespace cppsymview
             SocketType.Stream,
             ProtocolType.Tcp);
 
-            await client.ConnectAsync(ipEndPoint);
-
+            try
             {
-                // Send command line
-                byte[] data = SerializeStringArray(this.commandArgs);
-                byte[] fullBytes = new byte[data.Length + 1];
-                fullBytes[0] = (int)DataType.CommandLineArgs;
-                Buffer.BlockCopy(data, 0, fullBytes, 1, data.Length);
-                _ = await client.SendAsync(fullBytes, SocketFlags.None);
+                await client.ConnectAsync(ipEndPoint);
 
-                // Receive ack.
-                var buffer = new byte[2];
-                var received = await client.ReceiveAsync(buffer, SocketFlags.None);
-                UInt16 response = BitConverter.ToUInt16(buffer);
-                if (response != 200)
-                    throw new Exception("Command line error");
+                
+
+                while (true)
+                {
+                    await sendEvent.WaitAsync();
+                    if (dataType == DataType.Shutdown)
+                        break;
+                    
+                    await SendCommandline(client);
+                    // Send source.
+                    var localsrc = this.sourceCode;
+                    this.sourceCode = string.Empty;
+                    int byteCount = Encoding.UTF8.GetByteCount(localsrc);
+                    byte[] messageBytes = new byte[byteCount + 1];
+                    int numencoded = Encoding.UTF8.GetBytes(localsrc, new Span<byte>(messageBytes, 1, byteCount));
+                    messageBytes[0] = (byte)this.dataType;
+                    _ = await client.SendAsync(messageBytes, SocketFlags.None);
+
+                    // Receive ack.
+                    var buffer = new byte[1_024];
+                    var received = await client.ReceiveAsync(buffer, SocketFlags.None);
+                    var response = Encoding.UTF8.GetString(buffer, 0, received);
+                }
+                client.Shutdown(SocketShutdown.Both);
+            }
+            catch (Exception ex)
+            {
+                return false;
             }
 
-            while (true)
-            {
-                await sendEvent.WaitAsync();
-                if (dataType == DataType.Shutdown)
-                    break;
-                // Send source.
-                var localsrc = this.sourceCode;
-                this.sourceCode = string.Empty;
-                int byteCount = Encoding.UTF8.GetByteCount(localsrc);
-                byte []messageBytes = new byte[byteCount + 1];
-                int numencoded = Encoding.UTF8.GetBytes(localsrc, new Span<byte>(messageBytes, 1, byteCount));
-                messageBytes[0] = (byte)this.dataType;
-                _ = await client.SendAsync(messageBytes, SocketFlags.None);
-
-                // Receive ack.
-                var buffer = new byte[1_024];
-                var received = await client.ReceiveAsync(buffer, SocketFlags.None);
-                var response = Encoding.UTF8.GetString(buffer, 0, received);
-            }
-
-            client.Shutdown(SocketShutdown.Both);
             return true;
         }
 

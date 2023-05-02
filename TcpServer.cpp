@@ -6,6 +6,7 @@
 #include <evpp/buffer.h>
 #include <evpp/tcp_conn.h>
 
+#include "Compiler.h"
 
 void TcpServer::Start()
 {
@@ -25,9 +26,12 @@ void TcpServer::Start()
 
     server.SetMessageCallback([this, &buffer](const evpp::TCPConnPtr& conn,
         evpp::Buffer* msg) {
-            if (msg->data()[0] == 1)  // Send command line
+            size_t sz = msg->size();
+            const char* pdata = msg->data();
+            if (pdata[0] == 1)  // Send command line
             {
-                std::vector<uint8_t> data(msg->data() + 1, msg->data() + (msg->size() - 1));
+                buffer.Reset();
+                std::vector<uint8_t> data(pdata + 1, pdata + sz);
                 CppVecStreamReader vecReader(data);
                 std::vector<std::string> args;
                 CppStream::Read(vecReader, 0, args);
@@ -37,17 +41,20 @@ void TcpServer::Start()
                 buffer.Append(&val, sizeof(val));
                 conn->Send(&buffer);
             }
-            if (msg->data()[0] == 2) // send source filename
+            if (pdata[0] == 2) // send source filename
             {
                 buffer.Reset();
-                std::string str(msg->data() + 1, msg->data() + msg->size());
+                std::string filename(pdata + 1, pdata + sz);
+
+                std::vector<std::string> cargs = m_args;
+                Compiler::Inst()->CompileWithArgs(filename, m_args, true);
                 int16_t val = 200;
                 buffer.Append(&val, sizeof(val));
                 conn->Send(&buffer);
             }
             else
             {
-                std::string str(msg->data(), msg->data() + msg->size());
+                std::string str(pdata, pdata + sz);
                 conn->Send(msg);
             }
         });
