@@ -29,7 +29,7 @@ namespace cppsymview
 
             //ConnectTcp();
             engine.RunServer();
-            CPPTextEditor cppTextEditor = new CPPTextEditor(@"C:\flash\src\core\geo\SphericalProjection.cpp", engine);
+            CPPTextEditor cppTextEditor = new CPPTextEditor(@"D:\vq\flash\src\core\geo\SphericalProjection.cpp", engine);
             Editors.Children.Add(cppTextEditor);
         }
         

@@ -74,7 +74,8 @@ namespace cppsymview
             CPPName = Path.GetFileName(FilePath);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CPPName"));
             Load(this.FilePath);
-            this.Engine.SendSourceCode(Document.Text);
+            this.Engine.CompileFile(this.FilePath);
+            //this.Engine.SendSourceCode(Document.Text);
         }
         public void SaveAs(string path)
         {

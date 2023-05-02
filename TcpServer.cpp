@@ -22,7 +22,8 @@ void TcpServer::Start()
     int thread_num = 4;
     evpp::EventLoop loop;
     evpp::TCPServer server(&loop, addr, "CPPSymbols", thread_num);
-    server.SetMessageCallback([&buffer](const evpp::TCPConnPtr& conn,
+
+    server.SetMessageCallback([this, &buffer](const evpp::TCPConnPtr& conn,
         evpp::Buffer* msg) {
             if (msg->data()[0] == 1)  // Send command line
             {
@@ -30,6 +31,7 @@ void TcpServer::Start()
                 CppVecStreamReader vecReader(data);
                 std::vector<std::string> args;
                 CppStream::Read(vecReader, 0, args);
+                m_args = args;
                 buffer.Reset();
                 int16_t val = 200;
                 buffer.Append(&val, sizeof(val));

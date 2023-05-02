@@ -22,6 +22,7 @@ namespace cppsymview
         SemaphoreSlim sendEvent = new SemaphoreSlim(0, 1);
         enum DataType
         {
+            CommandLineArgs = 1,
             Filename = 2,
             SourceCode = 3,
             Shutdown = 100
@@ -37,8 +38,6 @@ namespace cppsymview
                                 "-g",
                                 "-gcodeview",
                                 "-std=c++20",
-                                "-c",
-                                "D:/vq/flash/src/core/geo/SphericalProjection.cpp",
                                 "-P",
                                 "D:/vq/flash/build/debugclg/StdIncludes.h.pch" };
 
@@ -87,7 +86,7 @@ namespace cppsymview
                 // Send command line
                 byte[] data = SerializeStringArray(this.commandArgs);
                 byte[] fullBytes = new byte[data.Length + 1];
-                fullBytes[0] = 1;
+                fullBytes[0] = (int)DataType.CommandLineArgs;
                 Buffer.BlockCopy(data, 0, fullBytes, 1, data.Length);
                 _ = await client.SendAsync(fullBytes, SocketFlags.None);
 
