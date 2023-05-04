@@ -28,9 +28,9 @@ namespace cppsymview
         public string CPPName { get; set; }
 
         public string FilePath { get; set; }
-        public CPPEngine Engine { get; set; }
+        public CPPEngineFile Engine { get; set; }
 
-        public CPPTextEditor(string path, CPPEngine engine)
+        public CPPTextEditor(string path, CPPEngineFile engine)
         {
             FilePath = path;
             Engine = engine;
@@ -55,14 +55,21 @@ namespace cppsymview
                 }
             }
 
-            // in the constructor:
-            this.TextArea.TextEntering += TextArea_TextEntering;
-            this.TextArea.TextEntered += TextArea_TextEntered;
+            TextArea.Caret.PositionChanged += Caret_PositionChanged;
+            TextArea.SelectionChanged += TextArea_SelectionChanged;
             //Reload();
             SearchPanel.Install(this);
             Reload();
         }
 
+        private void TextArea_SelectionChanged(object? sender, EventArgs e)
+        {
+        }
+
+        private void Caret_PositionChanged(object? sender, EventArgs e)
+        {
+            
+        }
 
         private void ParentWnd_BeforeCPPRun(object sender, bool e)
         {
@@ -91,69 +98,6 @@ namespace cppsymview
         public void Save()
         {
             Save(this.FilePath);
-        }
-
-        private void TextArea_TextEntered(object sender, System.Windows.Input.TextCompositionEventArgs e)
-        {
-            char[] symbolTermChars = new char[] { ' ', '\t', '{', '(' };
-            List<string> members = null;
-            if (e.Text == ".")
-            {
-                int spaceOffset = this.Text.LastIndexOfAny(symbolTermChars, this.CaretOffset);
-                int len = this.CaretOffset - spaceOffset - 2;
-                if (len <= 0)
-                    return;
-                string word = this.Text.Substring(spaceOffset + 1, len);
-                //members = Engine.CodeComplete(this.Text, spaceOffset + 1, word, CPPEngine.CodeCompleteType.Member);
-            }
-            else if (e.Text == "(")
-            {
-                int spaceOffset = this.Text.LastIndexOfAny(symbolTermChars, this.CaretOffset);
-                int len = this.CaretOffset - spaceOffset - 2;
-                if (len <= 0)
-                    return;
-                string word = this.Text.Substring(spaceOffset + 1, len);
-                //members = Engine.CodeComplete(this.Text, spaceOffset + 1, word, CPPEngine.CodeCompleteType.Function);
-            }
-            else if (e.Text == " ")
-            {
-                int spaceOffset = this.Text.LastIndexOfAny(symbolTermChars, this.CaretOffset - 2);
-                int len = this.CaretOffset - spaceOffset - 2;
-                if (len != 3 || this.Text.Substring(spaceOffset + 1, 3) != "new")
-                    return;
-                //members = Engine.CodeComplete(this.Text, spaceOffset + 1, "new", CPPEngine.CodeCompleteType.New);
-
-            }
-
-            if (members != null)
-            {
-                completionWindow = new CompletionWindow(this.TextArea);
-                IList<ICompletionData> data = completionWindow.CompletionList.CompletionData;
-                foreach (var member in members)
-                {
-                    data.Add(new MyCompletionData(member, 0));
-                }
-                completionWindow.Show();
-                completionWindow.Closed += delegate
-                {
-                    completionWindow = null;
-                };
-            }
-        }
-
-        private void TextArea_TextEntering(object sender, System.Windows.Input.TextCompositionEventArgs e)
-        {
-            if (e.Text.Length > 0 && completionWindow != null)
-            {
-                if (!char.IsLetterOrDigit(e.Text[0]))
-                {
-                    // Whenever a non-letter is typed while the completion window is open,
-                    // insert the currently selected element.
-                    completionWindow.CompletionList.RequestInsertion(e);
-                }
-            }
-            // Do not set e.Handled=true.
-            // We still want to insert the character that was typed.
         }
 
         class ErrorColorizer : DocumentColorizingTransformer

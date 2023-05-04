@@ -62,8 +62,7 @@ void DbFile::AddNodes(std::vector<Node>& nodes)
 }
 
 
-DbFile::DbFile(const std::string& dbfile) :
-    m_dbfile(dbfile)
+DbFile::DbFile()
 {
 }
 
@@ -89,9 +88,8 @@ int64_t DbFile::AddRows(std::vector<Token>& range)
     return 0;
 }
 
-void DbFile::Save()
+void DbFile::WriteStream(std::vector<uint8_t>& data)
 {
-    std::vector<uint8_t> data;
     int64_t maxFileKey = 0;
     for (const auto& kv : m_sourceFiles)
     {
@@ -107,7 +105,12 @@ void DbFile::Save()
     CppStream::Write(vecWriter, orderedSourceFiles);
     CppStream::Write(vecWriter, m_dbTokens);
     CppStream::Write(vecWriter, m_dbNodes);
+}
 
+void DbFile::Save(const std::string &dbfile)
+{
+    std::vector<uint8_t> data;
+    WriteStream(data);
     // Decoded data size (in bytes).
     const uLongf decodedCnt = (uLongf)data.size();
 
@@ -123,7 +126,7 @@ void DbFile::Save()
         decodedCnt,
         Z_DEFAULT_COMPRESSION);
 
-    std::ofstream ofstream(m_dbfile, std::ios::out | std::ios::binary);
+    std::ofstream ofstream(dbfile, std::ios::out | std::ios::binary);
     ofstream.write((const char*)&decodedCnt, sizeof(uint32_t));
     ofstream.write((const char*)compressedData.data(), encodedCnt);
     ofstream.close();
@@ -270,9 +273,9 @@ static std::map<CXTypeKind, std::string> sTypeKindMap
 { CXType_Elaborated, "Elaborated" }
 };
 
-void DbFile::Load()
+void DbFile::Load(const std::string &dbfile)
 {
-    std::ifstream ifstream(m_dbfile, std::ios::in | std::ios::binary);
+    std::ifstream ifstream(dbfile, std::ios::in | std::ios::binary);
     ifstream.seekg(0, std::ios::end);
     size_t size = ifstream.tellg();
     std::vector<uint8_t> compressedData(size - sizeof(uint32_t));
@@ -296,7 +299,7 @@ void DbFile::Load()
     offset = CppStream::Read(vecReader, offset, orderedSourceFiles);
     offset = CppStream::Read(vecReader, offset, m_dbTokens);
     offset = CppStream::Read(vecReader, offset, m_dbNodes);
-
+   
 //    std::set<CXCursorKind> cursorKinds;
     std::set<CXTypeKind> typeKinds;
     for (const auto& node : m_dbNodes)

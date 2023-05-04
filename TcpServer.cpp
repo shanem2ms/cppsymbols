@@ -22,16 +22,17 @@ void TcpServer::Start()
     evpp::Buffer buffer(1024);
     int thread_num = 4;
     evpp::EventLoop loop;
-    evpp::TCPServer server(&loop, addr, "CPPSymbols", thread_num);
+    evpp::TCPServer server(&loop, addr, "CPPSymbols", 1);
 
     server.SetMessageCallback([this, &buffer](const evpp::TCPConnPtr& conn,
         evpp::Buffer* msg) {
-            size_t sz = msg->size();
-            const char* pdata = msg->data();
-            if (pdata[0] == 1)  // Send command line
+            int8_t command = msg->ReadInt8();
+            evpp::Slice slice = msg->ToSlice();
+            if (command == 1)  // Send command line
             {
                 buffer.Reset();
-                std::vector<uint8_t> data(pdata + 1, pdata + sz);
+                
+                std::vector<uint8_t> data(slice.data(), slice.data() + slice.size());
                 CppVecStreamReader vecReader(data);
                 std::vector<std::string> args;
                 CppStream::Read(vecReader, 0, args);
@@ -41,20 +42,18 @@ void TcpServer::Start()
                 buffer.Append(&val, sizeof(val));
                 conn->Send(&buffer);
             }
-            if (pdata[0] == 2) // send source filename
+            if (command == 2) // send source filename
             {
                 buffer.Reset();
-                std::string filename(pdata + 1, pdata + sz);
-
+                std::string filename = slice.ToString();
                 std::vector<std::string> cargs = m_args;
-                Compiler::Inst()->CompileWithArgs(filename, m_args, true);
-                int16_t val = 200;
-                buffer.Append(&val, sizeof(val));
+                std::vector<uint8_t> data = 
+                    Compiler::Inst()->CompileWithArgs(filename, m_args, true);
+                buffer.Append(data.data(), data.size());
                 conn->Send(&buffer);
             }
             else
             {
-                std::string str(pdata, pdata + sz);
                 conn->Send(msg);
             }
         });

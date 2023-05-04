@@ -49,10 +49,10 @@ private:
 public:
     static Compiler* Inst();
 
-    CXTranslationUnit CompileWithArgs(const std::string& fname,        
+    std::vector<uint8_t> CompileWithArgs(const std::string& fname,        
         const std::vector<std::string>& args, bool dolog);
 
-    CXTranslationUnit Compile(const std::string& fname,
+    std::vector<uint8_t> Compile(const std::string& fname,
         const std::string& outpath, const std::vector<std::string>& includes,
         const std::vector<std::string>& defines,
         const std::vector<std::string>& miscArgs,

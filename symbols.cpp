@@ -29,8 +29,8 @@ int main(int argc, char* argv[])
     if (!strcmp(argv[1], "-dump"))
     {
         std::cout << "Reading " << argv[2] << std::endl;
-        DbFile dbFile(argv[2]);
-        dbFile.Load();
+        DbFile dbFile;
+        dbFile.Load(argv[2]);
     }
     else if (!strcmp(argv[1], "-host"))
     {

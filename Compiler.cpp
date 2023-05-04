@@ -16,7 +16,7 @@ Compiler *Compiler::Inst()
     return m_sInstance;
 }
 
-CXTranslationUnit Compiler::CompileWithArgs(const std::string& fname,
+std::vector<uint8_t> Compiler::CompileWithArgs(const std::string& fname,
     const std::vector<std::string>& args, bool dolog)
 {
     std::vector<std::string> includeFiles;
@@ -68,7 +68,7 @@ CXTranslationUnit Compiler::CompileWithArgs(const std::string& fname,
     return Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, misc, doPch, pchFile, "", false);
 }
 
-CXTranslationUnit Compiler::Compile(const std::string& fname, 
+std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     const std::string &outpath, const std::vector<std::string>& includes,
     const std::vector<std::string>& defines, const std::vector<std::string> &miscArgs,
     bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
@@ -97,7 +97,7 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
     if (errorCode != CXErrorCode::CXError_Success)
     {
         std::cout << "Error: " << fname << " " << errorCode << std::endl;
-        return nullptr;
+        return std::vector<uint8_t>();
     }    
 
     unsigned int numDiagnostics = clang_getNumDiagnostics(translationUnit);
@@ -140,7 +140,7 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
     vc->rootDir = rootdir;
     vc->compiledFileF = fname;
     vc->allocNodes.reserve(50000);
-    vc->dbFile = new DbFile(destpath.string());
+    vc->dbFile = new DbFile();
     vc->compilingFilePtr =
         vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(fname), vc->compiledFileF);
 
@@ -212,7 +212,11 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
         std::cout << "Tokens: " << tokens.size() << std::endl;
     }
 
-    vc->dbFile->Save();
+    std::vector<uint8_t> data;
+    if (!destpath.empty())
+        vc->dbFile->Save(destpath.string());
+    else
+        vc->dbFile->WriteStream(data);
     delete vc;
 
     if (buildPch)
@@ -224,7 +228,7 @@ CXTranslationUnit Compiler::Compile(const std::string& fname,
             std::cout << "Save Error: " << saveError << std::endl;
         }
     }
-    return translationUnit;
+    return data;
 }
 
 CXTranslationUnit Compiler::CompileInternal(const std::string& fname,
@@ -300,7 +304,7 @@ CXTranslationUnit Compiler::CompileInternal(const std::string& fname,
     vc->rootDir = rootdir;
     vc->compiledFileF = fname;
     vc->allocNodes.reserve(50000);
-    vc->dbFile = new DbFile(destpath.string());
+    vc->dbFile = new DbFile();
     vc->compilingFilePtr =
         vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(fname), vc->compiledFileF);
 

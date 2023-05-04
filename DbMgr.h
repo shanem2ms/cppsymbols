@@ -90,18 +90,18 @@ class DbHandle;
 class CPPEXPORT DbFile
 {
     std::map<std::string, CPPSourceFilePtr> m_sourceFiles;
-    std::string m_dbfile;
     std::vector<DbNode> m_dbNodes;
     std::vector<DbToken> m_dbTokens;
     std::vector<DbError> m_dbErrors;
     std::vector<DbCPPSourcefile> m_dbSourceFiles;
 public:
-    DbFile(const std::string& dbfile);
+    DbFile();
     void UpdateRow(CPPSourceFilePtr node);
     void AddRowsPtr(std::vector<ErrorPtr>& range);
     int64_t AddRows(std::vector<Token>& range);
     CPPSourceFilePtr GetOrInsertFile(const std::string& commitName, const std::string& fileName);
     void AddNodes(std::vector<Node>& range);
-    void Save();
-    void Load();
+    void WriteStream(std::vector<uint8_t>& data);
+    void Save(const std::string& dbfile);
+    void Load(const std::string& dbfile);
 };
