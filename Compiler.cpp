@@ -184,6 +184,28 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             node.TypeToken = itToken->second;
         }
     }
+    int idx = 0;
+    std::vector<int64_t> nodeRemap(vc->allocNodes.size());
+    for (Node& node : vc->allocNodes)
+    {
+        if (node.SourceFile == nullptr)
+        {
+            nodeRemap[node.Key] = nullnode;
+            node.Key = nullnode;
+        }
+        else
+        {
+            nodeRemap[node.Key] = idx;
+            node.Key = idx++;
+        }
+    }
+    for (Node& node : vc->allocNodes)
+    {
+        if (node.ParentNodeIdx != nullnode)
+        {
+            node.ParentNodeIdx = nodeRemap[node.ParentNodeIdx];
+        }
+    }
 
     for (auto& e : errors)
     {

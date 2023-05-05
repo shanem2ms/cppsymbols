@@ -55,7 +55,7 @@ namespace cppsymview
                 }
                 foreach (OSYFile.DbNode node in curFile.Nodes)
                 {
-                    nodesArray[node.key].parent = nodesArray[node.parentNodeIdx];
+                    nodesArray[node.key].parent = node.parentNodeIdx > 0 ? nodesArray[node.parentNodeIdx - 1] : null;
                     nodesArray[node.key].dbNode = node;
                 }
             }

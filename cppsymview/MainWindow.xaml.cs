@@ -29,8 +29,8 @@ namespace cppsymview
             InitializeComponent();
 
             //ConnectTcp();
-            engine.Init(@"D:\vq\flash\src\core\", @"D:\vq\flash\build\debugclg\");
-            cppTextEditor = new CPPTextEditor(@"D:\vq\flash\src\core\geo\SphericalProjection.cpp", engine);
+            engine.Init(@"C:\flash\src\core\", @"C:\flash\build\debugclg\");
+            cppTextEditor = new CPPTextEditor(@"C:\flash\src\core\geo\SphericalProjection.cpp", engine);
             Editors.Children.Add(cppTextEditor);
         }
 
