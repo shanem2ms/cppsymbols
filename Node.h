@@ -26,7 +26,7 @@ struct Token
     int64_t Key;
     std::string Text;
 
-    Token() : Key(-1) { numAlloc++; }
+    Token(int64_t key) : Key(key) { numAlloc++; }
     ~Token() { numAlloc--; }
 };
 #define nullnode (-1)
@@ -54,7 +54,7 @@ public:
     static std::atomic<int64_t> numAlloc;
 
 public:
-    BaseNode();
+    BaseNode(int64_t key);
     ~BaseNode();
 
     uint64_t RefHash();
@@ -97,6 +97,8 @@ class Node : public BaseNode
 public:
     std::string tmpTokenString;
     std::string tmpTypeTokenStr;
+
+    Node(int64_t key) : BaseNode(key) {}
 };
 
 inline std::string Str(CXString str)

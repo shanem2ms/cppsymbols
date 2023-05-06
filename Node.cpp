@@ -9,9 +9,9 @@ std::atomic<int64_t> Token::nextKey(1);
 std::atomic<int64_t> Token::numAlloc(0);
 
 
-BaseNode::BaseNode() :
+BaseNode::BaseNode(int64_t key) :
     Linkage(CXLinkageKind::CXLinkage_Invalid),
-    Key(-1),
+    Key(key),
     ParentNodeIdx(nullnode),
     ReferencedIdx(nullnode),
     Kind(CXCursorKind::CXCursor_FirstInvalid),
@@ -100,9 +100,10 @@ static inline void trim(std::string& s) {
 int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     int64_t parentNode, VisitContextPtr vc)
 {
-    vc->allocNodes.push_back(Node());
     int64_t nodeIdx = vc->allocNodes.size();
+    vc->allocNodes.push_back(Node(nodeIdx));
     Node& node = vc->allocNodes.back();
+    node.Key = nodeIdx;
     node.CompilingFile = vc->compilingFilePtr;
     node.Kind = clang_getCursorKind(cursor);
     if (node.Kind == CXCursorKind::CXCursor_FirstInvalid ||
@@ -168,9 +169,10 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
 
 int64_t BaseNode::NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitContextPtr vc)
 {
-    vc->allocNodes.push_back(Node());
     int64_t nodeIdx = vc->allocNodes.size();
+    vc->allocNodes.push_back(Node(nodeIdx));
     Node& node = vc->allocNodes.back();
+    node.Key = nodeIdx;
     node.Kind = clang_getCursorKind(cursor);
     node.CompilingFile = vc->compilingFilePtr;
     if (node.Kind == CXCursorKind::CXCursor_FirstInvalid)
@@ -180,8 +182,10 @@ int64_t BaseNode::NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitCon
     unsigned int outline, outcol, outoffset;
     clang_getExpansionLocation(loc, &outfile, &outline, &outcol, &outoffset);
     std::string fileName = Str(clang_getFileName(outfile));
-    if (fileName.empty())
-        return nullnode;
+    std::string commitName = CPPSourceFile::FormatPath(fileName);
+    node.SourceFile = commitName.empty() ?
+        vc->curSourceFile :
+        vc->dbFile->GetOrInsertFile(commitName, fileName);
     node.Line = outline;
     node.Column = outcol;
     node.ParentNodeIdx = parentIdx;

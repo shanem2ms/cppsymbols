@@ -5,25 +5,26 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static cppsymview.ClangTypes;
+using System.Diagnostics;
 
 namespace cppsymview
 {
+    public class Token
+    {
+        public ulong Key { get; set; }
+        public string Text { get; set; }
+    }
     public class OSYFile
     {
-        public class Token
-        {
-            public ulong key;
-            public string text;
-        }
-
         public class DbNode
         {
             public long key;
             public long compilingFile;
             public long parentNodeIdx;
             public long referencedIdx;
-            public int kind;
-            public int typeKind;
+            public CXCursorKind kind;
+            public CXTypeKind typeKind;
             public long token;
             public long typetoken;
             public uint line;
@@ -33,13 +34,13 @@ namespace cppsymview
             public long sourceFile;
         };
 
-        List<string> filenames;
-        List<Token> tokens;
-        List<DbNode> nodes;
+        string []filenames;
+        Token []tokens;
+        DbNode []nodes;
 
-        public List<string> Filenames => filenames;
-        public List<Token> Tokens => tokens;
-        public List<DbNode> Nodes => nodes;
+        public string []Filenames => filenames;
+        public Token []Tokens => tokens;
+        public DbNode []Nodes => nodes;
 
         public OSYFile(string filename)
         {
@@ -89,8 +90,8 @@ namespace cppsymview
         Token ReadToken(MemoryStream stream)
         {
             Token t = new Token();
-            t.key = ReadUint64(stream);
-            t.text = ReadString(stream);
+            t.Key = ReadUint64(stream);
+            t.Text = ReadString(stream);
             return t;
         }
         DbNode ReadNode(MemoryStream stream)
@@ -100,8 +101,8 @@ namespace cppsymview
             n.compilingFile = ReadInt64(stream);
             n.parentNodeIdx = ReadInt64(stream);
             n.referencedIdx = ReadInt64(stream);
-            n.kind = ReadInt32(stream);
-            n.typeKind = ReadInt32(stream);
+            n.kind = (CXCursorKind)ReadInt32(stream);
+            n.typeKind = (CXTypeKind)ReadInt32(stream);
             n.token = ReadInt64(stream);
             n.typetoken = ReadInt64(stream);
             n.line = ReadUInt32(stream);
@@ -128,14 +129,14 @@ namespace cppsymview
 
             return null;
         }
-        List<T> ReadList<T>(MemoryStream stream) where T : class
+        T[] ReadList<T>(MemoryStream stream) where T : class
         {
             ulong vecLength = ReadUint64(stream);
-            List<T> items = new List<T>();
+            T[] items = new T[vecLength];
             for (ulong idx = 0; idx < vecLength; ++idx)
             {
-                T str = ReadItem<T>(stream);
-                items.Add(str);
+                T val = ReadItem<T>(stream);
+                items[idx] = val;
             }
 
             return items;
@@ -163,7 +164,7 @@ namespace cppsymview
             MemoryStream stream = new MemoryStream(decompressed, false);
             filenames = ReadList<string>(stream);
             tokens = ReadList<Token>(stream);
-            nodes = ReadList<DbNode>(stream);
+            nodes = ReadList<DbNode>(stream);           
         }
     }
 }

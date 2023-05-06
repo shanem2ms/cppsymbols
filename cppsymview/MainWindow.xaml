@@ -3,9 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib" 
         xmlns:local="clr-namespace:cppsymview"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
+    <Window.Resources>
+
+        <HierarchicalDataTemplate DataType="{x:Type local:Node}"
+                                ItemsSource="{Binding Path=Children}">
+            <TextBlock Text="{Binding Path=Kind}"/>
+        </HierarchicalDataTemplate>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
@@ -20,6 +28,10 @@
                 <Button Width="100" Click="ParseButton_Click">Parse</Button>
             </StackPanel>
             <Grid Grid.Row="1" x:Name="Editors" />
+        </Grid>
+        <Grid Grid.Column="1">
+            <TreeView ItemsSource="{Binding Path=TopNodes}">
+            </TreeView>
         </Grid>
     </Grid>
 </Window>

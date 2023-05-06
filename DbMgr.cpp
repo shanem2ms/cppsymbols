@@ -55,8 +55,8 @@ void DbFile::AddNodes(std::vector<Node>& nodes)
             continue;
         }
         t.Key = m_dbNodes.size();
-        t.ParentNodeIdx = (t.ParentNodeIdx != nullnode) ? t.ParentNodeIdx : 0;
-        t.ReferencedIdx = (t.ReferencedIdx != nullnode) ? t.ReferencedIdx : 0;
+        t.ParentNodeIdx = t.ParentNodeIdx;
+        t.ReferencedIdx = t.ReferencedIdx;
         m_dbNodes.push_back(DbNode(t));
     }    
 }

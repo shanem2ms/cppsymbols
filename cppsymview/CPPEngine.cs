@@ -15,9 +15,36 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Xml.Linq;
 using System.Runtime.InteropServices.Marshalling;
+using static cppsymview.ClangTypes;
 
 namespace cppsymview
 {
+    public class Node : IComparable<Node>
+    {
+        public Node parent;
+        public OSYFile.DbNode dbNode;
+        public List<Node> Children { get; set;} =  new List<Node>();
+        public Token Token { get; set; }
+        public Token TypeToken { get; set; }
+        public CXCursorKind Kind { get; set; }
+        public CXTypeKind TypeKind { get; set; }
+        public uint Line { get; set; }
+        public uint Column { get; set; }
+        public uint StartOffset { get; set; }
+        public uint EndOffset { get; set; }
+        public long SourceFile { get; set; }
+
+        public int CompareTo(Node? other)
+        {
+            if (other == null) return -1;
+            if (SourceFile != other.SourceFile)
+                return SourceFile.CompareTo(other.SourceFile);
+            if (StartOffset != other.StartOffset)
+                return StartOffset.CompareTo(other.StartOffset);
+            return 0;
+        }
+    }
+
     public class CPPEngineFile
     {
         string srcDir = string.Empty;
@@ -25,14 +52,10 @@ namespace cppsymview
 
         OSYFile curFile;
 
-        public class Node
-        {
-            public Node parent;
-            public OSYFile.DbNode dbNode;
-            public List<Node> children = new List<Node>();
-        }
 
-        public Node []nodesArray;
+        public Node[] nodesArray;
+        public List<Node> topNodes = new List<Node>();
+        public List<Node> TopNodes => topNodes;
 
         public void Init(string sourcedir, string osydir)
         {
@@ -48,18 +71,38 @@ namespace cppsymview
             {
                 curFile = new OSYFile(osypath);
 
-                nodesArray = new Node[curFile.Nodes.Count];
-                for (int i = 0; i < curFile.Nodes.Count; i++)
+                List<Node> nodes = new List<Node>();
+                //nodesArray = new Node[curFile.Nodes.Length];
+                foreach (OSYFile.DbNode dbnode in curFile.Nodes)
                 {
-                    nodesArray[i] = new Node();
+                    Node node = new Node();
+                    if (dbnode.parentNodeIdx >= 0)
+                    {
+                        node.parent = nodes[(int)dbnode.parentNodeIdx];
+                        node.parent.Children.Add(node);
+
+                    }
+                    node.dbNode = dbnode;
+                    if (dbnode.token >= 0)
+                        node.Token = curFile.Tokens[(int)dbnode.token];
+                    if (dbnode.typetoken >= 0)
+                        node.Token = curFile.Tokens[(int)dbnode.typetoken];
+
+
+                    node.Kind = dbnode.kind;
+                    node.TypeKind = dbnode.typeKind;
+                    node.Line = dbnode.line;
+                    node.Column = dbnode.column;
+                    node.StartOffset = dbnode.startOffset;
+                    node.EndOffset = dbnode.endOffset;
+                    node.SourceFile = dbnode.sourceFile;
+                    nodes.Add(node);
                 }
-                foreach (OSYFile.DbNode node in curFile.Nodes)
-                {
-                    nodesArray[node.key].parent = node.parentNodeIdx > 0 ? nodesArray[node.parentNodeIdx - 1] : null;
-                    nodesArray[node.key].dbNode = node;
-                }
+
+                nodes.Sort();
+                nodesArray = nodes.ToArray();
+                topNodes = nodesArray.Where(n => n.parent == null).ToList();
             }
         }
-
     }
 }

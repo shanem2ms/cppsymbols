@@ -167,8 +167,9 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             auto itToken = tokenMap.find(node.tmpTokenString);
             if (itToken == tokenMap.end())
             {
-                itToken = tokenMap.insert(std::make_pair(node.tmpTokenString, tokens.size())).first;
-                tokens.push_back(Token());
+                size_t tokenKey = tokens.size();
+                itToken = tokenMap.insert(std::make_pair(node.tmpTokenString, tokenKey)).first;
+                tokens.push_back(Token(tokenKey));
                 tokens.back().Text = node.tmpTokenString;
             }
             node.token = itToken->second;
@@ -177,14 +178,17 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             auto itToken = tokenMap.find(node.tmpTypeTokenStr);
             if (itToken == tokenMap.end())
             {
-                itToken = tokenMap.insert(std::make_pair(node.tmpTypeTokenStr, tokens.size())).first;
-                tokens.push_back(Token());
+                size_t tokenKey = tokens.size();
+                itToken = tokenMap.insert(std::make_pair(node.tmpTypeTokenStr, tokenKey)).first;
+                tokens.push_back(Token(tokenKey));
                 tokens.back().Text = node.tmpTypeTokenStr;
             }
             node.TypeToken = itToken->second;
         }
     }
     int idx = 0;
+    std::vector<Node> newNodes;
+    newNodes.reserve(vc->allocNodes.size());
     std::vector<int64_t> nodeRemap(vc->allocNodes.size());
     for (Node& node : vc->allocNodes)
     {
@@ -195,11 +199,12 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         }
         else
         {
+            newNodes.push_back(node);
             nodeRemap[node.Key] = idx;
-            node.Key = idx++;
+            newNodes.back().Key = idx++;
         }
     }
-    for (Node& node : vc->allocNodes)
+    for (Node& node : newNodes)
     {
         if (node.ParentNodeIdx != nullnode)
         {
@@ -228,9 +233,9 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     }
     if (errors.size() == 0)
     {
-        vc->dbFile->AddNodes(vc->allocNodes);
+        vc->dbFile->AddNodes(newNodes);
 
-        std::cout << "Nodes: " << vc->allocNodes.size() << std::endl;
+        std::cout << "Nodes: " << newNodes.size() << std::endl;
         std::cout << "Tokens: " << tokens.size() << std::endl;
     }
 
@@ -251,150 +256,6 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         }
     }
     return data;
-}
-
-CXTranslationUnit Compiler::CompileInternal(const std::string& fname,
-    const std::string& outpath, const std::vector<std::string>& includes,
-    const std::vector<std::string>& defines, const std::vector<std::string>& miscArgs,
-    ProjectCache& pc, bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
-{
-    std::vector<std::string> clgargs =
-        GenerateCompileArgs(fname, outpath, includes, defines, miscArgs,
-            pc, buildPch, pchfile, rootdir, dolog);
-
-    CXUnsavedFile unsavedFile;
-    CXTranslationUnit translationUnit;
-    CXIndex index = clang_createIndex(0, 0);
-    const char** pargs = new const char* [clgargs.size()];
-    for (size_t idx = 0; idx < clgargs.size(); ++idx)
-    {
-        pargs[idx] = clgargs[idx].c_str();
-    }
-
-    CXErrorCode errorCode =
-        clang_parseTranslationUnit2(index, fname.c_str(), pargs, clgargs.size(), &unsavedFile, 0,
-            (buildPch ? CXTranslationUnit_ForSerialization : 0),
-            &translationUnit);
-    clang_disposeIndex(index);
-
-    if (errorCode != CXErrorCode::CXError_Success)
-    {
-        std::cout << "Error: " << fname << " " << errorCode << std::endl;
-        return nullptr;
-    }
-
-    unsigned int numDiagnostics = clang_getNumDiagnostics(translationUnit);
-    std::vector<ErrorPtr> errors;
-    unsigned int defaultDiag = clang_defaultDiagnosticDisplayOptions();
-    for (unsigned int i = 0; i < numDiagnostics; ++i)
-    {
-        CXDiagnostic diagnostic = clang_getDiagnostic(translationUnit, i);
-        ErrorPtr te = new Error();
-        CXSourceLocation srcLoc = clang_getDiagnosticLocation(diagnostic);
-        CXFile file;
-        unsigned int line;
-        unsigned int column;
-        unsigned int offset;
-        clang_getExpansionLocation(srcLoc, &file, &line, &column, &offset);
-        te->Line = line;
-        te->Column = column;
-        CXString cxfilename = clang_getFileName(file);
-        te->filePath = Str(cxfilename);
-        te->compiledFilePath = fname;
-        unsigned int category = clang_getDiagnosticCategory(diagnostic);
-        te->Category = category;
-
-        CXString cxspell = clang_getDiagnosticSpelling(diagnostic);
-        te->Description = Str(cxspell);
-        if (dolog)
-        {
-            std::cout << te->filePath << "[" << te->Line << "]: " << te->Description << std::endl;
-        }
-        errors.push_back(te);
-        clang_disposeString(cxfilename);
-        clang_disposeString(cxspell);
-        clang_disposeDiagnostic(diagnostic);
-    }
-    std::filesystem::path srcpath(fname);
-    std::filesystem::path destpath(outpath);
-    std::filesystem::path dbname = srcpath.filename().replace_extension("db");
-    destpath = destpath / dbname;
-    CXCursor startCursor = clang_getTranslationUnitCursor(translationUnit);
-    VisitContext* vc = new VisitContext();
-    vc->pchFiles = pc.pchFiles;
-    vc->dolog = dolog;
-    vc->rootDir = rootdir;
-    vc->compiledFileF = fname;
-    vc->allocNodes.reserve(50000);
-    vc->dbFile = new DbFile();
-    vc->compilingFilePtr =
-        vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(fname), vc->compiledFileF);
-
-    {
-        clang_visitChildren(startCursor, Node::ClangVisitor, vc);
-    }
-
-    vc->compilingFilePtr->CompiledTime = time(nullptr);
-
-    try
-    {
-        vc->dbFile->UpdateRow(vc->compilingFilePtr);
-    }
-    catch (std::system_error& error)
-    {
-        std::cout << error.what();
-    }
-    if (buildPch)
-    {
-        pc.pchFiles = vc->visitedFiles;
-    }
-
-    std::vector<Token> tokens;
-    std::unordered_map<std::string, size_t> tokenMap;
-    for (Node& node : vc->allocNodes)
-    {
-        {
-            auto itToken = tokenMap.find(node.tmpTokenString);
-            if (itToken == tokenMap.end())
-            {
-                itToken = tokenMap.insert(std::make_pair(node.tmpTokenString, tokens.size())).first;
-                tokens.push_back(Token());
-                tokens.back().Text = node.tmpTokenString;
-            }
-            node.token = itToken->second;
-        }
-        {
-            auto itToken = tokenMap.find(node.tmpTypeTokenStr);
-            if (itToken == tokenMap.end())
-            {
-                itToken = tokenMap.insert(std::make_pair(node.tmpTypeTokenStr, tokens.size())).first;
-                tokens.push_back(Token());
-                tokens.back().Text = node.tmpTypeTokenStr;
-            }
-            node.TypeToken = itToken->second;
-        }
-    }
-
-    for (auto& e : errors)
-    {
-        e->CompiledFile = vc->compilingFilePtr;
-
-        e->File =
-            vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(e->filePath), std::string());
-    }
-    int64_t tokenOffset = vc->dbFile->AddRows(tokens);
-    for (Node& n : vc->allocNodes)
-    {
-        n.token = n.token == nulltoken ? 0 : n.token + tokenOffset;
-        n.TypeToken = n.TypeToken == nulltoken ? 0 : n.TypeToken + tokenOffset;
-    }
-    vc->dbFile->AddNodes(vc->allocNodes);
-    vc->dbFile->AddRowsPtr(errors);
-
-    std::cout << "Nodes: " << vc->allocNodes.size() << std::endl;
-    std::cout << "Tokens: " << tokens.size() << std::endl;
-    delete vc;
-    return translationUnit;
 }
 
 std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
