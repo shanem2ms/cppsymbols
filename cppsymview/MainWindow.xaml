@@ -6,13 +6,50 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib" 
         xmlns:local="clr-namespace:cppsymview"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="1200" Width="1600">
     <Window.Resources>
-
-        <HierarchicalDataTemplate DataType="{x:Type local:Node}"
+        <HierarchicalDataTemplate x:Key="treeNodeTemplate" DataType="{x:Type local:Node}"
                                 ItemsSource="{Binding Path=Children}">
-            <TextBlock Text="{Binding Path=Kind}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="35"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Path=CursorAbbrev}" Background="{Binding CursorBrush}"/>
+                <TextBlock Grid.Column="1" Text="{Binding Token.Text}" />
+            </Grid>
         </HierarchicalDataTemplate>
+
+        <DataTemplate x:Key="nodeTemplate" DataType="{x:Type local:Node}" >
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="35"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Path=CursorAbbrev}" Background="{Binding CursorBrush}"/>
+                <TextBlock Grid.Column="1" Text="{Binding Token.Text}" />
+            </Grid>
+        </DataTemplate>
+
+
+        <Style x:Key="LibraryTreeViewItemStyle"
+               TargetType="{x:Type TreeViewItem}">
+            <Setter Property="IsExpanded"
+                        Value="{Binding IsNodeExpanded, Mode=TwoWay}" />
+            <Setter Property="IsSelected"
+                        Value="{Binding IsSelected, Mode=TwoWay}" />
+            <Setter Property="FontWeight"
+                        Value="Normal" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected"
+                              Value="True">
+                    <Setter Property="FontWeight"
+                                Value="Bold" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <local:BooleanToVisibilityConverter InvertVisibility="true"  x:Key="BooleanToVisibilityConverterInv" />
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -30,8 +67,72 @@
             <Grid Grid.Row="1" x:Name="Editors" />
         </Grid>
         <Grid Grid.Column="1">
-            <TreeView ItemsSource="{Binding Path=TopNodes}">
-            </TreeView>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="0,5">
+                    <ToggleButton x:Name="TreeOrListBtn">
+                        <ToggleButton.Style>
+                            <Style TargetType="{x:Type ToggleButton}">
+                                <Setter Property="Content" Value="Flat List"/>
+                                <Setter Property="Foreground" Value="Green"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter Property="Content" Value="Tree View"/>
+                                        <Setter Property="Foreground" Value="Blue"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    <TextBox Margin="15,0,5,0" x:Name="queryBox" Width="300" />
+                    <Button Name="queryBtn" Content="Query" Click="queryBtn_Click" />
+                </StackPanel>
+                <TreeView Grid.Row="1" x:Name="nodesTreeView" TreeViewItem.Selected="nodesTreeView_Selected" ItemTemplate="{StaticResource treeNodeTemplate}" 
+                          ItemContainerStyle="{StaticResource LibraryTreeViewItemStyle}" ItemsSource="{Binding Path=TopNodes}" 
+                          Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverterInv}}"/>
+                <ListView Grid.Row="1" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
+                          Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                <GridSplitter Grid.Row="2" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
+                <Grid Grid.Row="3">
+                    <ContentControl Content="{Binding ElementName=nodesTreeView, Path=SelectedItem}" >
+                        <ContentControl.ContentTemplate>
+                            <DataTemplate DataType="{x:Type local:Node}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Line" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Line}" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Column" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Column}" />
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Token" />
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Token.Text}" />
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="TypeToken" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TypeToken.Text}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ContentControl.ContentTemplate>
+                    </ContentControl>
+                </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

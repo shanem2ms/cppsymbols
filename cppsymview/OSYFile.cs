@@ -13,7 +13,7 @@ namespace cppsymview
     public class Token
     {
         public ulong Key { get; set; }
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
     }
     public class OSYFile
     {
@@ -35,10 +35,12 @@ namespace cppsymview
         };
 
         string []filenames;
+        string[] filenamesLwr;
         Token []tokens;
         DbNode []nodes;
 
         public string []Filenames => filenames;
+        public string[] FilenamesLower => filenamesLwr;
         public Token []Tokens => tokens;
         public DbNode []Nodes => nodes;
 
@@ -163,6 +165,7 @@ namespace cppsymview
 
             MemoryStream stream = new MemoryStream(decompressed, false);
             filenames = ReadList<string>(stream);
+            filenamesLwr = filenames.Select(f => f.ToLower()).ToArray();
             tokens = ReadList<Token>(stream);
             nodes = ReadList<DbNode>(stream);           
         }

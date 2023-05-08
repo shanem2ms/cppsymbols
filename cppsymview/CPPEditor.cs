@@ -29,11 +29,15 @@ namespace cppsymview
 
         public string FilePath { get; set; }
         public CPPEngineFile Engine { get; set; }
+        int curFileKey = -1;
+
+        public event EventHandler<Node> NodeChanged;
 
         public CPPTextEditor(string path, CPPEngineFile engine)
         {
             FilePath = path;
             Engine = engine;
+            Engine.SelectedNodeChanged += Engine_SelectedNodeChanged;
             this.FontFamily = new FontFamily("Consolas");
             this.FontSize = 14;
             this.Foreground = new SolidColorBrush(Color.FromArgb(255, 0, 0, 0));
@@ -62,13 +66,31 @@ namespace cppsymview
             Reload();
         }
 
+        OffsetColorizer curNodeColorizer = null;
+
+        private void Engine_SelectedNodeChanged(object? sender, Node e)
+        {
+            if (curNodeColorizer != null)
+                this.TextArea.TextView.LineTransformers.Remove(curNodeColorizer);
+            curNodeColorizer = new OffsetColorizer();
+            curNodeColorizer.StartOffset = (int)e.StartOffset;
+            curNodeColorizer.EndOffset = (int)e.EndOffset;
+            this.TextArea.TextView.LineTransformers.Add(curNodeColorizer);
+        }
+
         private void TextArea_SelectionChanged(object? sender, EventArgs e)
         {
         }
 
         private void Caret_PositionChanged(object? sender, EventArgs e)
         {
-            
+            Node node = this.Engine.GetNodeFor(this.curFileKey, (uint)this.CaretOffset);
+            if (node != null)
+            {
+                node.Expand();
+                node.Select();
+            }
+            NodeChanged?.Invoke(this, node);
         }
 
         private void ParentWnd_BeforeCPPRun(object sender, bool e)
@@ -79,6 +101,7 @@ namespace cppsymview
         public void Reparse()
         {
             this.Engine.CompileFile(this.FilePath);
+            this.curFileKey = this.Engine.GetSourceFile(this.FilePath);
         }
         void Reload()
         {
@@ -165,6 +188,26 @@ namespace cppsymview
             public void Complete(TextArea textArea, ISegment completionSegment, EventArgs insertionRequestEventArgs)
             {
                 textArea.Document.Replace(completionSegment, this.Text.Substring(startReplaceIdx));
+            }
+        }
+
+        public class OffsetColorizer : DocumentColorizingTransformer
+        {
+            public int StartOffset { get; set; }
+            public int EndOffset { get; set; }
+
+            protected override void ColorizeLine(DocumentLine line)
+            {
+                if (line.Length == 0)
+                    return;
+                                
+                if (StartOffset >= line.EndOffset || EndOffset < line.Offset)
+                    return;
+
+                int start = line.Offset > StartOffset ? line.Offset : StartOffset;
+                int end = EndOffset > line.EndOffset ? line.EndOffset : EndOffset;
+
+                ChangeLinePart(start, end, element => element.TextRunProperties.SetBackgroundBrush(Brushes.AliceBlue));
             }
         }
     }

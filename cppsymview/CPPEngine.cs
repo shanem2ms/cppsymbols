@@ -3,29 +3,22 @@ using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Documents.DocumentStructures;
-using System.Threading;
-using System.Text.Unicode;
-using System.Windows.Media.Animation;
-using System.IO.Compression;
-using System.Security.Cryptography;
-using System.Xml.Linq;
-using System.Runtime.InteropServices.Marshalling;
 using static cppsymview.ClangTypes;
+using System.ComponentModel;
+using System.Linq.Expressions;
+using System.Windows.Forms;
+using System.Windows.Media;
+using System.Diagnostics;
 
 namespace cppsymview
 {
-    public class Node : IComparable<Node>
+    public class Node : IComparable<Node>, INotifyPropertyChanged
     {
         public Node parent;
         public OSYFile.DbNode dbNode;
         public List<Node> Children { get; set;} =  new List<Node>();
-        public Token Token { get; set; }
-        public Token TypeToken { get; set; }
+        public Token? Token { get; set; }
+        public Token? TypeToken { get; set; }
         public CXCursorKind Kind { get; set; }
         public CXTypeKind TypeKind { get; set; }
         public uint Line { get; set; }
@@ -33,6 +26,13 @@ namespace cppsymview
         public uint StartOffset { get; set; }
         public uint EndOffset { get; set; }
         public long SourceFile { get; set; }
+
+        public bool IsNodeExpanded { get; set; } = false;
+        public bool IsSelected { get; set; } = false;
+
+        public Brush CursorBrush => new SolidColorBrush(ClangTypes.CursorColor[Kind]);
+        public string CursorAbbrev => ClangTypes.CursorAbbrev[Kind];
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public int CompareTo(Node? other)
         {
@@ -43,19 +43,39 @@ namespace cppsymview
                 return StartOffset.CompareTo(other.StartOffset);
             return 0;
         }
+
+        public void Expand()
+        {
+            if (parent != null) { parent.Expand(); }
+            IsNodeExpanded = true;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsNodeExpanded)));
+        }
+
+        public void Select()
+        {
+            IsSelected = true;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+        }
     }
 
-    public class CPPEngineFile
+    public class CPPEngineFile : INotifyPropertyChanged
     {
         string srcDir = string.Empty;
         string osyDir = string.Empty;
 
         OSYFile curFile;
 
-
         public Node[] nodesArray;
         public List<Node> topNodes = new List<Node>();
         public List<Node> TopNodes => topNodes;
+        public event EventHandler<Node> SelectedNodeChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        List<Node> queryNodes = new List<Node>();
+        public List<Node> QueryNodes => queryNodes;
+
+        Dictionary<ClangTypes.CXCursorKind, int> cursorKindCounts;
+        Dictionary<ClangTypes.CXTypeKind, int> typeKindCounts;
 
         public void Init(string sourcedir, string osydir)
         {
@@ -86,7 +106,7 @@ namespace cppsymview
                     if (dbnode.token >= 0)
                         node.Token = curFile.Tokens[(int)dbnode.token];
                     if (dbnode.typetoken >= 0)
-                        node.Token = curFile.Tokens[(int)dbnode.typetoken];
+                        node.TypeToken = curFile.Tokens[(int)dbnode.typetoken];
 
 
                     node.Kind = dbnode.kind;
@@ -103,6 +123,65 @@ namespace cppsymview
                 nodesArray = nodes.ToArray();
                 topNodes = nodesArray.Where(n => n.parent == null).ToList();
             }
+
+            cursorKindCounts = new Dictionary<CXCursorKind, int>();
+            foreach (Node node in nodesArray)
+            {
+                if (!cursorKindCounts.ContainsKey(node.Kind))
+                {
+                    cursorKindCounts.Add(node.Kind, 1);
+                }
+                else
+                    cursorKindCounts[node.Kind]++;
+            }
+
+            var sortedCursorKinds = cursorKindCounts.ToList();
+            sortedCursorKinds.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+
+            typeKindCounts = new Dictionary<CXTypeKind, int>();
+            foreach (Node node in nodesArray)
+            {
+                if (!typeKindCounts.ContainsKey(node.TypeKind))
+                {
+                    typeKindCounts.Add(node.TypeKind, 1);
+                }
+                else
+                    typeKindCounts[node.TypeKind]++;
+            }
+        }
+
+
+        public void Query(string querystr)
+        {
+            string tokenstr = querystr.Trim();
+            
+            HashSet<Token> tokens = curFile.Tokens.Where(t => t.Text.Contains(tokenstr)).ToHashSet();
+            
+            queryNodes = nodesArray.Where(n => (n.Token != null && tokens.Contains(n.Token)) || (n.TypeToken != null && tokens.Contains(n.TypeToken))).ToList();
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(QueryNodes)));
+        }
+
+        public void NotifySelectedNodeChanged(Node n)
+        {
+            SelectedNodeChanged?.Invoke(this, n);
+        }
+        public int GetSourceFile(string filename)
+        {
+            string f = filename.ToLower();
+            int idx = Array.IndexOf(curFile.FilenamesLower, f);
+            return idx + 1;
+        }
+
+        public Node GetNodeFor(int filenameKey, uint offset)
+        {
+            if (this.nodesArray == null)
+                return null;
+            Node srchNode = new Node() { SourceFile = filenameKey, StartOffset = offset };
+            int nodeIdx = Array.BinarySearch(this.nodesArray, srchNode);
+            if (nodeIdx < 0) nodeIdx = (~nodeIdx) - 1;
+            if (nodeIdx < 0 || nodeIdx >= nodesArray.Length)
+                return null;
+            return nodesArray[nodeIdx];
         }
     }
 }

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Windows.Media;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace cppsymview
 {
-    public class ClangTypes
+    public static class ClangTypes
     {
         public enum CXCursorKind
         {
@@ -1210,5 +1212,165 @@ namespace cppsymview
             Atomic = 177,
             BTFTagAttributed = 178
         }
+
+        public static List<CXCursorKind> CursorKindsMRU = new List<CXCursorKind> {
+            CXCursorKind.ParmDecl,
+            CXCursorKind.TypeRef,
+            CXCursorKind.DeclRefExpr,
+            CXCursorKind.OverloadedDeclRef,
+            CXCursorKind.TemplateTypeParameter,
+            CXCursorKind.VarDecl,
+            CXCursorKind.TypedefDecl,
+            CXCursorKind.FunctionDecl,
+            CXCursorKind.CallExpr,
+            CXCursorKind.FirstExpr,
+            CXCursorKind.MemberRefExpr,
+            CXCursorKind.TemplateRef,
+            CXCursorKind.CompoundStmt,
+            CXCursorKind.CXXMethod,
+            CXCursorKind.TypeAliasDecl,
+            CXCursorKind.BinaryOperator,
+            CXCursorKind.ClassTemplate,
+            CXCursorKind.FieldDecl,
+            CXCursorKind.IntegerLiteral,
+            CXCursorKind.Namespace,
+            CXCursorKind.ReturnStmt,
+            CXCursorKind.NamespaceRef,
+            CXCursorKind.FunctionTemplate,
+            CXCursorKind.DeclStmt,
+            CXCursorKind.UnaryOperator,
+            CXCursorKind.ClassDecl,
+            CXCursorKind.ConceptDecl,
+            CXCursorKind.FirstDecl,
+            CXCursorKind.EnumConstantDecl,
+            CXCursorKind.TypeAliasTemplateDecl,
+            CXCursorKind.IfStmt,
+            CXCursorKind.NonTypeTemplateParameter,
+            CXCursorKind.Constructor,
+            CXCursorKind.StructDecl,
+            CXCursorKind.ParenExpr,
+            CXCursorKind.WarnUnusedResultAttr,
+            CXCursorKind.CXXAccessSpecifier,
+            CXCursorKind.CXXStaticCastExpr,
+            CXCursorKind.ArraySubscriptExpr,
+            CXCursorKind.EnumDecl,
+            CXCursorKind.CXXThisExpr,
+            CXCursorKind.CXXBoolLiteralExpr,
+            CXCursorKind.InitListExpr,
+            CXCursorKind.ClassTemplatePartialSpecialization,
+            CXCursorKind.CStyleCastExpr,
+            CXCursorKind.MemberRef,
+            CXCursorKind.UsingDeclaration,
+            CXCursorKind.ConceptSpecializationExpr,
+            CXCursorKind.CXXBaseSpecifier,
+            CXCursorKind.FirstAttr,
+            CXCursorKind.NullStmt,
+            CXCursorKind.StaticAssert,
+            CXCursorKind.ForStmt,
+            CXCursorKind.StringLiteral,
+            CXCursorKind.CXXNullPtrLiteralExpr,
+            CXCursorKind.FriendDecl,
+            CXCursorKind.CompoundAssignOperator,
+            CXCursorKind.Destructor,
+            CXCursorKind.ConditionalOperator,
+            CXCursorKind.BreakStmt,
+            CXCursorKind.UnaryExpr,
+            CXCursorKind.CharacterLiteral,
+            CXCursorKind.CaseStmt,
+            CXCursorKind.FloatingLiteral,
+            CXCursorKind.PackExpansionExpr,
+            CXCursorKind.CXXFunctionalCastExpr,
+            CXCursorKind.WhileStmt,
+            CXCursorKind.CXXConstCastExpr,
+            CXCursorKind.CXXReinterpretCastExpr,
+            CXCursorKind.CXXOverrideAttr,
+            CXCursorKind.ConversionFunction,
+            CXCursorKind.UnionDecl,
+            CXCursorKind.RequiresExpr,
+            CXCursorKind.LambdaExpr,
+            CXCursorKind.DoStmt,
+            CXCursorKind.CXXCatchStmt,
+            CXCursorKind.CXXTryStmt,
+            CXCursorKind.CXXNewExpr,
+            CXCursorKind.SwitchStmt,
+            CXCursorKind.TemplateTemplateParameter,
+            CXCursorKind.LastRef,
+            CXCursorKind.DefaultStmt,
+            CXCursorKind.NoDeclFound,
+            CXCursorKind.CXXDeleteExpr,
+            CXCursorKind.CXXThrowExpr,
+            CXCursorKind.AlignedAttr,
+            CXCursorKind.DLLImport,
+            CXCursorKind.ContinueStmt,
+            CXCursorKind.SizeOfPackExpr,
+            CXCursorKind.FirstStmt,
+            CXCursorKind.CXXFinalAttr,
+            CXCursorKind.CXXTypeidExpr,
+            CXCursorKind.CXXDynamicCastExpr,
+            CXCursorKind.UsingDirective,
+            CXCursorKind.CXXForRangeStmt,
+            CXCursorKind.BuiltinBitCastExpr,
+            CXCursorKind.NamespaceAlias
+        };
+
+        static Dictionary<CXCursorKind, string> cursorAbbrev = null;
+        public static Dictionary<CXCursorKind, string> CursorAbbrev
+        {
+            get
+            {
+                if (cursorAbbrev == null)
+                {
+                    cursorAbbrev = new Dictionary<CXCursorKind, string>();
+                    var vals = Enum.GetValues(typeof(CXCursorKind));
+                    foreach (CXCursorKind val in vals)
+                    {
+                        string name = Enum.GetName(typeof(CXCursorKind), val);
+                        char []uc = name.Where(c => char.IsUpper(c)).ToArray();
+                        cursorAbbrev.TryAdd(val, new string(uc));
+                    }
+                }
+                return cursorAbbrev;
+            }
+        }
+        
+        static Dictionary<CXCursorKind, Color> cursorColors = null;
+        public static Dictionary<CXCursorKind, Color> CursorColor
+        {
+            get 
+            { 
+                if (cursorColors == null)
+                {
+
+                    List<Color> colors = new List<Color>();
+                    int numsegs = 12;
+
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        float l = (1 - j) * 0.25f + 0.5f;
+                        for (int k = 0; k < 3; ++k)
+                        {
+                            float s = 0.33f + k * 0.33f;
+                            for (int i = 0; i < numsegs; ++i)
+                            {
+                                Cnv.HSL hsl = new Cnv.HSL((float)i / (float)numsegs, s, l);
+                                Cnv.RGB rgb = Cnv.HSLToRGB(hsl);
+                                colors.Add(Color.FromArgb(255, rgb.R, rgb.G, rgb.B));
+                            }
+                        }
+                    }
+
+                    cursorColors = new Dictionary<CXCursorKind, Color>();
+                    int idx = 0;
+                    foreach (var cursorKind in CursorKindsMRU)
+                    {
+                        cursorColors.Add(cursorKind, colors[idx]);
+                        idx++;
+                    }
+                }
+
+                return cursorColors;
+            }
+        }
+
     }
 }
