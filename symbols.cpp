@@ -31,6 +31,20 @@ int main(int argc, char* argv[])
         std::cout << "Reading " << argv[2] << std::endl;
         DbFile dbFile;
         dbFile.Load(argv[2]);
+        dbFile.ConsoleDump();
+    }
+    if (!strcmp(argv[1], "-merge"))
+    {
+        std::cout << "Reading " << argv[2] << std::endl;
+        DbFile dbFile;
+        dbFile.Load(argv[2]);
+        for (int idx = 3; idx < argc; ++idx)
+        {
+            std::cout << "Merging " << argv[idx] << std::endl;
+            DbFile dbMerge;
+            dbMerge.Load(argv[idx]);
+            dbFile.Merge(dbMerge);
+        }
     }
     else if (!strcmp(argv[1], "-host"))
     {

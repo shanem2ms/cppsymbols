@@ -26,8 +26,6 @@ struct DbCPPSourcefile
 {
     int64_t key;
     std::string fullPath;
-    long long modified;
-    long long compiledTime;
 };
 
 struct DbNode
@@ -45,6 +43,8 @@ struct DbNode
     unsigned int startOffset;
     unsigned int endOffset;
     int64_t sourceFile;
+
+    size_t GetHashVal(size_t parentHashVal = 2166136261U) const;
 
     DbNode() {}
     DbNode(const Node &);
@@ -93,7 +93,7 @@ class CPPEXPORT DbFile
     std::vector<DbNode> m_dbNodes;
     std::vector<DbToken> m_dbTokens;
     std::vector<DbError> m_dbErrors;
-    std::vector<DbCPPSourcefile> m_dbSourceFiles;
+    std::vector<std::string> m_dbSourceFiles;
 public:
     DbFile();
     void UpdateRow(CPPSourceFilePtr node);
@@ -104,4 +104,6 @@ public:
     void WriteStream(std::vector<uint8_t>& data);
     void Save(const std::string& dbfile);
     void Load(const std::string& dbfile);
+    void Merge(const DbFile& other);
+    void ConsoleDump();
 };

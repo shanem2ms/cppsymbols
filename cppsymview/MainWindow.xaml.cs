@@ -31,7 +31,7 @@ namespace cppsymview
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public CPPEngineFile Engine => engine;
-        public List<Node> TopNodes => engine.TopNodes;
+        public IEnumerable<Node> TopNodes => engine.TopNodes;
         public MainWindow()
         {
             this.DataContext = this;

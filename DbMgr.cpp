@@ -8,6 +8,27 @@
 bool g_fullDbRebuild = false;
 bool g_doOptimizeOnStart = false;
 
+template <class _InIt>
+inline size_t HashFunc(_InIt _Begin, _InIt _End, size_t _Val = 2166136261U)
+{	// hash range of elements;
+
+    while (_Begin != _End)
+        _Val = 16777619U * _Val ^ (size_t)*_Begin++;
+    return (_Val);
+}
+
+template<typename T, typename U> constexpr size_t offsetOf(U T::* member)
+{
+    return (char*)&((T*)nullptr->*member) - (char*)nullptr;
+}
+
+size_t DbNode::GetHashVal(size_t parentHashVal) const
+{
+    size_t* bgn = (size_t*)&kind;
+    size_t* end = (size_t *)(((int64_t*)&sourceFile) + 1);
+    return HashFunc(bgn, end, parentHashVal);
+}
+
 CPPSourceFilePtr DbFile::GetOrInsertFile(const std::string& commitName, const std::string& fileName)
 {
     CPPSourceFilePtr sf = nullptr;
@@ -293,23 +314,126 @@ void DbFile::Load(const std::string &dbfile)
         reinterpret_cast<const Bytef*>(compressedData.data()),
         compressedData.size());
 
-    std::vector<std::string> orderedSourceFiles;
     CppVecStreamReader vecReader(data);
     size_t offset = 0;
-    offset = CppStream::Read(vecReader, offset, orderedSourceFiles);
+    offset = CppStream::Read(vecReader, offset, m_dbSourceFiles);
     offset = CppStream::Read(vecReader, offset, m_dbTokens);
-    offset = CppStream::Read(vecReader, offset, m_dbNodes);
-   
-//    std::set<CXCursorKind> cursorKinds;
+    offset = CppStream::Read(vecReader, offset, m_dbNodes);  
+}
+
+void DbFile::ConsoleDump()
+{
+    //    std::set<CXCursorKind> cursorKinds;
     std::set<CXTypeKind> typeKinds;
     for (const auto& node : m_dbNodes)
     {
-//        cursorKinds.insert(node.kind);
+        //        cursorKinds.insert(node.kind);
         typeKinds.insert(node.typeKind);
         if (node.sourceFile == 1)
         {
-            std::cout << node.line << " " << sCursorKindMap[node.kind] << " " 
+            std::cout << node.line << " " << sCursorKindMap[node.kind] << " "
                 << sTypeKindMap[node.typeKind] << std::endl;
+        }
+    }
+}
+
+inline void SetNodeHash(std::vector<size_t>& nodeHashes, const std::vector<DbNode>& dbNodes, int64_t nodeIdx)
+{
+    const DbNode& nodeCur = dbNodes[nodeIdx];
+
+    size_t parenthash = 0;
+    if (nodeCur.parentNodeIdx != nullnode)
+    {
+        parenthash = nodeHashes[nodeCur.parentNodeIdx];
+        if (parenthash == 0)
+            SetNodeHash(nodeHashes, dbNodes, nodeCur.parentNodeIdx);
+        parenthash = nodeHashes[nodeCur.parentNodeIdx];
+    }
+
+    if (nodeCur.referencedIdx != nullnode)
+        parenthash = 16777619U * parenthash ^ dbNodes[nodeCur.referencedIdx].GetHashVal();
+    nodeHashes[nodeIdx] = nodeCur.GetHashVal(parenthash);
+}
+
+void DbFile::Merge(const DbFile& other)
+{
+    std::vector<int64_t> srcFileRemapping;
+    std::map<std::string, int64_t> sourceMap;
+    {
+        int64_t srcIdx = 1;
+        for (const auto& srcfile : m_dbSourceFiles)
+        {
+            sourceMap.insert(std::make_pair(srcfile, srcIdx++));
+        }
+
+        srcFileRemapping.push_back(0);
+        for (const auto& srcfile : other.m_dbSourceFiles)
+        {
+            auto itSrc = sourceMap.find(srcfile);
+            if (itSrc == sourceMap.end())
+                itSrc = sourceMap.insert(std::make_pair(srcfile, srcIdx++)).first;
+
+            srcFileRemapping.push_back(itSrc->second);
+        }
+    }
+
+    std::vector<int64_t> tokenRemapping;
+    std::map<std::string, int64_t> tokenMap;
+    {
+        int64_t tokIdx = 1;
+        for (const auto& token : m_dbTokens)
+        {
+            tokenMap.insert(std::make_pair(token.text, tokIdx++));
+        }
+
+        tokenRemapping.push_back(0);
+        for (const auto& token : other.m_dbTokens)
+        {
+            auto itTok = tokenMap.find(token.text);
+            if (itTok == tokenMap.end())
+                itTok = tokenMap.insert(std::make_pair(token.text, tokIdx++)).first;
+
+            tokenRemapping.push_back(itTok->second);
+        }
+    }
+
+    std::vector<DbNode> otherNodes = other.m_dbNodes;
+    for (auto& dbNode : otherNodes)
+    {
+        dbNode.compilingFile = srcFileRemapping[dbNode.compilingFile];
+        dbNode.sourceFile = srcFileRemapping[dbNode.sourceFile];
+        dbNode.token = tokenRemapping[dbNode.token];
+        dbNode.typetoken = tokenRemapping[dbNode.typetoken];
+    }
+
+ 
+    std::map<size_t, std::vector<DbNode*>> nodesMap;
+    {
+        std::vector<size_t> nodesTreeHash(m_dbNodes.size());
+        for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+        {
+            if (nodesTreeHash[idx] == 0)
+                SetNodeHash(nodesTreeHash, m_dbNodes, idx);
+
+            size_t hash_val = nodesTreeHash[idx];
+            auto itNode = nodesMap.find(hash_val);
+            if (itNode == nodesMap.end())
+                itNode = nodesMap.insert(std::make_pair(hash_val, std::vector<DbNode*>())).first;
+            itNode->second.push_back(&m_dbNodes[idx]);
+        }
+    }
+    {
+        std::vector<size_t> nodesTreeHash(otherNodes.size());
+        for (size_t idx = 0; idx < otherNodes.size(); ++idx)
+        {
+            if (nodesTreeHash[idx] == 0)
+                SetNodeHash(nodesTreeHash, otherNodes, idx);
+
+            size_t hash_val = nodesTreeHash[idx];
+            auto itNode = nodesMap.find(hash_val);
+            if (itNode == nodesMap.end())
+                itNode = nodesMap.insert(std::make_pair(hash_val, std::vector<DbNode*>())).first;
+            itNode->second.push_back(&otherNodes[idx]);
         }
     }
 }

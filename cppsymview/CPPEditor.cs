@@ -101,6 +101,7 @@ namespace cppsymview
         public void Reparse()
         {
             this.Engine.CompileFile(this.FilePath);
+            this.Engine.SetCurrentFile(this.FilePath);
             this.curFileKey = this.Engine.GetSourceFile(this.FilePath);
         }
         void Reload()

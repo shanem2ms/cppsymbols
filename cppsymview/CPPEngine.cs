@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Windows.Forms;
 using System.Windows.Media;
 using System.Diagnostics;
+using System.Windows.Automation;
 
 namespace cppsymview
 {
@@ -16,7 +17,8 @@ namespace cppsymview
     {
         public Node parent;
         public OSYFile.DbNode dbNode;
-        public List<Node> Children { get; set;} =  new List<Node>();
+        public bool enabled = false;
+        public IEnumerable<Node> Children => allChildren.Where(c => c.enabled);
         public Token? Token { get; set; }
         public Token? TypeToken { get; set; }
         public CXCursorKind Kind { get; set; }
@@ -33,6 +35,8 @@ namespace cppsymview
         public Brush CursorBrush => new SolidColorBrush(ClangTypes.CursorColor[Kind]);
         public string CursorAbbrev => ClangTypes.CursorAbbrev[Kind];
         public event PropertyChangedEventHandler? PropertyChanged;
+        
+        public List<Node> allChildren = new List<Node>();
 
         public int CompareTo(Node? other)
         {
@@ -56,6 +60,20 @@ namespace cppsymview
             IsSelected = true;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
         }
+
+        public void SetEnabled(bool _enabled, bool recursive)
+        {
+            this.enabled = _enabled;
+            if (this.parent != null && this.enabled == true & !this.parent.enabled)
+                this.parent.SetEnabled(true, false);
+            if (recursive)
+            {
+                foreach (var child in allChildren)
+                {
+                    child.SetEnabled(_enabled, recursive);
+                }
+            }
+        }
     }
 
     public class CPPEngineFile : INotifyPropertyChanged
@@ -67,7 +85,7 @@ namespace cppsymview
 
         public Node[] nodesArray;
         public List<Node> topNodes = new List<Node>();
-        public List<Node> TopNodes => topNodes;
+        public IEnumerable<Node> TopNodes => topNodes.Where(n => n.enabled);
         public event EventHandler<Node> SelectedNodeChanged;
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -99,7 +117,7 @@ namespace cppsymview
                     if (dbnode.parentNodeIdx >= 0)
                     {
                         node.parent = nodes[(int)dbnode.parentNodeIdx];
-                        node.parent.Children.Add(node);
+                        node.parent.allChildren.Add(node);
 
                     }
                     node.dbNode = dbnode;
@@ -150,6 +168,21 @@ namespace cppsymview
             }
         }
 
+        public void SetCurrentFile(string file)
+        {
+            foreach (Node n in nodesArray)
+            {
+                n.SetEnabled(false, false);
+            }
+            int srcFile = GetSourceFile(file);
+            foreach (Node n in  nodesArray) 
+            { 
+                if (n.SourceFile == srcFile)
+                {
+                    n.SetEnabled(true, false);
+                }
+            }
+        }
 
         public void Query(string querystr)
         {
