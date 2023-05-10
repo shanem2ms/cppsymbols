@@ -210,6 +210,10 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         {
             node.ParentNodeIdx = nodeRemap[node.ParentNodeIdx];
         }
+        if (node.ReferencedIdx != nullnode)
+        {
+            node.ReferencedIdx = nodeRemap[node.ReferencedIdx];
+        }
     }
 
     for (auto& e : errors)
