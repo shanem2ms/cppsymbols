@@ -79,7 +79,7 @@ namespace cppsymview
     public class CPPEngineFile : INotifyPropertyChanged
     {
         string srcDir = string.Empty;
-        string osyDir = string.Empty;
+        string osyFile = string.Empty;
 
         OSYFile curFile;
 
@@ -95,16 +95,18 @@ namespace cppsymview
         Dictionary<ClangTypes.CXCursorKind, int> cursorKindCounts;
         Dictionary<ClangTypes.CXTypeKind, int> typeKindCounts;
 
-        public void Init(string sourcedir, string osydir)
+        public void Init(string sourcedir, string osyfile)
         {
             srcDir = sourcedir;
-            osyDir = osydir;
+            osyFile = osyfile;
+            LoadOSYFile(osyFile);
         }
 
-        public void CompileFile(string filename)
+        void LoadOSYFile(string filename)
         {
-            string osypath = filename.Replace(srcDir, osyDir);
-            osypath = osypath + ".osy";
+            //string osypath = filename.Replace(srcDir, osyFile);
+            //osypath = osypath + ".osy";
+            string osypath = osyFile;
             if (File.Exists(osypath))
             {
                 curFile = new OSYFile(osypath);

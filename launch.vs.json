@@ -11,12 +11,12 @@
         //"-host"
         //"-DDLLX= -DPRId64=\"I64d\" -ID:/vq/flash/src/core/. -ID:/vq/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -emit-pch -x c++-header -c D:/vq/flash/src/core/StdIncludes.h -P D:/vq/flash/build/debugclg/StdIncludes.h.pch -o D:/vq/flash/build/debugclg/StdIncludes.h.osy"
         //"-DDLLX= -DPRId64=\"I64d\" -ID:/vq/flash/src/core/. -ID:/vq/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -c D:/vq/flash/src/core/geo/SphericalProjection.cpp -P D:/vq/flash/build/debugclg/StdIncludes.h.pch -o D:/vq/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
-        //"-merge D:/vq/flash/build/debugclg/geo/SphericalProjection.cpp.osy D:/vq/flash/build/debugclg/geo/TileLoc.cpp.osy"
+        "-merge -o D:/vq/flash/build/debugclg/flash.osy \"D:/vq/flash/build/debugclg/geo/SphericalProjection.cpp.osy\" \"D:/vq/flash/build/debugclg/geo/SphericalMercatorProjection.cpp.osy\" \"D:/vq/flash/build/debugclg/geo/TileLoc.cpp.osy\" \"D:/vq/flash/build/debugclg/geo/RectTransform2D.cpp.osy\" \"D:/vq/flash/build/debugclg/geo/SunAngle.cpp.osy\" \"D:/vq/flash/build/debugclg/geo/TileSelection.cpp.osy\" \"D:/vq/flash/build/debugclg/network/HttpClient.cpp.osy\" \"D:/vq/flash/build/debugclg/file/File.cpp.osy\" \"D:/vq/flash/build/debugclg/time/Time.cpp.osy\" \"D:/vq/flash/build/debugclg/util/PerlinNoise.cpp.osy\" \"D:/vq/flash/build/debugclg/util/LuaScript.cpp.osy\" \"D:/vq/flash/build/debugclg/util/ZipUtil.cpp.osy\""
         //"-dump D:/vq/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
 
         //"-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -emit-pch -x c++-header -c C:/flash/src/core/StdIncludes.h -P C:/flash/build/debugclg/StdIncludes.h.pch -o C:/flash/build/debugclg/StdIncludes.h.osy"
         //"-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -c C:/flash/src/core/geo/SphericalProjection.cpp -P C:/flash/build/debugclg/StdIncludes.h.pch -o C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
-        "-merge C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy C:/flash/build/debugclg/geo/TileLoc.cpp.osy"
+        //"-merge C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy C:/flash/build/debugclg/geo/TileLoc.cpp.osy"
         //"-dump C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
       ]
     }

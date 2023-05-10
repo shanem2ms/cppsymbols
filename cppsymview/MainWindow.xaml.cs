@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
@@ -26,25 +27,48 @@ namespace cppsymview
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         CPPEngineFile engine = new CPPEngineFile();
-        CPPTextEditor cppTextEditor;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public CPPEngineFile Engine => engine;
         public IEnumerable<Node> TopNodes => engine.TopNodes;
+        string root = @"D:\vq\flash";
+        public ObservableCollection<CPPTextEditor> Editors { get; } = new ObservableCollection<CPPTextEditor>();
+
         public MainWindow()
         {
             this.DataContext = this;
             InitializeComponent();
 
-            string prefix = @"D:\vq\";
+            folderView.Root = root;
+            folderView.OnFileSelected += FolderView_OnFileSelected;
             //ConnectTcp();
-            engine.Init(prefix + @"flash\src\core\", prefix + @"flash\build\debugclg\");
-            cppTextEditor = new CPPTextEditor(prefix + @"flash\src\core\geo\SphericalProjection.cpp", engine);
-            cppTextEditor.NodeChanged += CppTextEditor_NodeChanged;
+            engine.Init(root, root + @"\build\debugclg\flash.osy");
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
-            Editors.Children.Add(cppTextEditor);
+            this.EditorsCtrl.SelectionChanged += EditorsCtrl_SelectionChanged;
+        }
+
+        private void EditorsCtrl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0)
+            {
+                CPPTextEditor editor = (CPPTextEditor)e.AddedItems[0];
+                editor.MakeActive();
+            }
+        }
+
+        private void FolderView_OnFileSelected(object? sender, string e)
+        {
+            CreateEditor(e);
+        }
+
+        void CreateEditor(string path)
+        {
+            CPPTextEditor cppTextEditor = new CPPTextEditor(path, engine);
+            cppTextEditor.NodeChanged += CppTextEditor_NodeChanged;
+            Editors.Add(cppTextEditor);
+            EditorsCtrl.SelectedItem = cppTextEditor;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopNodes)));
         }
 
@@ -67,10 +91,6 @@ namespace cppsymview
         {
         }
 
-        private void ParseButton_Click(object sender, RoutedEventArgs e)
-        {
-            cppTextEditor.Reparse();
-        }
 
         private void queryBtn_Click(object sender, RoutedEventArgs e)
         {

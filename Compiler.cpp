@@ -243,6 +243,7 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         std::cout << "Tokens: " << tokens.size() << std::endl;
     }
 
+    vc->dbFile->CommitSourceFiles();
     std::vector<uint8_t> data;
     if (!destpath.empty())
         vc->dbFile->Save(destpath.string());

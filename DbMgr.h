@@ -102,6 +102,7 @@ public:
     CPPSourceFilePtr GetOrInsertFile(const std::string& commitName, const std::string& fileName);
     void AddNodes(std::vector<Node>& range);
     void WriteStream(std::vector<uint8_t>& data);
+    void CommitSourceFiles();
     void Save(const std::string& dbfile);
     void Load(const std::string& dbfile);
     void Merge(const DbFile& other);

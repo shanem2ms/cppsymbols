@@ -13,6 +13,16 @@
 class VisitContext;
 typedef VisitContext* VisitContextPtr;
 
+inline std::string noquotes(const char* arg)
+{
+    if (arg[0] == '\"')
+    {
+        size_t len = strlen(arg);
+        return std::string(arg + 1, arg + len - 2);
+    }
+    else
+        return std::string(arg);
+}
 extern bool g_fullDbRebuild;
 int main(int argc, char* argv[])
 {
@@ -35,16 +45,41 @@ int main(int argc, char* argv[])
     }
     if (!strcmp(argv[1], "-merge"))
     {
-        std::cout << "Reading " << argv[2] << std::endl;
-        DbFile dbFile;
-        dbFile.Load(argv[2]);
-        for (int idx = 3; idx < argc; ++idx)
+        std::vector<std::string> mergeFiles;
+        for (int i = 1; i < argc; ++i)
         {
-            std::cout << "Merging " << argv[idx] << std::endl;
+            std::string str(argv[i]);
+            if (str.length() < 2)
+                continue;
+            if (str[0] == '-')
+            {
+                char cmd = str[1];// std::toupper(str[1]);
+                switch (cmd)
+                {
+                case 'o':
+                    i++;
+                    outFile = noquotes(argv[i]);
+                    break;
+                }
+            }
+            else
+            {
+                mergeFiles.push_back(noquotes(argv[i]));
+            }
+        }
+        std::cout << "Reading " << mergeFiles[0] << std::endl;
+        DbFile dbFile;
+        dbFile.Load(mergeFiles[0]);
+        for (int idx = 1; idx < mergeFiles.size(); ++idx)
+        {
+            std::cout << "Merging " << mergeFiles[idx] << std::endl;
             DbFile dbMerge;
-            dbMerge.Load(argv[idx]);
+            dbMerge.Load(mergeFiles[idx]);
             dbFile.Merge(dbMerge);
         }
+
+        std::cout << "Writing " << outFile << std::endl;
+        dbFile.Save(outFile);
     }
     else if (!strcmp(argv[1], "-host"))
     {

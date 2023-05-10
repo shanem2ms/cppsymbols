@@ -98,9 +98,8 @@ namespace cppsymview
             this.Save();
         }
 
-        public void Reparse()
+        public void MakeActive()
         {
-            this.Engine.CompileFile(this.FilePath);
             this.Engine.SetCurrentFile(this.FilePath);
             this.curFileKey = this.Engine.GetSourceFile(this.FilePath);
         }
@@ -109,7 +108,6 @@ namespace cppsymview
             CPPName = Path.GetFileName(FilePath);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CPPName"));
             Load(this.FilePath);
-            Reparse();
             //this.Engine.SendSourceCode(Document.Text);
         }
         public void SaveAs(string path)

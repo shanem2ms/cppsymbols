@@ -111,21 +111,25 @@ int64_t DbFile::AddRows(std::vector<Token>& range)
 
 void DbFile::WriteStream(std::vector<uint8_t>& data)
 {
+    CppVecStreamWriter vecWriter(data);
+    CppStream::Write(vecWriter, m_dbSourceFiles);
+    CppStream::Write(vecWriter, m_dbTokens);
+    CppStream::Write(vecWriter, m_dbNodes);
+}
+
+void DbFile::CommitSourceFiles()
+{
     int64_t maxFileKey = 0;
     for (const auto& kv : m_sourceFiles)
     {
         maxFileKey = std::max(kv.second->Key, maxFileKey);
     }
-    std::vector<std::string> orderedSourceFiles(maxFileKey);
+    m_dbSourceFiles.resize(maxFileKey);
 
     for (const auto& kv : m_sourceFiles)
     {
-        orderedSourceFiles[kv.second->Key - 1] = kv.second->FullPath;
+        m_dbSourceFiles[kv.second->Key - 1] = kv.second->FullPath;
     }
-    CppVecStreamWriter vecWriter(data);
-    CppStream::Write(vecWriter, orderedSourceFiles);
-    CppStream::Write(vecWriter, m_dbTokens);
-    CppStream::Write(vecWriter, m_dbNodes);
 }
 
 void DbFile::Save(const std::string &dbfile)
@@ -350,8 +354,6 @@ inline void SetNodeHash(std::vector<size_t>& nodeHashes, const std::vector<DbNod
         parenthash = nodeHashes[nodeCur.parentNodeIdx];
     }
 
-    if (nodeCur.referencedIdx != nullnode)
-        parenthash = 16777619U * parenthash ^ dbNodes[nodeCur.referencedIdx].GetHashVal();
     nodeHashes[nodeIdx] = nodeCur.GetHashVal(parenthash);
 }
 
@@ -371,7 +373,10 @@ void DbFile::Merge(const DbFile& other)
         {
             auto itSrc = sourceMap.find(srcfile);
             if (itSrc == sourceMap.end())
+            {
                 itSrc = sourceMap.insert(std::make_pair(srcfile, srcIdx++)).first;
+                m_dbSourceFiles.push_back(srcfile);
+            }
 
             srcFileRemapping.push_back(itSrc->second);
         }
@@ -391,7 +396,12 @@ void DbFile::Merge(const DbFile& other)
         {
             auto itTok = tokenMap.find(token.text);
             if (itTok == tokenMap.end())
+            {
                 itTok = tokenMap.insert(std::make_pair(token.text, tokIdx++)).first;
+                DbToken t = token;
+                t.key = m_dbTokens.size();
+                m_dbTokens.push_back(t);
+            }
 
             tokenRemapping.push_back(itTok->second);
         }
@@ -406,34 +416,74 @@ void DbFile::Merge(const DbFile& other)
         dbNode.typetoken = tokenRemapping[dbNode.typetoken];
     }
 
- 
-    std::map<size_t, std::vector<DbNode*>> nodesMap;
+    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
     {
-        std::vector<size_t> nodesTreeHash(m_dbNodes.size());
+        if (m_dbNodes[idx].parentNodeIdx != nullnode &&
+            m_dbNodes[idx].parentNodeIdx >= idx)
+        {
+            throw;
+        }
+    }
+
+    std::map<size_t, int64_t> nodesMap;
+    {
+        std::vector<size_t> nodesTreeHash0(m_dbNodes.size());
         for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
         {
-            if (nodesTreeHash[idx] == 0)
-                SetNodeHash(nodesTreeHash, m_dbNodes, idx);
+            SetNodeHash(nodesTreeHash0, m_dbNodes, idx);
+        }
 
-            size_t hash_val = nodesTreeHash[idx];
+        for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+        {
+            DbNode& nodeCur = m_dbNodes[idx];
+            size_t hash_val = nodesTreeHash0[idx];
+            if (nodeCur.referencedIdx != nullnode)
+            {
+                size_t hash0 = nodesTreeHash0[nodeCur.referencedIdx];
+                hash_val = HashFunc(&hash0, &hash0 + 1, nodesTreeHash0[idx]);
+            }
+            
             auto itNode = nodesMap.find(hash_val);
             if (itNode == nodesMap.end())
-                itNode = nodesMap.insert(std::make_pair(hash_val, std::vector<DbNode*>())).first;
-            itNode->second.push_back(&m_dbNodes[idx]);
+                nodesMap.insert(std::make_pair(hash_val, idx));
         }
     }
     {
-        std::vector<size_t> nodesTreeHash(otherNodes.size());
+        std::vector<size_t> nodesTreeHash0(otherNodes.size());
+        std::vector<size_t> nodesTreeHash1(otherNodes.size());
         for (size_t idx = 0; idx < otherNodes.size(); ++idx)
         {
-            if (nodesTreeHash[idx] == 0)
-                SetNodeHash(nodesTreeHash, otherNodes, idx);
+            SetNodeHash(nodesTreeHash0, otherNodes, idx);
+        }
 
-            size_t hash_val = nodesTreeHash[idx];
+        for (size_t idx = 0; idx < otherNodes.size(); ++idx)
+        {
+            DbNode& nodeCur = otherNodes[idx];
+            size_t hash_val = nodesTreeHash0[idx];
+            if (nodeCur.referencedIdx != nullnode)
+            {
+                size_t hash0 = nodesTreeHash0[nodeCur.referencedIdx];
+                hash_val = HashFunc(&hash0, &hash0 + 1, nodesTreeHash0[idx]);
+            }
+            nodesTreeHash1[idx] = hash_val;
             auto itNode = nodesMap.find(hash_val);
             if (itNode == nodesMap.end())
-                itNode = nodesMap.insert(std::make_pair(hash_val, std::vector<DbNode*>())).first;
-            itNode->second.push_back(&otherNodes[idx]);
+            {
+                DbNode newNode = otherNodes[idx];
+                if (newNode.parentNodeIdx != nullnode)
+                {
+                    size_t parentHash = nodesTreeHash1[newNode.parentNodeIdx];
+                    newNode.parentNodeIdx = nodesMap[parentHash];
+                }
+                if (newNode.referencedIdx != nullnode)
+                {
+                    size_t refHash = nodesTreeHash1[newNode.referencedIdx];
+                    newNode.referencedIdx = nodesMap[refHash];
+                }
+                size_t newIdx = m_dbNodes.size();
+                m_dbNodes.push_back(newNode);
+                nodesMap.insert(std::make_pair(hash_val, newIdx));
+            }
         }
     }
 }
