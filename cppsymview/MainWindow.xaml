@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib" 
+        xmlns:s="clr-namespace:System;assembly=mscorlib" 
         xmlns:local="clr-namespace:cppsymview"
         mc:Ignorable="d"
         Title="MainWindow" Height="1200" Width="1600">
@@ -40,11 +40,15 @@
                         Value="{Binding IsSelected, Mode=TwoWay}" />
             <Setter Property="FontWeight"
                         Value="Normal" />
+            <Setter Property="Background"
+                            Value="White"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected"
                               Value="True">
                     <Setter Property="FontWeight"
                                 Value="Bold" />
+                    <Setter Property="Background"
+                            Value="BlueViolet"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -120,16 +124,17 @@
                 </StackPanel>
                 <TreeView Grid.Row="1" x:Name="nodesTreeView" TreeViewItem.Selected="nodesTreeView_Selected" ItemTemplate="{StaticResource treeNodeTemplate}" 
                           ItemContainerStyle="{StaticResource LibraryTreeViewItemStyle}" ItemsSource="{Binding Path=TopNodes}" 
-                          Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverterInv}}"/>
+                          Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverterInv}}" />
                 <ListView Grid.Row="1" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 <GridSplitter Grid.Row="2" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
                 <Grid Grid.Row="3">
-                    <ContentControl Content="{Binding ElementName=nodesTreeView, Path=SelectedItem}" >
+                    <ContentControl Foreground="AliceBlue" Content="{Binding ElementName=nodesTreeView, Path=SelectedItem}" >
                         <ContentControl.ContentTemplate>
                             <DataTemplate DataType="{x:Type local:Node}">
                                 <Grid>
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
@@ -140,7 +145,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" />
+                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" Foreground="Black" />
 
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Line" />
                                     <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Line}" />
@@ -151,8 +156,13 @@
                                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Token" />
                                     <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Token.Text}" />
 
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="TypeToken" />
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TypeToken.Text}" />
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="TypeKind" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TypeKind}" />
+                                    
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="TypeToken" />
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TypeToken.Text}" />
+                                    
+                                    
                                 </Grid>
                             </DataTemplate>
                         </ContentControl.ContentTemplate>

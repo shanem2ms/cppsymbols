@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -32,8 +34,9 @@ namespace cppsymview
 
         public CPPEngineFile Engine => engine;
         public IEnumerable<Node> TopNodes => engine.TopNodes;
-        string root = @"D:\vq\flash";
+        string root = @"C:\flash";
         public ObservableCollection<CPPTextEditor> Editors { get; } = new ObservableCollection<CPPTextEditor>();
+        Settings settings = Settings.Load();
 
         public MainWindow()
         {
@@ -47,6 +50,11 @@ namespace cppsymview
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
             this.EditorsCtrl.SelectionChanged += EditorsCtrl_SelectionChanged;
+
+            foreach (string openfile in settings.Files)
+            {
+                CreateEditor(openfile);
+            }
         }
 
         private void EditorsCtrl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -54,12 +62,14 @@ namespace cppsymview
             if (e.AddedItems.Count > 0)
             {
                 CPPTextEditor editor = (CPPTextEditor)e.AddedItems[0];
-                editor.MakeActive();
+                editor?.MakeActive();
             }
         }
 
         private void FolderView_OnFileSelected(object? sender, string e)
         {
+            settings.Files.Add(e);
+            settings.Save();
             CreateEditor(e);
         }
 

@@ -10,6 +10,8 @@ using System.Windows.Forms;
 using System.Windows.Media;
 using System.Diagnostics;
 using System.Windows.Automation;
+using static cppsymview.OSYFile;
+using System.Xml.Linq;
 
 namespace cppsymview
 {
@@ -28,6 +30,8 @@ namespace cppsymview
         public uint StartOffset { get; set; }
         public uint EndOffset { get; set; }
         public long SourceFile { get; set; }
+
+        public Node RefNode { get; set; }
 
         public bool IsNodeExpanded { get; set; } = false;
         public bool IsSelected { get; set; } = false;
@@ -138,6 +142,18 @@ namespace cppsymview
                     node.SourceFile = dbnode.sourceFile;
                     nodes.Add(node);
                 }
+
+                int idx = 0;
+                foreach (OSYFile.DbNode dbnode in curFile.Nodes)
+                {
+                    if (dbnode.referencedIdx >= 0)
+                    {
+                        Node node = nodes[idx];
+                        node.RefNode = nodes[(int)dbnode.referencedIdx];
+                    }
+                    idx++;
+                }
+
 
                 nodes.Sort();
                 nodesArray = nodes.ToArray();
