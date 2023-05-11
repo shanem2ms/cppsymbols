@@ -34,7 +34,8 @@ namespace cppsymview
 
         public CPPEngineFile Engine => engine;
         public IEnumerable<Node> TopNodes => engine.TopNodes;
-        string root = @"C:\flash";
+        //string root = @"C:\flash";
+        string root = @"D:\vq\flash";
         public ObservableCollection<CPPTextEditor> Editors { get; } = new ObservableCollection<CPPTextEditor>();
         Settings settings = Settings.Load();
 

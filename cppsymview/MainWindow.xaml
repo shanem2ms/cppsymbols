@@ -100,11 +100,24 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal" Margin="0,5">
+                <Grid Grid.Row="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <CheckBox Foreground="Wheat" Margin="5" >Current File Only</CheckBox>
+                    <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="1" Text="CursorType" />
+                    <ComboBox Margin="5,1,5,5" Grid.Row="2" x:Name="CursorTypesCB" />
+                </Grid>
+                <GridSplitter Grid.Row="1" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5">
                     <ToggleButton x:Name="TreeOrListBtn">
                         <ToggleButton.Style>
                             <Style TargetType="{x:Type ToggleButton}">
@@ -122,13 +135,13 @@
                     <TextBox Margin="15,0,5,0" x:Name="queryBox" Width="300" />
                     <Button Name="queryBtn" Content="Query" Click="queryBtn_Click" />
                 </StackPanel>
-                <TreeView Grid.Row="1" x:Name="nodesTreeView" TreeViewItem.Selected="nodesTreeView_Selected" ItemTemplate="{StaticResource treeNodeTemplate}" 
+                <TreeView Grid.Row="3" x:Name="nodesTreeView" TreeViewItem.Selected="nodesTreeView_Selected" ItemTemplate="{StaticResource treeNodeTemplate}" 
                           ItemContainerStyle="{StaticResource LibraryTreeViewItemStyle}" ItemsSource="{Binding Path=TopNodes}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverterInv}}" />
-                <ListView Grid.Row="1" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
+                <ListView Grid.Row="3" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                <GridSplitter Grid.Row="2" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
-                <Grid Grid.Row="3">
+                <GridSplitter Grid.Row="4" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
+                <Grid Grid.Row="5">
                     <ContentControl Foreground="AliceBlue" Content="{Binding ElementName=nodesTreeView, Path=SelectedItem}" >
                         <ContentControl.ContentTemplate>
                             <DataTemplate DataType="{x:Type local:Node}">

@@ -14,8 +14,13 @@ namespace cppsymview
 
         public static Settings Load()
         {
-            string jsonString = File.ReadAllText("settings.json");
-            return JsonSerializer.Deserialize<Settings>(jsonString);
+            if (File.Exists("settings.json"))
+            {
+                string jsonString = File.ReadAllText("settings.json");
+                return JsonSerializer.Deserialize<Settings>(jsonString);
+            }
+            else
+                return new Settings();
         }
         public void Save()
         {
