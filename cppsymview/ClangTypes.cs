@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Immutable;
 
 namespace cppsymview
 {
@@ -1312,6 +1313,9 @@ namespace cppsymview
             CXCursorKind.BuiltinBitCastExpr,
             CXCursorKind.NamespaceAlias
         };
+
+        public static IEnumerable<CXCursorKind> CursorKinds = Enum.GetValues(typeof(CXCursorKind)).Cast<CXCursorKind>();
+        public static IEnumerable<CXTypeKind> TypeKinds => Enum.GetValues(typeof(CXTypeKind)).Cast<CXTypeKind>();
 
         static Dictionary<CXCursorKind, string> cursorAbbrev = null;
         public static Dictionary<CXCursorKind, string> CursorAbbrev

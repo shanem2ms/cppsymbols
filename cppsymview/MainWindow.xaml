@@ -111,10 +111,14 @@
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
-                    <CheckBox Foreground="Wheat" Margin="5" >Current File Only</CheckBox>
+                    <CheckBox Foreground="Wheat" Margin="5" IsChecked="True">Current File Only</CheckBox>
                     <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="1" Text="CursorType" />
-                    <ComboBox Margin="5,1,5,5" Grid.Row="2" x:Name="CursorTypesCB" />
+                    <ComboBox Margin="5,1,5,5" Grid.Row="2" x:Name="CursorTypesCB" ItemsSource="{x:Static local:ClangTypes.CursorKinds}"/>
+                    <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="3" Text="Kind" />
+                    <ComboBox Margin="5,1,5,5" Grid.Row="4" x:Name="KindCB" ItemsSource="{x:Static local:ClangTypes.TypeKinds}"/>
                 </Grid>
                 <GridSplitter Grid.Row="1" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5">
