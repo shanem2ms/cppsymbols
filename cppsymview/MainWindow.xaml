@@ -55,137 +55,162 @@
         <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <local:BooleanToVisibilityConverter InvertVisibility="true"  x:Key="BooleanToVisibilityConverterInv" />
     </Window.Resources>
-    <Grid Background="#202020">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
-        <local:FolderView x:Name="folderView"/>
-        <GridSplitter Grid.Column="1" Width="8" VerticalAlignment="Stretch" ResizeBehavior="PreviousAndCurrent" />
-        <GridSplitter Grid.Column="3" Width="8" VerticalAlignment="Stretch" ResizeBehavior="CurrentAndNext" />
-        <Grid Grid.Column="0" Width="300"/>
-        <Grid Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal">
-            </StackPanel>
-            <TabControl Grid.Row="1" x:Name="EditorsCtrl" ItemsSource="{Binding Editors}">
-                <TabControl.ItemContainerStyle>
-                    <Style TargetType="{x:Type TabItem}">
-                        <Setter Property="Header" Value="{Binding Path=CPPName}" />
-                    </Style>
-                </TabControl.ItemContainerStyle>
-                <TabControl.ContentTemplate>
-                    <DataTemplate>
-                        <ContentControl Content="{Binding}" />
-                    </DataTemplate>
-                </TabControl.ContentTemplate>
-                <TabControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Rectangle Width="10" Height="10" Fill="BlueViolet" Margin="5"/>
-                            <TextBlock Text="{Binding }" Margin="5"/>
-                            <Button Content="X" Margin="5"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </TabControl.ItemTemplate>
-            </TabControl>
-        </Grid>
-        <Grid Grid.Column="4" Width="300">
-            <Grid>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <Button Margin="5" Name="RunScript" Content="Run Script" Click="RunScript_Click"/>
+            <Button Margin="5" Name="ClearOutput" Content="Clear Output" Click="ClearOutput_Click"/>
+        </StackPanel>
+        <Grid Grid.Row="1" Background="#202020">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <local:FolderView x:Name="folderView"/>
+            <GridSplitter Grid.Column="1" Width="8" VerticalAlignment="Stretch" HorizontalAlignment="Center" />
+            <GridSplitter Grid.Column="3" Width="8" VerticalAlignment="Stretch" HorizontalAlignment="Center" />
+            <Grid Grid.Column="0"/>
+            <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
-                        <RowDefinition />
-                        <RowDefinition />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <CheckBox Foreground="Wheat" Margin="5" IsChecked="True">Current File Only</CheckBox>
-                    <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="1" Text="CursorType" />
-                    <ComboBox Margin="5,1,5,5" Grid.Row="2" x:Name="CursorTypesCB" ItemsSource="{x:Static local:ClangTypes.CursorKinds}"/>
-                    <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="3" Text="Kind" />
-                    <ComboBox Margin="5,1,5,5" Grid.Row="4" x:Name="KindCB" ItemsSource="{x:Static local:ClangTypes.TypeKinds}"/>
-                </Grid>
-                <GridSplitter Grid.Row="1" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5">
-                    <ToggleButton x:Name="TreeOrListBtn">
-                        <ToggleButton.Style>
-                            <Style TargetType="{x:Type ToggleButton}">
-                                <Setter Property="Content" Value="Flat List"/>
-                                <Setter Property="Foreground" Value="Green"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsChecked" Value="True">
-                                        <Setter Property="Content" Value="Tree View"/>
-                                        <Setter Property="Foreground" Value="Blue"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ToggleButton.Style>
-                    </ToggleButton>
-                    <TextBox Margin="15,0,5,0" x:Name="queryBox" Width="300" />
-                    <Button Name="queryBtn" Content="Query" Click="queryBtn_Click" />
+                <StackPanel Orientation="Horizontal">
                 </StackPanel>
-                <TreeView Grid.Row="3" x:Name="nodesTreeView" TreeViewItem.Selected="nodesTreeView_Selected" ItemTemplate="{StaticResource treeNodeTemplate}" 
-                          ItemContainerStyle="{StaticResource LibraryTreeViewItemStyle}" ItemsSource="{Binding Path=TopNodes}" 
+                <TabControl Grid.Row="1" x:Name="EditorsCtrl" ItemsSource="{Binding Editors}">
+                    <TabControl.ItemContainerStyle>
+                        <Style TargetType="{x:Type TabItem}">
+                            <Setter Property="Header" Value="{Binding Path=CPPName}" />
+                        </Style>
+                    </TabControl.ItemContainerStyle>
+                    <TabControl.ContentTemplate>
+                        <DataTemplate>
+                            <ContentControl Content="{Binding}" />
+                        </DataTemplate>
+                    </TabControl.ContentTemplate>
+                    <TabControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Rectangle Width="10" Height="10" Fill="BlueViolet" Margin="5"/>
+                                <TextBlock Text="{Binding }" Margin="5"/>
+                                <Button Content="X" Margin="5"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </TabControl.ItemTemplate>
+                </TabControl>
+            </Grid>
+            <Grid Grid.Column="4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <CheckBox Name="CurFileChk"  Foreground="Wheat" Margin="5" IsChecked="True" 
+                              Checked="CurFileChk_Checked" Unchecked="CurFileChk_Checked">Current File Only</CheckBox>
+                        <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="1" Text="CursorType" />
+                        <ComboBox Margin="5,1,5,5" Grid.Row="2" x:Name="CursorTypesCB" ItemsSource="{x:Static local:ClangTypes.CursorKinds}"
+                              SelectionChanged="CursorTypesCB_SelectionChanged"/>
+                        <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="3" Text="Kind" />
+                        <ComboBox Margin="5,1,5,5" Grid.Row="4" x:Name="KindCB" ItemsSource="{x:Static local:ClangTypes.TypeKinds}"
+                              SelectionChanged="KindCB_SelectionChanged"/>
+                    </Grid>
+                    <GridSplitter Grid.Row="1" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5">
+                        <ToggleButton x:Name="TreeOrListBtn">
+                            <ToggleButton.Style>
+                                <Style TargetType="{x:Type ToggleButton}">
+                                    <Setter Property="Content" Value="Flat List"/>
+                                    <Setter Property="Foreground" Value="Green"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter Property="Content" Value="Tree View"/>
+                                            <Setter Property="Foreground" Value="Blue"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
+                        <TextBox Margin="15,0,5,0" x:Name="queryBox" Width="300" />
+                        <Button Name="queryBtn" Content="Query" Click="queryBtn_Click" />
+                    </StackPanel>
+                    <TreeView Grid.Row="3" x:Name="nodesTreeView" TreeViewItem.Selected="nodesTreeView_Selected" ItemTemplate="{StaticResource treeNodeTemplate}" 
+                          ItemContainerStyle="{StaticResource LibraryTreeViewItemStyle}" ItemsSource="{Binding Path=Engine.TopNodes}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverterInv}}" />
-                <ListView Grid.Row="3" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
+                    <ListView Grid.Row="3" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                <GridSplitter Grid.Row="4" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
-                <Grid Grid.Row="5">
-                    <ContentControl Foreground="AliceBlue" Content="{Binding ElementName=nodesTreeView, Path=SelectedItem}" >
-                        <ContentControl.ContentTemplate>
-                            <DataTemplate DataType="{x:Type local:Node}">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" Foreground="Black" />
+                    <GridSplitter Grid.Row="4" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
+                    <Grid Grid.Row="5">
+                        <ContentControl Foreground="AliceBlue" Content="{Binding ElementName=nodesTreeView, Path=SelectedItem}" >
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate DataType="{x:Type local:Node}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" Foreground="Black" />
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Line" />
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Line}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="File" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FileName}" />
 
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Column" />
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Column}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Line" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Line}" />
 
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Token" />
-                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Token.Text}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Column" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Column}" />
 
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="TypeKind" />
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TypeKind}" />
-                                    
-                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="TypeToken" />
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TypeToken.Text}" />
-                                    
-                                    
-                                </Grid>
-                            </DataTemplate>
-                        </ContentControl.ContentTemplate>
-                    </ContentControl>
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Token" />
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Token.Text}" />
+
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="TypeKind" />
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TypeKind}" />
+
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="TypeToken" />
+                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding TypeToken.Text}" />
+
+
+                                    </Grid>
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+                    </Grid>
                 </Grid>
             </Grid>
+        </Grid>
+        <GridSplitter Grid.Row="2" Height="5" ResizeDirection="Rows" HorizontalAlignment="Stretch" />
+        <Grid Grid.Row="3" >
+            <TextBlock x:Name="OutputConsole" Background="Black" Foreground="AliceBlue">
+            
+            </TextBlock>
         </Grid>
     </Grid>
 </Window>

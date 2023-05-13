@@ -20,6 +20,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using ICSharpCode.AvalonEdit;
 
 namespace cppsymview
 {
@@ -34,16 +35,19 @@ namespace cppsymview
 
         public CPPEngineFile Engine => engine;
         public IEnumerable<Node> TopNodes => engine.TopNodes;
-        string root = @"C:\flash";
-        //string root = @"D:\vq\flash";
-        public ObservableCollection<CPPTextEditor> Editors { get; } = new ObservableCollection<CPPTextEditor>();
+        //string root = @"C:\flash";
+        string root = @"D:\vq\flash";
+        public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
+        ScriptEngine scriptEngine = new ScriptEngine();
+        CSEditor scriptTextEditor;
 
         public MainWindow()
         {
             this.DataContext = this;
             InitializeComponent();
 
+            script.Api.WriteLine = WriteOutput;
             folderView.Root = root;
             folderView.OnFileSelected += FolderView_OnFileSelected;
             //ConnectTcp();
@@ -56,11 +60,15 @@ namespace cppsymview
             {
                 CreateEditor(openfile);
             }
+
+            scriptTextEditor = new CSEditor("Script.cs", engine, scriptEngine);
+            Editors.Add(scriptTextEditor);
+            EditorsCtrl.SelectedItem = scriptTextEditor;
         }
 
         private void EditorsCtrl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is CPPTextEditor)
             {
                 CPPTextEditor editor = (CPPTextEditor)e.AddedItems[0];
                 editor?.MakeActive();
@@ -80,9 +88,12 @@ namespace cppsymview
             cppTextEditor.NodeChanged += CppTextEditor_NodeChanged;
             Editors.Add(cppTextEditor);
             EditorsCtrl.SelectedItem = cppTextEditor;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopNodes)));
         }
 
+        void WriteOutput(string text)
+        {
+            this.OutputConsole.Text += text;
+        }
         private void NodesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0)
@@ -116,6 +127,35 @@ namespace cppsymview
             TreeViewItem tvi = e.OriginalSource as TreeViewItem;
             tvi.BringIntoView();
         }
+
+        private void CurFileChk_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = (sender as CheckBox);
+            this.engine.CurrentFileOnly = cb.IsChecked??false;
+
+        }
+
+        private void CursorTypesCB_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void KindCB_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void RunScript_Click(object sender, RoutedEventArgs e)
+        {
+            this.scriptTextEditor.Save();
+            Source src = new Source() { code = this.scriptTextEditor.Document.Text, filepath = "Script.cs" };
+            this.scriptEngine.Run(new List<Source>() { src }, this.engine);
+        }
+
+        private void ClearOutput_Click(object sender, RoutedEventArgs e)
+        {
+            OutputConsole.Text = "";
+        }
     }
 
     public class BooleanToVisibilityConverter : IValueConverter
@@ -138,6 +178,6 @@ namespace cppsymview
         }
 
         public Boolean InvertVisibility { get; set; }
-
     }
+
 }

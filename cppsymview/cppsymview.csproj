@@ -9,14 +9,17 @@
 
   <ItemGroup>
     <None Remove="CPP-Mode.xshd" />
+    <None Remove="CSharp-Mode.xshd" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="CPP-Mode.xshd" />
+    <EmbeddedResource Include="CSharp-Mode.xshd" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

@@ -12,73 +12,16 @@ using System.Diagnostics;
 using System.Windows.Automation;
 using static cppsymview.OSYFile;
 using System.Xml.Linq;
+using System.Windows.Forms.Design;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 
 namespace cppsymview
 {
-    public class Node : IComparable<Node>, INotifyPropertyChanged
-    {
-        public Node parent;
-        public OSYFile.DbNode dbNode;
-        public bool enabled = false;
-        public IEnumerable<Node> Children => allChildren.Where(c => c.enabled);
-        public Token? Token { get; set; }
-        public Token? TypeToken { get; set; }
-        public CXCursorKind Kind { get; set; }
-        public CXTypeKind TypeKind { get; set; }
-        public uint Line { get; set; }
-        public uint Column { get; set; }
-        public uint StartOffset { get; set; }
-        public uint EndOffset { get; set; }
-        public long SourceFile { get; set; }
-
-        public Node RefNode { get; set; }
-
-        public bool IsNodeExpanded { get; set; } = false;
-        public bool IsSelected { get; set; } = false;
-
-        public Brush CursorBrush => new SolidColorBrush(ClangTypes.CursorColor[Kind]);
-        public string CursorAbbrev => ClangTypes.CursorAbbrev[Kind];
-        public event PropertyChangedEventHandler? PropertyChanged;
-        
-        public List<Node> allChildren = new List<Node>();
-
-        public int CompareTo(Node? other)
-        {
-            if (other == null) return -1;
-            if (SourceFile != other.SourceFile)
-                return SourceFile.CompareTo(other.SourceFile);
-            if (StartOffset != other.StartOffset)
-                return StartOffset.CompareTo(other.StartOffset);
-            return 0;
-        }
-
-        public void Expand()
-        {
-            if (parent != null) { parent.Expand(); }
-            IsNodeExpanded = true;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsNodeExpanded)));
-        }
-
-        public void Select()
-        {
-            IsSelected = true;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
-        }
-
-        public void SetEnabled(bool _enabled, bool recursive)
-        {
-            this.enabled = _enabled;
-            if (this.parent != null && this.enabled == true & !this.parent.enabled)
-                this.parent.SetEnabled(true, false);
-            if (recursive)
-            {
-                foreach (var child in allChildren)
-                {
-                    child.SetEnabled(_enabled, recursive);
-                }
-            }
-        }
-    }
 
     public class CPPEngineFile : INotifyPropertyChanged
     {
@@ -90,20 +33,32 @@ namespace cppsymview
         public Node[] nodesArray;
         public List<Node> topNodes = new List<Node>();
         public IEnumerable<Node> TopNodes => topNodes.Where(n => n.enabled);
+        public Node[] Nodes => nodesArray;
         public event EventHandler<Node> SelectedNodeChanged;
         public event PropertyChangedEventHandler? PropertyChanged;
 
         List<Node> queryNodes = new List<Node>();
         public List<Node> QueryNodes => queryNodes;
 
-        Dictionary<ClangTypes.CXCursorKind, int> cursorKindCounts;
-        Dictionary<ClangTypes.CXTypeKind, int> typeKindCounts;
+        Dictionary<CXCursorKind, int> cursorKindCounts;
+        Dictionary<CXTypeKind, int> typeKindCounts;
 
+        public CXCursorKind CursorFilter { get; set; } = CXCursorKind.None;
+        public CXTypeKind TypeFilter { get; set; } = CXTypeKind.None;
+        string curEditorFile;
+
+        bool currentFileOnly = true;
+        public bool CurrentFileOnly { get => currentFileOnly; set { currentFileOnly = value; SetTopNodes(); } }
         public void Init(string sourcedir, string osyfile)
         {
             srcDir = sourcedir;
             osyFile = osyfile;
             LoadOSYFile(osyFile);
+        }
+
+        public string GetFileNameFromIdx(long idx)
+        {
+            return curFile.Filenames[idx-1];
         }
 
         void LoadOSYFile(string filename)
@@ -119,7 +74,7 @@ namespace cppsymview
                 //nodesArray = new Node[curFile.Nodes.Length];
                 foreach (OSYFile.DbNode dbnode in curFile.Nodes)
                 {
-                    Node node = new Node();
+                    Node node = new Node(this);
                     if (dbnode.parentNodeIdx >= 0)
                     {
                         node.parent = nodes[(int)dbnode.parentNodeIdx];
@@ -188,18 +143,39 @@ namespace cppsymview
 
         public void SetCurrentFile(string file)
         {
-            foreach (Node n in nodesArray)
+            this.curEditorFile = file;
+            SetTopNodes();
+        }
+
+        void SetTopNodes()
+        {
+            if (nodesArray == null)
+                return;
+            if (CurrentFileOnly)
             {
-                n.SetEnabled(false, false);
+                foreach (Node n in nodesArray)
+                {
+                    n.SetEnabled(false, false);
+                }
+                int srcFile = GetSourceFile(this.curEditorFile);
+                foreach (Node n in nodesArray)
+                {
+                    if (n.SourceFile == srcFile)
+                    {
+                        n.SetEnabled(true, false);
+                    }
+                }
             }
-            int srcFile = GetSourceFile(file);
-            foreach (Node n in  nodesArray) 
-            { 
-                if (n.SourceFile == srcFile)
+            else
+            {
+                foreach (Node n in nodesArray)
                 {
                     n.SetEnabled(true, false);
                 }
             }
+
+            int ct = TopNodes.Count();
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopNodes)));
         }
 
         public void Query(string querystr)
@@ -227,7 +203,7 @@ namespace cppsymview
         {
             if (this.nodesArray == null)
                 return null;
-            Node srchNode = new Node() { SourceFile = filenameKey, StartOffset = offset };
+            Node srchNode = new Node(this) { SourceFile = filenameKey, StartOffset = offset };
             int nodeIdx = Array.BinarySearch(this.nodesArray, srchNode);
             if (nodeIdx < 0) nodeIdx = (~nodeIdx) - 1;
             if (nodeIdx < 0 || nodeIdx >= nodesArray.Length)
