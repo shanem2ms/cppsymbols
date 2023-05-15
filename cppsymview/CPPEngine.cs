@@ -22,7 +22,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace cppsymview
 {
-
     public class CPPEngineFile : INotifyPropertyChanged
     {
         string srcDir = string.Empty;
@@ -46,6 +45,7 @@ namespace cppsymview
         public CXCursorKind CursorFilter { get; set; } = CXCursorKind.None;
         public CXTypeKind TypeFilter { get; set; } = CXTypeKind.None;
         string curEditorFile;
+        public string []SourceFiles => curFile.Filenames;
 
         bool currentFileOnly = true;
         public bool CurrentFileOnly { get => currentFileOnly; set { currentFileOnly = value; SetTopNodes(); } }

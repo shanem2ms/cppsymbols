@@ -208,9 +208,9 @@
         </Grid>
         <GridSplitter Grid.Row="2" Height="5" ResizeDirection="Rows" HorizontalAlignment="Stretch" />
         <Grid Grid.Row="3" >
-            <TextBlock x:Name="OutputConsole" Background="Black" Foreground="AliceBlue">
+            <TextBox x:Name="OutputConsole" Background="Black" Foreground="AliceBlue" VerticalScrollBarVisibility="Visible">
             
-            </TextBlock>
+            </TextBox>
         </Grid>
     </Grid>
 </Window>

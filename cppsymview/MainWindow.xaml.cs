@@ -35,8 +35,8 @@ namespace cppsymview
 
         public CPPEngineFile Engine => engine;
         public IEnumerable<Node> TopNodes => engine.TopNodes;
-        //string root = @"C:\flash";
-        string root = @"D:\vq\flash";
+        string root = @"C:\flash";
+        //string root = @"D:\vq\flash";
         public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
         ScriptEngine scriptEngine = new ScriptEngine();
@@ -92,7 +92,7 @@ namespace cppsymview
 
         void WriteOutput(string text)
         {
-            this.OutputConsole.Text += text;
+            this.OutputConsole.Text += text + "\n";
         }
         private void NodesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
