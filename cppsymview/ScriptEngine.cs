@@ -23,7 +23,6 @@ namespace cppsymview
 
             public static string ScriptFolder = null;
             public static CPPEngineFile Engine = null;
-
             public static void Reset(CPPEngineFile engine)
             {
                 script.Api.Engine = engine;

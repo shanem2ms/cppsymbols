@@ -28,11 +28,10 @@ namespace cppsymview
         public string CPPName { get; set; }
 
         public string FilePath { get; set; }
-        public CPPEngineFile Engine { get; set; }
         int curFileKey = -1;
         public ScriptEngine ScriptEngine { get; set; }
 
-        public CSEditor(string path, CPPEngineFile engine, ScriptEngine scriptEngine)
+        public CSEditor(string path, ScriptEngine scriptEngine)
         {
             if (!File.Exists(path))
             {
@@ -40,9 +39,7 @@ namespace cppsymview
             }
             
             FilePath = path;
-            Engine = engine;
             ScriptEngine = scriptEngine;
-            Engine.SelectedNodeChanged += Engine_SelectedNodeChanged;
             this.FontFamily = new FontFamily("Consolas");
             this.FontSize = 14;
             this.Foreground = new SolidColorBrush(Color.FromArgb(255, 180, 180, 180));
@@ -63,7 +60,6 @@ namespace cppsymview
                 }
             }
 
-            TextArea.Caret.PositionChanged += Caret_PositionChanged;
             TextArea.SelectionChanged += TextArea_SelectionChanged;
             TextArea.TextEntered += TextArea_TextEntered;
             //Reload();
@@ -73,28 +69,8 @@ namespace cppsymview
 
         OffsetColorizer curNodeColorizer = null;
 
-        private void Engine_SelectedNodeChanged(object? sender, Node e)
-        {
-            if (curNodeColorizer != null)
-                this.TextArea.TextView.LineTransformers.Remove(curNodeColorizer);
-            curNodeColorizer = new OffsetColorizer();
-            curNodeColorizer.StartOffset = (int)e.StartOffset;
-            curNodeColorizer.EndOffset = (int)e.EndOffset;
-            this.TextArea.TextView.LineTransformers.Add(curNodeColorizer);
-        }
-
         private void TextArea_SelectionChanged(object? sender, EventArgs e)
         {
-        }
-
-        private void Caret_PositionChanged(object? sender, EventArgs e)
-        {
-            Node node = this.Engine.GetNodeFor(this.curFileKey, (uint)this.CaretOffset);
-            if (node != null)
-            {
-                node.Expand();
-                node.Select();
-            }
         }
 
         private void ParentWnd_BeforeCPPRun(object sender, bool e)

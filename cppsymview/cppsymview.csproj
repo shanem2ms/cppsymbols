@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Script.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="CPP-Mode.xshd" />
     <None Remove="CSharp-Mode.xshd" />
   </ItemGroup>
@@ -15,6 +19,10 @@
   <ItemGroup>
     <EmbeddedResource Include="CPP-Mode.xshd" />
     <EmbeddedResource Include="CSharp-Mode.xshd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Script.cs" />
   </ItemGroup>
 
   <ItemGroup>

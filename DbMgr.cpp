@@ -25,8 +25,22 @@ template<typename T, typename U> constexpr size_t offsetOf(U T::* member)
 size_t DbNode::GetHashVal(size_t parentHashVal) const
 {
     size_t* bgn = (size_t*)&kind;
-    size_t* end = (size_t *)(((int64_t*)&sourceFile) + 1);
+    size_t* end = (size_t*)(((int64_t*)&sourceFile) + 1);
     return HashFunc(bgn, end, parentHashVal);
+}
+
+
+bool DbNode::operator == (const DbNode& other) const
+{
+    return kind == other.kind &&
+        typeKind == other.typeKind &&
+        token == other.token &&
+        typetoken == other.typetoken &&
+        line == other.line &&
+        column == other.column &&
+        startOffset == other.startOffset &&
+        endOffset == other.endOffset &&
+        sourceFile == other.sourceFile;
 }
 
 CPPSourceFilePtr DbFile::GetOrInsertFile(const std::string& commitName, const std::string& fileName)
@@ -46,9 +60,9 @@ CPPSourceFilePtr DbFile::GetOrInsertFile(const std::string& commitName, const st
             sf = itSrcFile->second;
     }
     return sf;
-} 
+}
 
-DbNode::DbNode(const Node &n) :
+DbNode::DbNode(const Node& n) :
     key(n.Key),
     compilingFile(n.CompilingFile->Key),
     parentNodeIdx(n.ParentNodeIdx),
@@ -79,7 +93,7 @@ void DbFile::AddNodes(std::vector<Node>& nodes)
         t.ParentNodeIdx = t.ParentNodeIdx;
         t.ReferencedIdx = t.ReferencedIdx;
         m_dbNodes.push_back(DbNode(t));
-    }    
+    }
 }
 
 
@@ -103,7 +117,7 @@ int64_t DbFile::AddRows(std::vector<Token>& range)
     size_t keyIdx = 0;
     m_dbTokens.reserve(m_dbTokens.size() + range.size());
     for (Token& token : range)
-    {        
+    {
         m_dbTokens.push_back(DbToken(keyIdx++, token.Text));
     }
     return 0;
@@ -132,7 +146,7 @@ void DbFile::CommitSourceFiles()
     }
 }
 
-void DbFile::Save(const std::string &dbfile)
+void DbFile::Save(const std::string& dbfile)
 {
     std::vector<uint8_t> data;
     WriteStream(data);
@@ -158,7 +172,7 @@ void DbFile::Save(const std::string &dbfile)
 }
 
 static std::map<CXCursorKind, std::string> sCursorKindMap
-{ 
+{
     { CXCursor_UnexposedDecl, "UnexposedDecl" },
     { CXCursor_StructDecl, "StructDecl" },
     { CXCursor_UnionDecl, "UnionDecl" },
@@ -298,7 +312,7 @@ static std::map<CXTypeKind, std::string> sTypeKindMap
 { CXType_Elaborated, "Elaborated" }
 };
 
-void DbFile::Load(const std::string &dbfile)
+void DbFile::Load(const std::string& dbfile)
 {
     std::ifstream ifstream(dbfile, std::ios::in | std::ios::binary);
     ifstream.seekg(0, std::ios::end);
@@ -308,7 +322,7 @@ void DbFile::Load(const std::string &dbfile)
 
     uLongf decodedCnt;
     ifstream.read((char*)&decodedCnt, sizeof(uint32_t));
-    ifstream.read((char *)compressedData.data(), size - sizeof(uint32_t));
+    ifstream.read((char*)compressedData.data(), size - sizeof(uint32_t));
 
     std::vector<uint8_t> data(decodedCnt);
 
@@ -322,7 +336,7 @@ void DbFile::Load(const std::string &dbfile)
     size_t offset = 0;
     offset = CppStream::Read(vecReader, offset, m_dbSourceFiles);
     offset = CppStream::Read(vecReader, offset, m_dbTokens);
-    offset = CppStream::Read(vecReader, offset, m_dbNodes);  
+    offset = CppStream::Read(vecReader, offset, m_dbNodes);
 }
 
 void DbFile::ConsoleDump()
@@ -385,13 +399,12 @@ void DbFile::Merge(const DbFile& other)
     std::vector<int64_t> tokenRemapping;
     std::map<std::string, int64_t> tokenMap;
     {
-        int64_t tokIdx = 1;
+        int64_t tokIdx = 0;
         for (const auto& token : m_dbTokens)
         {
             tokenMap.insert(std::make_pair(token.text, tokIdx++));
         }
 
-        tokenRemapping.push_back(0);
         for (const auto& token : other.m_dbTokens)
         {
             auto itTok = tokenMap.find(token.text);
@@ -412,8 +425,13 @@ void DbFile::Merge(const DbFile& other)
     {
         dbNode.compilingFile = srcFileRemapping[dbNode.compilingFile];
         dbNode.sourceFile = srcFileRemapping[dbNode.sourceFile];
+        int64_t oldToken = dbNode.token;
+        int64_t typeTok = dbNode.typetoken;
         dbNode.token = tokenRemapping[dbNode.token];
         dbNode.typetoken = tokenRemapping[dbNode.typetoken];
+        if (dbNode.token >= m_dbTokens.size() ||
+            dbNode.typetoken >= m_dbTokens.size())
+            __debugbreak();
     }
 
     for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
@@ -442,7 +460,7 @@ void DbFile::Merge(const DbFile& other)
                 size_t hash0 = nodesTreeHash0[nodeCur.referencedIdx];
                 hash_val = HashFunc(&hash0, &hash0 + 1, nodesTreeHash0[idx]);
             }
-            
+
             auto itNode = nodesMap.find(hash_val);
             if (itNode == nodesMap.end())
                 nodesMap.insert(std::make_pair(hash_val, idx));
@@ -486,4 +504,25 @@ void DbFile::Merge(const DbFile& other)
             }
         }
     }
+}
+
+inline std::string tolower(const std::string& src)
+{
+    std::string data = src;
+    std::transform(data.begin(), data.end(), data.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    return data;
+}
+
+size_t DbFile::QueryNodes(const std::string& filename)
+{
+    std::string fnlower = tolower(filename);
+    for (auto& src : m_dbSourceFiles)
+    {
+        if (tolower(src) == fnlower)
+        {
+            return 1;
+        }
+    }
+    return 0;
 }

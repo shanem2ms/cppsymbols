@@ -46,6 +46,7 @@ struct DbNode
 
     size_t GetHashVal(size_t parentHashVal = 2166136261U) const;
 
+    bool operator == (const DbNode& other) const;
     DbNode() {}
     DbNode(const Node &);
 };
@@ -106,5 +107,6 @@ public:
     void Save(const std::string& dbfile);
     void Load(const std::string& dbfile);
     void Merge(const DbFile& other);
+    size_t QueryNodes(const std::string& filename);
     void ConsoleDump();
 };

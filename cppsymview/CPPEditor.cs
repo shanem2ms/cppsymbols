@@ -29,7 +29,7 @@ namespace cppsymview
 
         public string FilePath { get; set; }
         public CPPEngineFile Engine { get; set; }
-        int curFileKey = -1;
+        int srcFileKey;
 
         public event EventHandler<Node> NodeChanged;
 
@@ -37,6 +37,7 @@ namespace cppsymview
         {
             FilePath = path;
             Engine = engine;
+            this.srcFileKey = this.Engine.GetSourceFile(this.FilePath);
             Engine.SelectedNodeChanged += Engine_SelectedNodeChanged;
             this.FontFamily = new FontFamily("Consolas");
             this.FontSize = 14;
@@ -72,6 +73,9 @@ namespace cppsymview
         {
             if (curNodeColorizer != null)
                 this.TextArea.TextView.LineTransformers.Remove(curNodeColorizer);
+            curNodeColorizer = null;
+            if (e == null || e.SourceFile != this.srcFileKey)
+                return;
             curNodeColorizer = new OffsetColorizer();
             curNodeColorizer.StartOffset = (int)e.StartOffset;
             curNodeColorizer.EndOffset = (int)e.EndOffset;
@@ -84,7 +88,7 @@ namespace cppsymview
 
         private void Caret_PositionChanged(object? sender, EventArgs e)
         {
-            Node node = this.Engine.GetNodeFor(this.curFileKey, (uint)this.CaretOffset);
+            Node node = this.Engine.GetNodeFor(this.srcFileKey, (uint)this.CaretOffset);
             if (node != null)
             {
                 node.Expand();
@@ -101,7 +105,6 @@ namespace cppsymview
         public void MakeActive()
         {
             this.Engine.SetCurrentFile(this.FilePath);
-            this.curFileKey = this.Engine.GetSourceFile(this.FilePath);
         }
         void Reload()
         {

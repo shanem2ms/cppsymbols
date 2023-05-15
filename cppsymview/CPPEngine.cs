@@ -41,6 +41,7 @@ namespace cppsymview
 
         Dictionary<CXCursorKind, int> cursorKindCounts;
         Dictionary<CXTypeKind, int> typeKindCounts;
+        public Token []Tokens => curFile.Tokens;
 
         public CXCursorKind CursorFilter { get; set; } = CXCursorKind.None;
         public CXTypeKind TypeFilter { get; set; } = CXTypeKind.None;
@@ -65,7 +66,7 @@ namespace cppsymview
         {
             //string osypath = filename.Replace(srcDir, osyFile);
             //osypath = osypath + ".osy";
-            string osypath = osyFile;
+            string osypath = osyFile;            
             if (File.Exists(osypath))
             {
                 curFile = new OSYFile(osypath);
@@ -147,6 +148,11 @@ namespace cppsymview
             SetTopNodes();
         }
 
+        public void RefreshNodeTree()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopNodes)));
+        }
+
         void SetTopNodes()
         {
             if (nodesArray == null)
@@ -175,7 +181,7 @@ namespace cppsymview
             }
 
             int ct = TopNodes.Count();
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopNodes)));
+            RefreshNodeTree();
         }
 
         public void Query(string querystr)

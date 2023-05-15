@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,7 +20,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using ICSharpCode.AvalonEdit;
 
 namespace cppsymview
@@ -34,13 +34,15 @@ namespace cppsymview
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public CPPEngineFile Engine => engine;
-        public IEnumerable<Node> TopNodes => engine.TopNodes;
-        string root = @"C:\flash";
-        //string root = @"D:\vq\flash";
+        //string root = @"C:\flash";
+        string root = @"D:\vq\flash";
         public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
         ScriptEngine scriptEngine = new ScriptEngine();
         CSEditor scriptTextEditor;
+        public bool ClearOutput { get; set; } = true;
+        string projectDir;
+        string curScriptFile;
 
         public MainWindow()
         {
@@ -50,7 +52,16 @@ namespace cppsymview
             script.Api.WriteLine = WriteOutput;
             folderView.Root = root;
             folderView.OnFileSelected += FolderView_OnFileSelected;
+            
+            DirectoryInfo di = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (di.Name.ToLower() != "cppsymview")
+                di = di.Parent;
+
+            this.projectDir = di.FullName;
+            this.curScriptFile = Path.Combine(projectDir, "Script.cs");
+
             //ConnectTcp();
+            //engine.Init(root, root + @"\build\debugclg\clouds\Particle.cpp.osy");        
             engine.Init(root, root + @"\build\debugclg\flash.osy");
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
@@ -61,7 +72,7 @@ namespace cppsymview
                 CreateEditor(openfile);
             }
 
-            scriptTextEditor = new CSEditor("Script.cs", engine, scriptEngine);
+            scriptTextEditor = new CSEditor(curScriptFile, scriptEngine);
             Editors.Add(scriptTextEditor);
             EditorsCtrl.SelectedItem = scriptTextEditor;
         }
@@ -147,14 +158,10 @@ namespace cppsymview
 
         private void RunScript_Click(object sender, RoutedEventArgs e)
         {
+            if (this.ClearOutput) { OutputConsole.Text = ""; }
             this.scriptTextEditor.Save();
-            Source src = new Source() { code = this.scriptTextEditor.Document.Text, filepath = "Script.cs" };
+            Source src = new Source() { code = this.scriptTextEditor.Document.Text, filepath = curScriptFile };
             this.scriptEngine.Run(new List<Source>() { src }, this.engine);
-        }
-
-        private void ClearOutput_Click(object sender, RoutedEventArgs e)
-        {
-            OutputConsole.Text = "";
         }
     }
 

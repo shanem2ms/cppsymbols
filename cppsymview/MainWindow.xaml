@@ -64,7 +64,7 @@
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal">
             <Button Margin="5" Name="RunScript" Content="Run Script" Click="RunScript_Click"/>
-            <Button Margin="5" Name="ClearOutput" Content="Clear Output" Click="ClearOutput_Click"/>
+            <ToggleButton Margin="5" Content="Clear Output" IsChecked="{Binding Path=ClearOutput,Mode=TwoWay}"/>
         </StackPanel>
         <Grid Grid.Row="1" Background="#202020">
             <Grid.ColumnDefinitions>

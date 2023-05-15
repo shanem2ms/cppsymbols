@@ -76,6 +76,9 @@ int main(int argc, char* argv[])
             DbFile dbMerge;
             dbMerge.Load(mergeFiles[idx]);
             dbFile.Merge(dbMerge);
+            //std::string fname("D:\\vq\\flash\\src\\engine\\clouds\\Particle.h");
+            //size_t count = dbFile.QueryNodes(fname);
+            //std::cout << "count " << count << std::endl;
         }
 
         std::cout << "Writing " << outFile << std::endl;
