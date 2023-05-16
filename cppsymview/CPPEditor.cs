@@ -110,6 +110,7 @@ namespace cppsymview
         {
             CPPName = Path.GetFileName(FilePath);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CPPName"));
+            Document.FileName = this.FilePath;
             Load(this.FilePath);
             //this.Engine.SendSourceCode(Document.Text);
         }

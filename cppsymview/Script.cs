@@ -20,6 +20,7 @@ namespace cppsymview.script
     			string fp = Path.GetFullPath(file);
     			fp = fp.ToLower();
     			if (fp.StartsWith(@"d:\vq\flash\src") &&
+    				fp.Contains("application") &&    			
     				!fp.StartsWith(@"d:\vq\flash\src\engine\thirdparty\imgui"))
     			{
 	    			myFiles.Add(idx, file);

@@ -101,7 +101,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <Rectangle Width="10" Height="10" Fill="BlueViolet" Margin="5"/>
                                 <TextBlock Text="{Binding }" Margin="5"/>
-                                <Button Content="X" Margin="5"/>
+                                <Button Name="CloseBtn" Content="X" Margin="5" Click="CloseBtn_Click"/>
                             </StackPanel>
                         </DataTemplate>
                     </TabControl.ItemTemplate>
@@ -125,14 +125,10 @@
                             <RowDefinition />
                             <RowDefinition />
                         </Grid.RowDefinitions>
-                        <CheckBox Name="CurFileChk"  Foreground="Wheat" Margin="5" IsChecked="True" 
-                              Checked="CurFileChk_Checked" Unchecked="CurFileChk_Checked">Current File Only</CheckBox>
-                        <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="1" Text="CursorType" />
-                        <ComboBox Margin="5,1,5,5" Grid.Row="2" x:Name="CursorTypesCB" ItemsSource="{x:Static local:ClangTypes.CursorKinds}"
-                              SelectionChanged="CursorTypesCB_SelectionChanged"/>
-                        <TextBlock Foreground="Wheat" Margin="5,5,5,1" Grid.Row="3" Text="Kind" />
-                        <ComboBox Margin="5,1,5,5" Grid.Row="4" x:Name="KindCB" ItemsSource="{x:Static local:ClangTypes.TypeKinds}"
-                              SelectionChanged="KindCB_SelectionChanged"/>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox Name="CurFileChk"  Foreground="Wheat" Margin="5" IsChecked="{Binding Path=LiveSwitching, Mode=TwoWay}">Live Switching</CheckBox>
+                            <Button x:Name="GotoNodeBtn" Margin="5" Content="Go To Node" Click="GotoNodeBtn_Click" />
+                        </StackPanel>
                     </Grid>
                     <GridSplitter Grid.Row="1" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5">
@@ -209,7 +205,7 @@
         <GridSplitter Grid.Row="2" Height="5" ResizeDirection="Rows" HorizontalAlignment="Stretch" />
         <Grid Grid.Row="3" >
             <TextBox x:Name="OutputConsole" Background="Black" Foreground="AliceBlue" VerticalScrollBarVisibility="Visible">
-            
+
             </TextBox>
         </Grid>
     </Grid>

@@ -44,6 +44,8 @@ namespace cppsymview
         string projectDir;
         string curScriptFile;
 
+        public bool LiveSwitching { get; set; } = true;
+
         public MainWindow()
         {
             this.DataContext = this;
@@ -65,16 +67,31 @@ namespace cppsymview
             engine.Init(root, root + @"\build\debugclg\flash.osy");
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
-            this.EditorsCtrl.SelectionChanged += EditorsCtrl_SelectionChanged;
 
             foreach (string openfile in settings.Files)
             {
                 CreateEditor(openfile);
             }
+            this.EditorsCtrl.SelectionChanged += EditorsCtrl_SelectionChanged;
 
             scriptTextEditor = new CSEditor(curScriptFile, scriptEngine);
             Editors.Add(scriptTextEditor);
             EditorsCtrl.SelectedItem = scriptTextEditor;
+            Editors.CollectionChanged += Editors_CollectionChanged;
+        }
+
+        private void Editors_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            settings.Files.Clear();
+            foreach (TextEditor editor in Editors)
+            {
+                if (editor is CPPTextEditor)
+                {
+                    CPPTextEditor cppeditor = (CPPTextEditor)editor;
+                    settings.Files.Add(editor.Document.FileName);
+                }
+            }
+            settings.Save();
         }
 
         private void EditorsCtrl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -88,17 +105,15 @@ namespace cppsymview
 
         private void FolderView_OnFileSelected(object? sender, string e)
         {
-            settings.Files.Add(e);
-            settings.Save();
             CreateEditor(e);
         }
 
-        void CreateEditor(string path)
+        CPPTextEditor CreateEditor(string path)
         {
             CPPTextEditor cppTextEditor = new CPPTextEditor(path, engine);
             cppTextEditor.NodeChanged += CppTextEditor_NodeChanged;
             Editors.Add(cppTextEditor);
-            EditorsCtrl.SelectedItem = cppTextEditor;
+            return cppTextEditor;
         }
 
         void WriteOutput(string text)
@@ -124,7 +139,6 @@ namespace cppsymview
         {
         }
 
-
         private void queryBtn_Click(object sender, RoutedEventArgs e)
         {
             if (queryBox.Text.Trim().Length == 0)
@@ -137,13 +151,6 @@ namespace cppsymview
         {
             TreeViewItem tvi = e.OriginalSource as TreeViewItem;
             tvi.BringIntoView();
-        }
-
-        private void CurFileChk_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox cb = (sender as CheckBox);
-            this.engine.CurrentFileOnly = cb.IsChecked??false;
-
         }
 
         private void CursorTypesCB_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -162,6 +169,38 @@ namespace cppsymview
             this.scriptTextEditor.Save();
             Source src = new Source() { code = this.scriptTextEditor.Document.Text, filepath = curScriptFile };
             this.scriptEngine.Run(new List<Source>() { src }, this.engine);
+        }
+
+        //void GotoFileAndLocation()
+
+        TextEditor GetOrMakeTextEditor(string filename)
+        {
+            string srchfile = filename.ToLower();
+            foreach (var editor in Editors)
+            {
+                string editorFile = editor.Document.FileName?.ToLower();
+                if (srchfile == editorFile)
+                    return editor;
+            }
+            return CreateEditor(filename);
+        }
+        private void GotoNodeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Node n = nodesTreeView.SelectedItem as Node;
+            if (n != null)
+            {
+                string filename = engine.GetFileNameFromIdx(n.SourceFile);
+                TextEditor te = GetOrMakeTextEditor(filename);
+                EditorsCtrl.SelectedItem = te;
+                te.ScrollTo((int)n.Line, (int)n.Column);
+            }
+        }
+
+        private void CloseBtn_Click(object sender, RoutedEventArgs e)
+        {
+            TabItem ti = Util.FindParent<TabItem>(sender as DependencyObject);
+            TextEditor te = ti.Content as TextEditor;
+            Editors.Remove(te);
         }
     }
 
@@ -187,4 +226,22 @@ namespace cppsymview
         public Boolean InvertVisibility { get; set; }
     }
 
+    public class Util
+    {
+        public static T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            //get parent item
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+
+            //we've reached the end of the tree
+            if (parentObject == null) return null;
+
+            //check if the parent matches the type we're looking for
+            T parent = parentObject as T;
+            if (parent != null)
+                return parent;
+            else
+                return FindParent<T>(parentObject);
+        }
+    }
 }

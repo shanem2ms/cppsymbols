@@ -63,8 +63,11 @@ std::string CPPSourceFile::FormatPath(std::string filepath)
     if (filepath.empty())
         return std::string();
 
-    std::transform(filepath.begin(), filepath.end(), filepath.begin(), [](unsigned char c) { return std::tolower(c); });
-    return FixPathSlashes(filepath);
+    std::filesystem::path cp = std::filesystem::canonical(filepath);
+
+    std::string cpath = cp.string();
+    std::transform(cpath.begin(), cpath.end(), cpath.begin(), [](unsigned char c) { return std::tolower(c); });
+    return FixPathSlashes(cpath);
 }
 
 std::string CPPSourceFile::FixPathSlashes(std::string filepath)
