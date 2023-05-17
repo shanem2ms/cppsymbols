@@ -29,8 +29,8 @@ public:
     CPPSourceFile(std::string fullPath);
     size_t Hash() const;
 
-    static std::string FormatPath(std::string filepath);
-    static std::string FixPathSlashes(std::string filepath);
+    static std::string FormatPath(const std::string& filepath);
+    static std::string FixPathSlashes(const std::string &filepath);
 };
 
 

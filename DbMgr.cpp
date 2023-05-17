@@ -79,6 +79,7 @@ DbNode::DbNode(const Node& n) :
 {
 
 }
+
 void DbFile::AddNodes(std::vector<Node>& nodes)
 {
     size_t idx = 0;
@@ -94,6 +95,8 @@ void DbFile::AddNodes(std::vector<Node>& nodes)
         t.ReferencedIdx = t.ReferencedIdx;
         m_dbNodes.push_back(DbNode(t));
     }
+
+    RemoveDuplicates();
 }
 
 
@@ -371,6 +374,59 @@ inline void SetNodeHash(std::vector<size_t>& nodeHashes, const std::vector<DbNod
     nodeHashes[nodeIdx] = nodeCur.GetHashVal(parenthash);
 }
 
+void DbFile::RemoveDuplicates()
+{
+    std::map<size_t, int64_t> nodesMap;
+    std::vector<size_t> nodesTreeHash0(m_dbNodes.size());
+    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+    {
+        SetNodeHash(nodesTreeHash0, m_dbNodes, idx);
+    }
+
+    std::vector<DbNode> newNodes;
+    std::vector<int64_t> nodeRemapping(m_dbNodes.size());
+    newNodes.reserve(m_dbNodes.size());
+    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+    {
+        DbNode& nodeCur = m_dbNodes[idx];
+        if (nodeCur.parentNodeIdx != nullnode && nodeCur.parentNodeIdx >= idx)
+            __debugbreak();
+        size_t hash_val = nodesTreeHash0[idx];
+        if (nodeCur.referencedIdx != nullnode)
+        {
+            size_t hash0 = nodesTreeHash0[nodeCur.referencedIdx];
+            hash_val = HashFunc(&hash0, &hash0 + 1, nodesTreeHash0[idx]);
+        }
+
+        auto itNode = nodesMap.find(hash_val);
+        if (itNode == nodesMap.end())
+        {
+            nodesMap.insert(std::make_pair(hash_val, newNodes.size()));
+            nodeRemapping[idx] = newNodes.size();
+            newNodes.push_back(nodeCur);
+        }
+        else
+        {
+            nodeRemapping[idx] = itNode->second;
+        }
+    }
+
+    for (size_t idx = 0; idx < newNodes.size(); ++idx)
+    {
+        DbNode& nodeCur = newNodes[idx];
+        if (nodeCur.parentNodeIdx != nullnode)
+        {
+            size_t remapped = nodeRemapping[nodeCur.parentNodeIdx];
+            if (remapped >= idx)
+                throw;
+            nodeCur.parentNodeIdx = remapped;
+        }
+        if (nodeCur.referencedIdx != nullnode)
+            nodeCur.referencedIdx = nodeRemapping[nodeCur.referencedIdx];
+    }
+    m_dbNodes = newNodes;
+}
+
 void DbFile::Merge(const DbFile& other)
 {
     std::vector<int64_t> srcFileRemapping;
@@ -431,7 +487,7 @@ void DbFile::Merge(const DbFile& other)
         dbNode.typetoken = tokenRemapping[dbNode.typetoken];
         if (dbNode.token >= m_dbTokens.size() ||
             dbNode.typetoken >= m_dbTokens.size())
-            __debugbreak();
+            throw;
     }
 
     for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
@@ -504,6 +560,7 @@ void DbFile::Merge(const DbFile& other)
             }
         }
     }
+    RemoveDuplicates();
 }
 
 inline std::string tolower(const std::string& src)

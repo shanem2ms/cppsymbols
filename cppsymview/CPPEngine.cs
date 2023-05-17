@@ -66,16 +66,16 @@ namespace cppsymview
         {
             //string osypath = filename.Replace(srcDir, osyFile);
             //osypath = osypath + ".osy";
-            string osypath = osyFile;            
+            string osypath = osyFile;
             if (File.Exists(osypath))
             {
                 curFile = new OSYFile(osypath);
 
                 List<Node> nodes = new List<Node>();
-                //nodesArray = new Node[curFile.Nodes.Length];
+                long index = 0;
                 foreach (OSYFile.DbNode dbnode in curFile.Nodes)
                 {
-                    Node node = new Node(this);
+                    Node node = new Node(this, index++);
                     if (dbnode.parentNodeIdx >= 0)
                     {
                         node.parent = nodes[(int)dbnode.parentNodeIdx];
@@ -209,7 +209,7 @@ namespace cppsymview
         {
             if (this.nodesArray == null)
                 return null;
-            Node srchNode = new Node(this) { SourceFile = filenameKey, StartOffset = offset };
+            Node srchNode = new Node(this, 0) { SourceFile = filenameKey, StartOffset = offset };
             int nodeIdx = Array.BinarySearch(this.nodesArray, srchNode);
             if (nodeIdx < 0) nodeIdx = (~nodeIdx) - 1;
             if (nodeIdx < 0 || nodeIdx >= nodesArray.Length)

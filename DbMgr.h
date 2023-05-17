@@ -106,6 +106,7 @@ public:
     void CommitSourceFiles();
     void Save(const std::string& dbfile);
     void Load(const std::string& dbfile);
+    void RemoveDuplicates();
     void Merge(const DbFile& other);
     size_t QueryNodes(const std::string& filename);
     void ConsoleDump();

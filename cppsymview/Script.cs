@@ -19,8 +19,8 @@ namespace cppsymview.script
     		{
     			string fp = Path.GetFullPath(file);
     			fp = fp.ToLower();
-    			if (fp.StartsWith(@"d:\vq\flash\src") &&
-    				fp.Contains("application") &&    			
+    			if (
+    				fp.Contains("application.h") &&
     				!fp.StartsWith(@"d:\vq\flash\src\engine\thirdparty\imgui"))
     			{
 	    			myFiles.Add(idx, file);
@@ -36,8 +36,8 @@ namespace cppsymview.script
     		{
     			if (!myFiles.ContainsKey(node.SourceFile - 1))
     				continue;
-    			if (node.Kind == CXCursorKind.CXXMethod &&
-    				node.TypeKind == CXTypeKind.FunctionProto)
+    			if (node.Kind == CXCursorKind.ClassDecl &&
+    				node.TypeKind == CXTypeKind.Record)
     			{   
     				node.SetEnabled(true, true);
     				sb.Append($"t: {node.Token.Text} {engine.SourceFiles[node.SourceFile-1]}\n");

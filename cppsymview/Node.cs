@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static cppsymview.ClangTypes;
 using System.Windows.Media;
+using System.Runtime.InteropServices;
 
 namespace cppsymview
 {
@@ -15,6 +16,7 @@ namespace cppsymview
         public Node parent;
         public OSYFile.DbNode dbNode;
         public bool enabled = false;
+        public long Index { get; }
         public IEnumerable<Node> Children => allChildren.Where(c => c.enabled);
         public Token? Token { get; set; }
         public Token? TypeToken { get; set; }
@@ -39,9 +41,10 @@ namespace cppsymview
 
         public string FileName => engine.GetFileNameFromIdx(this.SourceFile);
 
-        public Node(CPPEngineFile engine)
+        public Node(CPPEngineFile engine, long index)
         {
             this.engine = engine;
+            this.Index = index;
         }
         public int CompareTo(Node? other)
         {

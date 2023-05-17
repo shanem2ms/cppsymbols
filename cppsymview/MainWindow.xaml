@@ -168,6 +168,7 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -175,23 +176,26 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" Foreground="Black" />
 
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="File" />
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FileName}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Index" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Index}" />
 
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Line" />
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Line}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="File" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding FileName}" />
 
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Column" />
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Column}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Line" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Line}" />
 
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Token" />
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Token.Text}" />
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Column" />
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Column}" />
 
-                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="TypeKind" />
-                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TypeKind}" />
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Token" />
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Token.Text}" />
 
-                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="TypeToken" />
-                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding TypeToken.Text}" />
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="TypeKind" />
+                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding TypeKind}" />
+
+                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="TypeToken" />
+                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding TypeToken.Text}" />
 
 
                                     </Grid>

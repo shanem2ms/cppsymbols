@@ -58,27 +58,32 @@ std::string CPPSourceFile::Name() {
     return std::filesystem::path(FullPath).filename().string();
 }
 
-std::string CPPSourceFile::FormatPath(std::string filepath)
+std::string CPPSourceFile::FormatPath(const std::string &filepath)
 {
     if (filepath.empty())
         return std::string();
-
-    std::filesystem::path cp(filepath);
-
-    std::string cpath = cp.string();
+    
+    std::string cpath = filepath;
     std::transform(cpath.begin(), cpath.end(), cpath.begin(), [](unsigned char c) { return std::tolower(c); });
     return FixPathSlashes(cpath);
 }
 
-std::string CPPSourceFile::FixPathSlashes(std::string filepath)
+std::string CPPSourceFile::FixPathSlashes(const std::string &filepath)
 {
-    std::replace(filepath.begin(), filepath.end(), '/', '\\');
-    size_t idx = filepath.find("\\\\");
-    while (idx != std::string::npos)
+    std::filesystem::path pp(filepath);
+    std::filesystem::path op;
+    for (auto& p : pp)
     {
-        filepath.replace(filepath.begin() + idx, filepath.begin() + idx + 2, "\\");
-        idx = filepath.find("\\\\");
+        if (p == "." || p == "")
+            continue;
+        else if (p == "..")
+        {
+            op = op.parent_path();
+        }
+        else
+            op /= p;
     }
-    return filepath;
+    op.make_preferred();
+    return op.string();
 }
 
