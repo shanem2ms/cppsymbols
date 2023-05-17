@@ -36,6 +36,19 @@ int main(int argc, char* argv[])
     std::string outFile;
     std::string pchFile;
 
+    std::filesystem::path pp("c:\\my\\first\\name\\..\\is\\shane");
+    std::filesystem::path op;
+    for (auto& p : pp)
+    {
+        if (p == ".")
+            continue;
+        else if (p == "..")
+        { }
+        
+        op /= p;
+        std::cout << p << std::endl;
+    }
+
     if (!strcmp(argv[1], "-dump"))
     {
         std::cout << "Reading " << argv[2] << std::endl;
