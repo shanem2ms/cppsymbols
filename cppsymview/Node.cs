@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using static cppsymview.ClangTypes;
 using System.Windows.Media;
 using System.Runtime.InteropServices;
+using Accessibility;
 
 namespace cppsymview
 {
@@ -40,6 +41,42 @@ namespace cppsymview
         public List<Node> allChildren = new List<Node>();
 
         public string FileName => engine.GetFileNameFromIdx(this.SourceFile);
+
+        public enum FindChildResult
+        {
+            eTrue,
+            eFalseTraverse,
+            eFalseNoTraverse,
+            eAbort
+        }
+        public List<Node> FindChildren(Func<Node, FindChildResult> func)
+        {
+            List<Node> nodes = new List<Node>();
+            FindChildrenRec(ref nodes, func);
+            return nodes;
+        }
+
+        bool FindChildrenRec(ref List<Node> nodes, Func<Node, FindChildResult> func)
+        {
+            foreach (var node in this.allChildren)
+            {
+                var result = func(node);
+                switch (result)
+                {
+                    case FindChildResult.eTrue:
+                        nodes.Add(node);
+                        break;
+                    case FindChildResult.eFalseNoTraverse:
+                        break;
+                    case FindChildResult.eFalseTraverse:
+                        if (!node.FindChildrenRec(ref nodes, func)) return false;
+                        break;
+                    case FindChildResult.eAbort:
+                        return false;
+                }
+            }
+            return true;
+        }
 
         public Node(CPPEngineFile engine, long index)
         {

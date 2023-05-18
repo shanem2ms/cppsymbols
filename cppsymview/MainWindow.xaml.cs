@@ -34,8 +34,8 @@ namespace cppsymview
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public CPPEngineFile Engine => engine;
-        string root = @"C:\flash";
-        //string root = @"D:\vq\flash";
+        //string root = @"C:\flash";
+        string root = @"D:\vq\flash";
         public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
         ScriptEngine scriptEngine = new ScriptEngine();
@@ -201,6 +201,16 @@ namespace cppsymview
             TabItem ti = Util.FindParent<TabItem>(sender as DependencyObject);
             TextEditor te = ti.Content as TextEditor;
             Editors.Remove(te);
+        }
+
+        private void RefNodeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Button btn = (Button)(sender);
+            long refNodeIndex = (long)btn.Content;
+            Node node = engine.Nodes[refNodeIndex];
+            node.SetEnabled(true, true);
+            this.engine.RefreshNodeTree();
+            node.Select();
         }
     }
 

@@ -169,14 +169,15 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
 
 int64_t BaseNode::NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitContextPtr vc)
 {
+    CXCursorKind cursorKind = clang_getCursorKind(cursor);
+    if (cursorKind == CXCursorKind::CXCursor_FirstInvalid)
+        return nullnode;
     int64_t nodeIdx = vc->allocNodes.size();
     vc->allocNodes.push_back(Node(nodeIdx));
     Node& node = vc->allocNodes.back();
     node.Key = nodeIdx;
-    node.Kind = clang_getCursorKind(cursor);
+    node.Kind = cursorKind;
     node.CompilingFile = vc->compilingFilePtr;
-    if (node.Kind == CXCursorKind::CXCursor_FirstInvalid)
-        return nullnode;
     CXSourceLocation loc = clang_getCursorLocation(cursor);
     CXFile outfile;
     unsigned int outline, outcol, outoffset;
@@ -224,7 +225,6 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
         std::string fileName = Str(clang_getFileName(file));
         std::string commitName = CPPSourceFile::FormatPath(fileName);
 
-        //vc->dolog = commitName == vc->compiledFile;
         if (vc->dolog)
             vc->LogTree("\nChange File: " + commitName);
 
