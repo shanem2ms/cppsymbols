@@ -184,7 +184,7 @@ namespace cppsymview
             }
             return CreateEditor(filename);
         }
-        private void GotoNodeBtn_Click(object sender, RoutedEventArgs e)
+        private void GotoSrcBtn_Click(object sender, RoutedEventArgs e)
         {
             Node n = nodesTreeView.SelectedItem as Node;
             if (n != null)
