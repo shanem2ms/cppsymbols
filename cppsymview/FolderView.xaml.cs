@@ -56,6 +56,15 @@ namespace cppsymview
             topFolder = new FVFolder(new DirectoryInfo(root));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopItems)));
         }
+
+        private void SearchTb_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextBox tb = (sender as TextBox);
+            if (tb.Text.Length > 3)
+            {
+
+            }
+        }
     }
 
     public enum FVItemType
