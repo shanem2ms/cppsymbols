@@ -23,7 +23,7 @@ namespace cppsymview.script
     			string fp = Path.GetFullPath(file);
     			fp = fp.ToLower();
     			if (
-    				fp.Contains("sphericalprojection.h") &&
+    				fp.Contains("application.h") &&
     				!fp.StartsWith(@"d:\vq\flash\src\engine\thirdparty\imgui"))
     			{
 	    			myFiles.Add(idx, file);

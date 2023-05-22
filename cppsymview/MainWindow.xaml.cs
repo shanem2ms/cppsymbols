@@ -34,8 +34,8 @@ namespace cppsymview
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public CPPEngineFile Engine => engine;
-        //string root = @"C:\flash";
-        string root = @"D:\vq\flash";
+        string root = @"C:\flash";
+        //string root = @"D:\vq\flash";
         public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
         ScriptEngine scriptEngine = new ScriptEngine();
