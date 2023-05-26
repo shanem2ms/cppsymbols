@@ -23,8 +23,8 @@ namespace cppsymview.script
     		{
     			string fp = Path.GetFullPath(file);
     			fp = fp.ToLower();
-    			if (fp.StartsWith(@"d:\vq\flash\src") &&
-    				!fp.StartsWith(@"d:\vq\flash\src\engine\thirdparty\imgui"))
+    			if (fp.StartsWith(@"c:\flash\src") &&
+    				!fp.StartsWith(@"c:\flash\src\engine\thirdparty\imgui"))
     			{
 	    			myFiles.Add(idx, file);
 	    		}

@@ -97,8 +97,15 @@ class Node : public BaseNode
 public:
     std::string tmpTokenString;
     std::string tmpTypeTokenStr;
+    int32_t clangHash;
+    bool isref;
+    bool alive;
 
-    Node(int64_t key) : BaseNode(key) {}
+    Node(int64_t key) : 
+        BaseNode(key), 
+        clangHash(0), 
+        isref(false), 
+        alive(true) {}
 };
 
 inline std::string Str(CXString str)
@@ -163,7 +170,7 @@ public:
     CPPSourceFilePtr compilingFilePtr;
     std::map<CXCursor, int64_t> nodesMap;
     std::vector<Node> allocNodes;
-
+    std::string isolateFile;    
 
     void LogTree(const std::string& log)
     {

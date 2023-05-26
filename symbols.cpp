@@ -12,6 +12,7 @@
 
 class VisitContext;
 typedef VisitContext* VisitContextPtr;
+void InitCx();
 
 inline std::string noquotes(const char* arg)
 {
@@ -35,6 +36,7 @@ int main(int argc, char* argv[])
     std::string srcFile;
     std::string outFile;
     std::string pchFile;
+    bool dolog = false;
 
     if (!strcmp(argv[1], "-dump"))
     {
@@ -119,6 +121,10 @@ int main(int argc, char* argv[])
                     i++;
                     outFile = argv[i];
                     break;
+                case 'L':
+                    dolog = true;
+                    i++;
+                    break;
                 default:
                     misc_args.insert(str);
                     break;
@@ -128,9 +134,14 @@ int main(int argc, char* argv[])
                 misc_args.insert(str);
         }
 
+        if (dolog)
+            InitCx();
+
+        std::filesystem::path p = std::filesystem::absolute(std::filesystem::path(srcFile));
+        srcFile = p.string();
         bool doPch = misc_args.find("-emit-pch") != misc_args.end();
         std::vector<std::string> misc(misc_args.begin(), misc_args.end());
-        Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, misc, doPch, pchFile, "", false);
+        Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, misc, doPch, pchFile, "", dolog);
     }
 
     std::cout << "Complete." << std::endl;

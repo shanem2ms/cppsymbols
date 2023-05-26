@@ -32,6 +32,7 @@ set(Main_Files
 	Node.cpp
 	Precomp.cpp
 	symbols.cpp
+	ClangDefs.cpp
 	TcpServer.cpp
 )
 

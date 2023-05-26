@@ -96,7 +96,6 @@ static inline void trim(std::string& s) {
     rtrim(s);
 }
 
-
 int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     int64_t parentNode, VisitContextPtr vc)
 {
@@ -109,6 +108,8 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     if (node.Kind == CXCursorKind::CXCursor_FirstInvalid ||
         node.Kind == CXCursorKind::CXCursor_NoDeclFound)
         return nullnode;
+    node.clangHash = clang_hashCursor(cursor);
+    node.isref = false;
 
     CXSourceRange range = clang_getCursorExtent(cursor);
     CXSourceLocation srcLoc = clang_getCursorLocation(cursor);
@@ -178,6 +179,8 @@ int64_t BaseNode::NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitCon
     node.Key = nodeIdx;
     node.Kind = cursorKind;
     node.CompilingFile = vc->compilingFilePtr;
+    node.clangHash = clang_hashCursor(cursor);
+    node.isref = true;
     CXSourceLocation loc = clang_getCursorLocation(cursor);
     CXFile outfile;
     unsigned int outline, outcol, outoffset;
@@ -194,16 +197,19 @@ int64_t BaseNode::NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitCon
     return nodeIdx;
 }
 
+extern std::string cxc[CXCursor_OverloadCandidate + 1];
+extern std::string cxt[CXType_Atomic + 1];
+
+
 void BaseNode::LogNodeInfo(VisitContextPtr vc, int64_t nodeIdx, std::string tag)
 {
     Node &node = vc->allocNodes[nodeIdx];
-    size_t depth = vc->curNode != nullptr ? vc->depth : 0;
+    size_t depth = vc->depth;
     std::ostringstream strm;
     strm << std::endl << std::string(depth * 3, ' ') <<
-        tag << " " << node.SourceFile->Name() << " " <<
-        node.Line << " " << node.Column << " " << node.StartOffset <<
-        " " << node.EndOffset << " " << node.Kind << " " << node.TypeKind <<
-        " " << node.tmpTokenString << " " << node.Linkage;
+        tag << " " << (node.SourceFile != nullptr ? node.SourceFile->Name() : "") << " [" <<
+        node.Line << ", " << node.Column << "] " << cxc[node.Kind] << " " << cxt[node.TypeKind] <<
+        " " << node.tmpTokenString << " " << "t:" << node.tmpTypeTokenStr << " " << node.Linkage;
 
     vc->LogTree(strm.str());
 }
@@ -219,18 +225,21 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
     CXSourceLocation loc = clang_getCursorLocation(cursor);
     CXFile file;
     clang_getExpansionLocation(loc, &file, nullptr, nullptr, nullptr);
-
     if (vc->prevFile != file)
     {
         std::string fileName = Str(clang_getFileName(file));
         std::string commitName = CPPSourceFile::FormatPath(fileName);
 
-        if (vc->dolog)
-            vc->LogTree("\nChange File: " + commitName);
+        //if (vc->dolog)
+            //vc->LogTree("\nChange File: " + commitName);
 
         if (!commitName.empty())
         {
             vc->skipthisfile = (vc->pchFiles.find(commitName) != vc->pchFiles.end());
+            if (!vc->isolateFile.empty() && vc->isolateFile != fileName)
+            {
+                vc->skipthisfile = true;
+            }
 
             PrevFilePtr pv = new PrevFile(commitName, nullptr);
             auto itPv = std::find(vc->fileStack.rbegin(), vc->fileStack.rend(), pv);
@@ -254,7 +263,7 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
             {
                 std::ostringstream strm;
                 strm << commitName << ": " << vc->fileStack.size();
-                vc->LogTree(strm.str());
+                //vc->LogTree(strm.str());
             }
         }
         else
@@ -269,7 +278,11 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
     auto itParNode = vc->nodesMap.find(parent);
     int64_t parNodeIdx = itParNode != vc->nodesMap.end() ? itParNode->second : nullnode;
     int64_t nodeIdx = NodeFromCursor(cursor, parNodeIdx, vc);
+    if (vc->dolog && !vc->skipthisfile)
+        LogNodeInfo(vc, nodeIdx, "node");
     vc->allocNodes[nodeIdx].ReferencedIdx = BaseNode::NodeRefFromCursor(clang_getCursorReferenced(cursor), nodeIdx, vc);
+    if (vc->dolog && !vc->skipthisfile && vc->allocNodes[nodeIdx].ReferencedIdx != nullnode)
+        LogNodeInfo(vc, vc->allocNodes[nodeIdx].ReferencedIdx, "noderef");
 
     vc->nodesMap.insert(std::make_pair(cursor, nodeIdx));
    

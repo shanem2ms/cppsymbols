@@ -140,9 +140,10 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     vc->rootDir = rootdir;
     vc->compiledFileF = fname;
     vc->allocNodes.reserve(50000);
-    vc->dbFile = new DbFile();
+    vc->dbFile = new DbFile();    
     vc->compilingFilePtr =
         vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(fname), vc->compiledFileF);
+    //vc->isolateFile = fname;
 
     {
         clang_visitChildren(startCursor, Node::ClangVisitor, vc);
@@ -159,9 +160,62 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         std::cout << error.what();
     }
     
+
+    /// Match refnodes to actual nodes based on clangHash
+    std::map<uint32_t, std::vector<size_t>> nodeHashes;
+    size_t nodeIdx = 0;
+    for (auto& node : vc->allocNodes)
+    {
+        if (!node.isref)
+        {
+            auto itnode = nodeHashes.find(node.clangHash);
+            if (itnode == nodeHashes.end())
+                itnode = nodeHashes.insert(std::make_pair(node.clangHash, std::vector<size_t>())).first;
+            itnode->second.push_back(nodeIdx);
+        }
+        nodeIdx++;
+    }
+    for (auto& node : vc->allocNodes)
+    {
+        if (node.isref)
+        {
+            auto itnode = nodeHashes.find(node.clangHash);
+            if (itnode != nodeHashes.end())
+            {
+                Node& baseNode = vc->allocNodes[itnode->second.front()];
+                node.Key = baseNode.Key;
+                node.alive = false;
+            }            
+        }
+    }
+    for (auto& node : vc->allocNodes)
+    {
+        if (!node.isref)
+        {
+            if (node.ReferencedIdx != nullnode)
+                node.ReferencedIdx = vc->allocNodes[node.ReferencedIdx].Key;
+        }
+    }
+    std::vector<Node> newNodes0;
+    for (auto& node : vc->allocNodes)
+    {
+        if (node.alive)
+        {            
+            node.Key = newNodes0.size(); 
+            newNodes0.push_back(node);
+        }
+    }
+    for (auto node : newNodes0)
+    {
+        if (node.ReferencedIdx != nullnode)
+            node.ReferencedIdx = vc->allocNodes[node.ReferencedIdx].Key;
+        if (node.ParentNodeIdx != nullnode)
+            node.ParentNodeIdx = vc->allocNodes[node.ParentNodeIdx].Key;
+    }
+
     std::vector<Token> tokens;
     std::unordered_map<std::string, size_t> tokenMap;
-    for (Node &node : vc->allocNodes)
+    for (Node &node : newNodes0)
     {
         {
             auto itToken = tokenMap.find(node.tmpTokenString);
@@ -187,10 +241,10 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         }
     }
     int idx = 0;
-    std::vector<Node> newNodes;
-    newNodes.reserve(vc->allocNodes.size());
-    std::vector<int64_t> nodeRemap(vc->allocNodes.size());
-    for (Node& node : vc->allocNodes)
+    std::vector<Node> newNodes1;
+    newNodes1.reserve(newNodes0.size());
+    std::vector<int64_t> nodeRemap(newNodes0.size());
+    for (Node& node : newNodes0)
     {
         if (node.SourceFile == nullptr)
         {
@@ -199,12 +253,12 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         }
         else
         {
-            newNodes.push_back(node);
+            newNodes1.push_back(node);
             nodeRemap[node.Key] = idx;
-            newNodes.back().Key = idx++;
+            newNodes1.back().Key = idx++;
         }
     }
-    for (Node& node : newNodes)
+    for (Node& node : newNodes1)
     {
         if (node.ParentNodeIdx != nullnode)
         {
@@ -224,7 +278,7 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(e->filePath), std::string());
     }
     int64_t tokenOffset = vc->dbFile->AddRows(tokens);
-    for (Node& n : vc->allocNodes)
+    for (Node& n : newNodes1)
     {
         n.token = n.token == nulltoken ? 0 : n.token + tokenOffset;
         n.TypeToken = n.TypeToken == nulltoken ? 0 : n.TypeToken + tokenOffset;
@@ -237,9 +291,9 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     }
     if (errors.size() == 0)
     {
-        vc->dbFile->AddNodes(newNodes);
+        vc->dbFile->AddNodes(newNodes1);
 
-        std::cout << "Nodes: " << newNodes.size() << std::endl;
+        std::cout << "Nodes: " << newNodes1.size() << std::endl;
         std::cout << "Tokens: " << tokens.size() << std::endl;
     }
 
