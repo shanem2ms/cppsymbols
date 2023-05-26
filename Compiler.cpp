@@ -68,6 +68,8 @@ std::vector<uint8_t> Compiler::CompileWithArgs(const std::string& fname,
     return Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, misc, doPch, pchFile, "", false);
 }
 
+void SanityCheckNodes(const std::vector<Node>& nodes);
+
 std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     const std::string &outpath, const std::vector<std::string>& includes,
     const std::vector<std::string>& defines, const std::vector<std::string> &miscArgs,
@@ -160,6 +162,14 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         std::cout << error.what();
     }
     
+    // Setup pointers for remapping
+    for (auto& node : vc->allocNodes)
+    {
+        if (node.ParentNodeIdx != nullnode)
+            node.pParentPtr = &vc->allocNodes[node.ParentNodeIdx];
+        if (node.ReferencedIdx != nullnode)
+            node.pRefPtr = &vc->allocNodes[node.ReferencedIdx];
+    }
 
     /// Match refnodes to actual nodes based on clangHash
     std::map<uint32_t, std::vector<size_t>> nodeHashes;
@@ -182,20 +192,23 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             auto itnode = nodeHashes.find(node.clangHash);
             if (itnode != nodeHashes.end())
             {
-                Node& baseNode = vc->allocNodes[itnode->second.front()];
-                node.Key = baseNode.Key;
+                Node& baseNode = vc->allocNodes[itnode->second.front()];                
                 node.alive = false;
+                node.pRefPtr = &baseNode;
             }            
         }
     }
     for (auto& node : vc->allocNodes)
     {
-        if (!node.isref)
+        if (!node.isref && node.ReferencedIdx != nullnode &&
+            !node.pRefPtr->alive)
         {
-            if (node.ReferencedIdx != nullnode)
-                node.ReferencedIdx = vc->allocNodes[node.ReferencedIdx].Key;
+            if (node.pRefPtr->pRefPtr == nullptr)
+                __debugbreak();
+            node.pRefPtr = node.pRefPtr->pRefPtr;
         }
     }
+
     std::vector<Node> newNodes0;
     for (auto& node : vc->allocNodes)
     {
@@ -205,12 +218,17 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             newNodes0.push_back(node);
         }
     }
-    for (auto node : newNodes0)
+
+    size_t nnidx = 0;
+    for (auto &node : newNodes0)
     {
         if (node.ReferencedIdx != nullnode)
-            node.ReferencedIdx = vc->allocNodes[node.ReferencedIdx].Key;
+            node.ReferencedIdx = node.pRefPtr->Key;
         if (node.ParentNodeIdx != nullnode)
-            node.ParentNodeIdx = vc->allocNodes[node.ParentNodeIdx].Key;
+        {
+            node.ParentNodeIdx = node.pParentPtr->Key;
+        }
+        nnidx++;
     }
 
     std::vector<Token> tokens;
@@ -240,36 +258,7 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             node.TypeToken = itToken->second;
         }
     }
-    int idx = 0;
-    std::vector<Node> newNodes1;
-    newNodes1.reserve(newNodes0.size());
-    std::vector<int64_t> nodeRemap(newNodes0.size());
-    for (Node& node : newNodes0)
-    {
-        if (node.SourceFile == nullptr)
-        {
-            nodeRemap[node.Key] = nullnode;
-            node.Key = nullnode;
-        }
-        else
-        {
-            newNodes1.push_back(node);
-            nodeRemap[node.Key] = idx;
-            newNodes1.back().Key = idx++;
-        }
-    }
-    for (Node& node : newNodes1)
-    {
-        if (node.ParentNodeIdx != nullnode)
-        {
-            node.ParentNodeIdx = nodeRemap[node.ParentNodeIdx];
-        }
-        if (node.ReferencedIdx != nullnode)
-        {
-            node.ReferencedIdx = nodeRemap[node.ReferencedIdx];
-        }
-    }
-
+  
     for (auto& e : errors)
     {
         e->CompiledFile = vc->compilingFilePtr;
@@ -278,7 +267,7 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(e->filePath), std::string());
     }
     int64_t tokenOffset = vc->dbFile->AddRows(tokens);
-    for (Node& n : newNodes1)
+    for (Node& n : newNodes0)
     {
         n.token = n.token == nulltoken ? 0 : n.token + tokenOffset;
         n.TypeToken = n.TypeToken == nulltoken ? 0 : n.TypeToken + tokenOffset;
@@ -289,11 +278,13 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         std::string erromsg = fmt::format("{}: [{}, {}] = {}", error->filePath, error->Line, error->Column, error->Description);
         std::cout << erromsg << std::endl;
     }
+    SanityCheckNodes(newNodes0);
+
     if (errors.size() == 0)
     {
-        vc->dbFile->AddNodes(newNodes1);
+        vc->dbFile->AddNodes(newNodes0);
 
-        std::cout << "Nodes: " << newNodes1.size() << std::endl;
+        std::cout << "Nodes: " << newNodes0.size() << std::endl;
         std::cout << "Tokens: " << tokens.size() << std::endl;
     }
 
@@ -385,4 +376,25 @@ Compiler::Timer::~Timer()
     auto visitTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     float seconds = visitTime.count() / 1000.0f;
     //std::cout << name << ": " << seconds << "s" << std::endl;
+}
+
+
+void SanityCheckNodes(const std::vector<Node>& nodes)
+{
+    size_t idx = 0;
+    for (auto &node: nodes)
+    { 
+        if (node.Key != idx)
+            __debugbreak();
+        if (node.ParentNodeIdx != nullnode &&
+            node.ParentNodeIdx >= nodes.size())
+            __debugbreak();
+        if (node.ParentNodeIdx != nullnode &&
+            node.ParentNodeIdx == node.Key)
+            __debugbreak();
+        if (node.ReferencedIdx != nullnode &&
+            node.ReferencedIdx >= nodes.size())
+            __debugbreak();
+        idx++;
+    }
 }

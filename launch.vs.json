@@ -17,12 +17,12 @@
         //"D:/vq/flash/build/debugclg/clouds/CloudsVis.cpp.osy D:/vq/flash/build/debugclg/clouds/GsParticlePolicy.cpp.osy D:/vq/flash/build/debugclg/clouds/ParticleSystem.cpp.osy D:/vq/flash/build/debugclg/clouds/Particle.cpp.osy D:/vq/flash/build/debugclg/clouds/WxCloudParticle.cpp.osy D:/vq/flash/build/debugclg/clouds/WxCloudGsParticlePolicy.cpp.osy D:/vq/flash/build/debugclg/clouds/WxGsParticlePolicyRQT.cpp.osy D:/vq/flash/build/debugclg/clouds/WxCloudConfiguration.cpp.osy D:/vq/flash/build/debugclg/Hud.cpp.osy D:/vq/flash/build/debugclg/EarthCamera.cpp.osy D:/vq/flash/build/debugclg/Texture.cpp.osy D:/vq/flash/build/debugclg/ui/UIControl.cpp.osy D:/vq/flash/build/debugclg/thirdparty/imgui/imgui.cpp.osy D:/vq/flash/build/debugclg/thirdparty/imgui/TextEditor.cpp.osy D:/vq/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui.cpp.osy D:/vq/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui_draw.cpp.osy D:/vq/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui_widgets.cpp.osy D:/vq/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui_tables.cpp.osy D:/vq/flash/build/debugclg/thirdparty/nanovg/nanovg.cpp.osy D:/vq/flash/build/debugclg/thirdparty/nanovg/nanovg_bgfx.cpp.osy D:/vq/flash/build/debugclg/FlashUI.cpp.osy"
         //"-dump D:/vq/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
 
-        //"-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -emit-pch -x c++-header -P C:/flash/build/debugclg/StdIncludes.h_core.pch -c C:/flash/src/core/StdIncludes.h -o C:/flash/build/debugclg/StdIncludes.h_core.osy"
+        "-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -emit-pch -x c++-header -P C:/flash/build/debugclg/StdIncludes.h_core.pch -c C:/flash/src/core/StdIncludes.h -o C:/flash/build/debugclg/StdIncludes.h_core.osy"
         //"-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -emit-pch -x c++-header -c C:/flash/src/core/StdIncludes.h -P C:/flash/build/debugclg/StdIncludes.h.pch -o C:/flash/build/debugclg/StdIncludes.h.osy"
         //"-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -c C:/flash/src/core/geo/SphericalProjection.cpp -P C:/flash/build/debugclg/StdIncludes.h.pch -o C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
         //"-merge C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy C:/flash/build/debugclg/geo/TileLoc.cpp.osy"
         //"-dump C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
-        "-c ../../Test/test1.cpp -o test.osy"
+        //"-c ../../Test/test1.cpp -o test.osy"
       ]
     }
   ]

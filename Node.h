@@ -100,12 +100,16 @@ public:
     int32_t clangHash;
     bool isref;
     bool alive;
+    Node* pParentPtr;
+    Node* pRefPtr;
 
     Node(int64_t key) : 
         BaseNode(key), 
         clangHash(0), 
         isref(false), 
-        alive(true) {}
+        alive(true),
+        pParentPtr(nullptr), 
+        pRefPtr(nullptr) {}
 };
 
 inline std::string Str(CXString str)

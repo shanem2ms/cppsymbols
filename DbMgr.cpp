@@ -75,7 +75,7 @@ DbNode::DbNode(const Node& n) :
     column(n.Column),
     startOffset(n.StartOffset),
     endOffset(n.EndOffset),
-    sourceFile(n.SourceFile->Key)
+    sourceFile(n.SourceFile != nullptr ? n.SourceFile->Key : nullnode)
 {
 
 }
@@ -85,11 +85,6 @@ void DbFile::AddNodes(std::vector<Node>& nodes)
     size_t idx = 0;
     for (Node& t : nodes)
     {
-        if (t.SourceFile == nullptr)
-        {
-            idx++;
-            continue;
-        }
         t.Key = m_dbNodes.size();
         t.ParentNodeIdx = t.ParentNodeIdx;
         t.ReferencedIdx = t.ReferencedIdx;
