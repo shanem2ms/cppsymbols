@@ -11,18 +11,33 @@ using Accessibility;
 
 namespace cppsymview
 {
+
+    public class CppType
+    {
+        public CppType() { }
+        public Token Token { get; set;}
+        public CppType Next { get; set; }
+        public CXTypeKind Kind { get; set; }
+        public bool Const { get; set; }
+
+        public override string ToString()
+        {
+            return Token.Text;
+        }
+    }
     public class Node : IComparable<Node>, INotifyPropertyChanged
     {
         CPPEngineFile engine;
         public Node parent;
+
+        public Node Parent => parent;
         public OSYFile.DbNode dbNode;
         public bool enabled = false;
         public long Index { get; }
         public IEnumerable<Node> Children => allChildren.Where(c => c.enabled);
         public Token? Token { get; set; }
-        public Token? TypeToken { get; set; }
+        public CppType CppType { get; set; }
         public CXCursorKind Kind { get; set; }
-        public CXTypeKind TypeKind { get; set; }
         public uint Line { get; set; }
         public uint Column { get; set; }
         public uint StartOffset { get; set; }

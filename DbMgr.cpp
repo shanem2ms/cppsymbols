@@ -33,9 +33,8 @@ size_t DbNode::GetHashVal(size_t parentHashVal) const
 bool DbNode::operator == (const DbNode& other) const
 {
     return kind == other.kind &&
-        typeKind == other.typeKind &&
+        typeIdx == other.typeIdx &&
         token == other.token &&
-        typetoken == other.typetoken &&
         line == other.line &&
         column == other.column &&
         startOffset == other.startOffset &&
@@ -68,9 +67,8 @@ DbNode::DbNode(const Node& n) :
     parentNodeIdx(n.ParentNodeIdx),
     referencedIdx(n.ReferencedIdx),
     kind(n.Kind),
-    typeKind(n.TypeKind),
+    typeIdx(n.TypeIdx),
     token(n.token),
-    typetoken(n.TypeToken),
     line(n.Line),
     column(n.Column),
     startOffset(n.StartOffset),
@@ -110,6 +108,18 @@ void DbFile::AddRowsPtr(std::vector<ErrorPtr>& range)
 
 }
 
+int64_t DbFile::AddRows(std::vector<TypeNode>& types)
+{
+    size_t keyIdx = 0;
+    
+    m_dbTypes.reserve(m_dbTypes.size() + types.size());
+    for (TypeNode& typ : types)
+    {
+        m_dbTypes.push_back(DbType(typ.Key, typ.nextIdx, typ.tokenIdx, typ.TypeKind, typ.isConst));
+    }
+    return 0;
+}
+
 int64_t DbFile::AddRows(std::vector<Token>& range)
 {
     size_t keyIdx = 0;
@@ -123,9 +133,11 @@ int64_t DbFile::AddRows(std::vector<Token>& range)
 
 void DbFile::WriteStream(std::vector<uint8_t>& data)
 {
+    static_assert(80 == sizeof(DbNode));
     CppVecStreamWriter vecWriter(data);
     CppStream::Write(vecWriter, m_dbSourceFiles);
     CppStream::Write(vecWriter, m_dbTokens);
+    CppStream::Write(vecWriter, m_dbTypes);
     CppStream::Write(vecWriter, m_dbNodes);
 }
 
@@ -334,23 +346,12 @@ void DbFile::Load(const std::string& dbfile)
     size_t offset = 0;
     offset = CppStream::Read(vecReader, offset, m_dbSourceFiles);
     offset = CppStream::Read(vecReader, offset, m_dbTokens);
+    offset = CppStream::Read(vecReader, offset, m_dbTypes);
     offset = CppStream::Read(vecReader, offset, m_dbNodes);
 }
 
 void DbFile::ConsoleDump()
 {
-    //    std::set<CXCursorKind> cursorKinds;
-    std::set<CXTypeKind> typeKinds;
-    for (const auto& node : m_dbNodes)
-    {
-        //        cursorKinds.insert(node.kind);
-        typeKinds.insert(node.typeKind);
-        if (node.sourceFile == 1)
-        {
-            std::cout << node.line << " " << sCursorKindMap[node.kind] << " "
-                << sTypeKindMap[node.typeKind] << std::endl;
-        }
-    }
 }
 
 inline void SetNodeHash(std::vector<size_t>& nodeHashes, const std::vector<DbNode>& dbNodes, int64_t nodeIdx)
@@ -448,6 +449,8 @@ void DbFile::Merge(const DbFile& other)
     }
 
     std::vector<int64_t> tokenRemapping;
+    std::vector<int64_t> typeRemapping;
+
     std::map<std::string, int64_t> tokenMap;
     {
         int64_t tokIdx = 0;
@@ -471,17 +474,64 @@ void DbFile::Merge(const DbFile& other)
         }
     }
 
+
+    // DbType merging and remapping
+    {
+        std::map<int64_t, int64_t> uidTypeMap;
+        size_t typeIdx = 0;
+        for (auto& ctype : m_dbTypes)
+        {
+            auto ittok = uidTypeMap.find(ctype.Uid());
+            if (ittok != uidTypeMap.end())
+                dbgbreak();
+            uidTypeMap.insert(std::make_pair(ctype.Uid(), typeIdx));
+            typeIdx++;
+        }
+        typeIdx = 0;
+        typeRemapping.resize(other.m_dbTypes.size());
+        for (auto& otype : other.m_dbTypes)
+        {
+            int64_t tokenIdx = tokenRemapping[otype.token];
+            int64_t uid = DbType::UidCalc(otype.kind, tokenIdx);
+            auto itFoundType = uidTypeMap.find(uid);
+            if (itFoundType == uidTypeMap.end())
+            {
+                DbType tn = otype;
+                tn.key = m_dbTypes.size();
+                tn.token = tokenIdx;
+                tn.next = tn.next != nullnode ? typeRemapping[tn.next] : nullnode;
+                uidTypeMap.insert(std::make_pair(uid, tn.key));
+                m_dbTypes.push_back(tn);
+                typeRemapping[typeIdx] = tn.key;
+            }
+            else
+                typeRemapping[typeIdx] = itFoundType->second;
+            typeIdx++;
+        }
+    }
+    
     std::vector<DbNode> otherNodes = other.m_dbNodes;
+    {
+        size_t idx = 0;
+        for (const DbNode& node : otherNodes)
+        {
+            if (node.referencedIdx == idx)
+                __debugbreak();
+            idx++;
+        }
+    }
     for (auto& dbNode : otherNodes)
     {
         dbNode.compilingFile = srcFileRemapping[dbNode.compilingFile];
-        dbNode.sourceFile = srcFileRemapping[dbNode.sourceFile];
+        dbNode.sourceFile = dbNode.sourceFile != nullnode ? 
+            srcFileRemapping[dbNode.sourceFile] : nullnode;
         int64_t oldToken = dbNode.token;
-        int64_t typeTok = dbNode.typetoken;
+        int64_t typeTok = dbNode.typeIdx;
         dbNode.token = tokenRemapping[dbNode.token];
-        dbNode.typetoken = tokenRemapping[dbNode.typetoken];
-        if (dbNode.token >= m_dbTokens.size() ||
-            dbNode.typetoken >= m_dbTokens.size())
+
+        dbNode.typeIdx = dbNode.typeIdx != nullnode ? 
+            typeRemapping[dbNode.typeIdx] : nullnode;
+        if (dbNode.typeIdx >= (int64_t)m_dbTypes.size())
             throw;
     }
 
@@ -529,6 +579,8 @@ void DbFile::Merge(const DbFile& other)
         {
             DbNode& nodeCur = otherNodes[idx];
             size_t hash_val = nodesTreeHash0[idx];
+//            if (idx == 369906)
+                //__debugbreak();
             if (nodeCur.referencedIdx != nullnode)
             {
                 size_t hash0 = nodesTreeHash0[nodeCur.referencedIdx];
@@ -542,7 +594,8 @@ void DbFile::Merge(const DbFile& other)
                 if (newNode.parentNodeIdx != nullnode)
                 {
                     size_t parentHash = nodesTreeHash1[newNode.parentNodeIdx];
-                    newNode.parentNodeIdx = nodesMap[parentHash];
+                    auto itparent = nodesMap.find(parentHash);
+                    newNode.parentNodeIdx = itparent->second;
                 }
                 if (newNode.referencedIdx != nullnode)
                 {
@@ -554,6 +607,13 @@ void DbFile::Merge(const DbFile& other)
                 nodesMap.insert(std::make_pair(hash_val, newIdx));
             }
         }
+    }
+
+    size_t nullnodes = 0;
+    for (DbNode& node : m_dbNodes)
+    {
+        if (node.parentNodeIdx == nullnode)
+            nullnodes++;
     }
     RemoveDuplicates();
 }

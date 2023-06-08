@@ -26,7 +26,8 @@ namespace cppsymview
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string CPPName { get; set; }
-
+        
+        public Brush TabBrush => Brushes.OrangeRed;
         public string FilePath { get; set; }
         int curFileKey = -1;
         public ScriptEngine ScriptEngine { get; set; }
@@ -84,7 +85,7 @@ namespace cppsymview
             List<string> members = null;
             if (e.Text == ".")
             {
-                int spaceOffset = this.Text.LastIndexOfAny(symbolTermChars, this.CaretOffset);
+                int spaceOffset = this.Text.LastIndexOfAny(symbolTermChars, this.CaretOffset-1);
                 int len = this.CaretOffset - spaceOffset - 2;
                 if (len <= 0)
                     return;

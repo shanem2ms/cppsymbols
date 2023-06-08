@@ -40,3 +40,10 @@ class DbFile;
 typedef DbFile* DbFilePtr;
 
 #define CPPEXPORT __declspec(dllexport)
+
+#ifdef _DEBUG
+#define dbgbreak() __debugbreak()
+#else
+#define dbgbreak()
+#endif
+

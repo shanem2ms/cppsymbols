@@ -10,8 +10,22 @@ namespace cppsymview.script
     public class Script
     {
 		StringBuilder sb = new StringBuilder();    
-        HashSet<CXTypeKind> paramTypes = new HashSet<CXTypeKind>();
+        Dictionary<CXTypeKind, int> allParams = new Dictionary<CXTypeKind, int>();
 		Dictionary<long,string> myFiles = new Dictionary<long, string>();
+		HashSet<CXTypeKind> primitives = new HashSet<CXTypeKind>() {
+			CXTypeKind.Float,
+			CXTypeKind.Int,
+			CXTypeKind.UInt,
+			CXTypeKind.Bool,
+			CXTypeKind.Char_S,
+			CXTypeKind.Double,
+			CXTypeKind.ULongLong,
+			CXTypeKind.UChar,
+			CXTypeKind.Enum,
+			CXTypeKind.LongLong,
+			CXTypeKind.Long,
+			CXTypeKind.ULong,
+			CXTypeKind.Record };
 		
         public void Run()
         {                    	
@@ -40,24 +54,48 @@ namespace cppsymview.script
     				continue;
     			
     			if (node.Kind == CXCursorKind.ClassDecl &&
-    				node.TypeKind == CXTypeKind.Record)
+    				node.CppType?.Kind == CXTypeKind.Record)
     			{   
     				GetAllFunctions(node);
     			}
     		}
-    		foreach (var tk in paramTypes)
+    		Api.WriteLine(sb.ToString());    		
+    		Api.Engine.RefreshNodeTree();    		    	
+    		//LogTypes();
+        }
+        
+        void LogTypes()
+        {
+    		var plist = 
+    			allParams.Select(kv => new Tuple<CXTypeKind, int>(kv.Key, kv.Value)).ToList();
+    		plist.Sort((a, b) => b.Item2 - a.Item2);
+    		sb.Clear();
+    		foreach (var kv in plist)
     		{
-    			sb.Append($"{tk}\n");
+    			sb.Append($"{kv.Item1}, {kv.Item2}\n");
     		}
     		Api.WriteLine(sb.ToString());
-    		Api.Engine.RefreshNodeTree();
-        }
+    	}
         
         void LogNodeLocation(Node n)
         {
         	string filename = Api.Engine.SourceFiles[n.SourceFile - 1];
 			sb.Append($"[{n.Line}, {n.Column}]");	
         }
+        
+        CppType GetBaseType(CppType t)
+        {
+        	if (t.Next != null)
+        		return GetBaseType(t.Next);
+        	else
+        		return t;
+        }
+        
+        bool IsPrimitiveType(CppType t)
+        {
+        	return primitives.Contains(GetBaseType(t).Kind);
+        }
+        
         
         void GetAllFunctions(Node classNode)
         {        
@@ -77,6 +115,13 @@ namespace cppsymview.script
 			foreach (Node func in funcs)
 			{
 				func.SetEnabled(true, true);
+				
+				Node returnNode = func.FindChildren((n) => 
+	        	{
+        			return (n.Kind == CXCursorKind.TypeRef) ?
+        				Node.FindChildResult.eTrue : Node.FindChildResult.eFalseTraverse;
+	        	}).FirstOrDefault();
+	        	
 
 	        	List<Node> pars = func.FindChildren((n) => 
 	        	{
@@ -84,16 +129,34 @@ namespace cppsymview.script
         			Node.FindChildResult.eTrue : Node.FindChildResult.eFalseTraverse;
 	        	});
 			
-				sb.Append($"   {classname}::{func.Token.Text}(");
+			
+			    bool supported = true;
+
+				if (returnNode != null && returnNode.CppType != null)
+				{
+					supported &= IsPrimitiveType(returnNode.CppType);
+				}
+
 				foreach (Node p in pars)				
 				{
-					paramTypes.Add(p.TypeKind);
-					if (p.TypeKind == CXTypeKind.LValueReference)
-						sb.Append($"{p.TypeToken.Text} {p.Token.Text}, ");
+					supported &= (p.CppType != null) && IsPrimitiveType(p.CppType);
 				}
-				sb.Append(") ");
-				LogNodeLocation(func);
-				sb.Append("\n");
+				
+				if (supported)
+				{
+					string returntype = returnNode?.CppType?.Token.Text;
+					if (returntype == null) returntype = "void";
+					sb.Append($"   {returntype} {classname}::{func.Token.Text}(");
+					foreach (Node p in pars)				
+					{
+						var paramName = p.CppType.Token.Text;
+						sb.Append($"{paramName} {p.Token.Text}, ");
+					}
+					sb.Append(") ");
+					LogNodeLocation(func);
+					sb.Append("\n");
+					
+				}
 			}
 		}
     }

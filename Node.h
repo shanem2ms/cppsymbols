@@ -21,15 +21,34 @@ typedef VisitContext *VisitContextPtr;
 #define nulltoken (-1)
 struct Token
 {
-    static std::atomic<int64_t> nextKey;
-    static std::atomic<int64_t> numAlloc;
     int64_t Key;
     std::string Text;
 
-    Token(int64_t key) : Key(key) { numAlloc++; }
-    ~Token() { numAlloc--; }
+    Token(int64_t key) : Key(key) { }
+    ~Token() {  }
 };
 #define nullnode (-1)
+
+class TypeNode
+{
+public:
+    int64_t Key;
+    CXTypeKind TypeKind;
+    std::string tokenStr;
+    int64_t tokenIdx;
+    bool isConst;
+    TypeNode* pNext;
+    int64_t nextIdx;
+    TypeNode() :
+        TypeKind(CXType_Invalid),
+        Key(nullnode),
+        pNext(nullptr),
+        isConst(false),
+        nextIdx(nullnode)
+    {}
+};
+
+std::ostream& operator<<(std::ostream& os, TypeNode const& m);
 
 class BaseNode
 {
@@ -48,11 +67,8 @@ public:
     unsigned int EndOffset;
 
     CXCursorKind Kind;
-    CXTypeKind TypeKind;
+    int64_t TypeIdx;
     CXLinkageKind Linkage;
-    static std::atomic<int64_t> nextKey;
-    static std::atomic<int64_t> numAlloc;
-
 public:
     BaseNode(int64_t key);
     ~BaseNode();
@@ -89,19 +105,22 @@ public:
         VisitContextPtr vc);
     static int64_t NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitContextPtr vc);
     static void LogNodeInfo(VisitContextPtr vc, int64_t node, std::string tag);
+    static void LogTypeInfo(VisitContextPtr vc, std::ostringstream& strm, TypeNode *ptype);
     static CXChildVisitResult ClangVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
+    static TypeNode* TypeFromCxType(CXType cxtype, VisitContextPtr vc);
+    static TypeNode *TypeFromCursor(CXCursor cursor, VisitContextPtr vc);
 };
 
 class Node : public BaseNode
 {
 public:
     std::string tmpTokenString;
-    std::string tmpTypeTokenStr;
     int32_t clangHash;
     bool isref;
     bool alive;
     Node* pParentPtr;
     Node* pRefPtr;
+    TypeNode* pTypePtr;
 
     Node(int64_t key) : 
         BaseNode(key), 
@@ -109,7 +128,8 @@ public:
         isref(false), 
         alive(true),
         pParentPtr(nullptr), 
-        pRefPtr(nullptr) {}
+        pRefPtr(nullptr),
+        pTypePtr(nullptr) {}
 };
 
 inline std::string Str(CXString str)
@@ -163,6 +183,7 @@ public:
     std::set<std::string> newFiles;
     std::set<std::string> pchFiles;
     bool dolog = false;
+    bool logthisfile = false;
     bool skipthisfile = false;
     std::string logTree;
     int depth = 0;
@@ -174,7 +195,8 @@ public:
     CPPSourceFilePtr compilingFilePtr;
     std::map<CXCursor, int64_t> nodesMap;
     std::vector<Node> allocNodes;
-    std::string isolateFile;    
+    std::string isolateFile;
+    std::string logFilterFile;
 
     void LogTree(const std::string& log)
     {

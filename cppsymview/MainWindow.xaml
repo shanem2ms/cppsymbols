@@ -85,8 +85,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal">
             <Button Margin="5" Name="RunScript" Content="Run Script" Click="RunScript_Click"/>
@@ -94,9 +92,9 @@
         </StackPanel>
         <Grid Grid.Row="1" Background="#202020">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -106,15 +104,14 @@
             <Grid Grid.Column="0"/>
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal">
-                </StackPanel>
-                <TabControl Grid.Row="1" x:Name="EditorsCtrl" ItemsSource="{Binding Editors}">
+                <TabControl Grid.Row="0" x:Name="EditorsCtrl" ItemsSource="{Binding Editors}">
                     <TabControl.ItemContainerStyle>
                         <Style TargetType="{x:Type TabItem}">
-                            <Setter Property="Header" Value="{Binding Path=CPPName}" />
+                            <Setter Property="Header" Value="{Binding }" />
                         </Style>
                     </TabControl.ItemContainerStyle>
                     <TabControl.ContentTemplate>
@@ -125,13 +122,18 @@
                     <TabControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <Rectangle Width="10" Height="10" Fill="BlueViolet" Margin="5"/>
-                                <TextBlock Text="{Binding }" Margin="5"/>
+                                <Rectangle Width="10" Height="10" Fill="{Binding Path=TabBrush}" Margin="5"/>
+                                <TextBlock Text="{Binding Path=CPPName}" Margin="5"/>
                                 <Button Name="CloseBtn" Content="X" Margin="5" Click="CloseBtn_Click"/>
                             </StackPanel>
                         </DataTemplate>
                     </TabControl.ItemTemplate>
                 </TabControl>
+                <GridSplitter Grid.Row="1" Height="5" ResizeDirection="Rows" HorizontalAlignment="Stretch" />
+                <Grid Grid.Row="2" >
+                    <TextBox x:Name="OutputConsole" Background="Black" Foreground="AliceBlue" VerticalScrollBarVisibility="Visible">
+                    </TextBox>
+                </Grid>
             </Grid>
             <Grid Grid.Column="4">
                 <Grid>
@@ -139,7 +141,9 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="3*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="3*" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
@@ -181,66 +185,122 @@
                     <ListView Grid.Row="3" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     <GridSplitter Grid.Row="4" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
-                    <Grid Grid.Row="5">
-                        <ContentControl Foreground="AliceBlue" Content="{Binding ElementName=nodesTreeView, Path=SelectedItem}" >
-                            <ContentControl.ContentTemplate>
-                                <DataTemplate DataType="{x:Type local:Node}">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" Foreground="Black" />
+                    <Grid Grid.Row="5" Margin="0,10,2,0" Grid.RowSpan="2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0"  Orientation="Horizontal" >
+                                <Button Name="NodeBkBtn" Content="Back" Margin="5,0" Click="NodeBkBtn_Click" IsEnabled="{Binding NodeBkEnabled}"/>
+                                <Button Name="NodeFwdBtn" Content="Fwd" Margin="5,0" Click="NodeFwdBtn_Click" IsEnabled="{Binding NodeFwdEnabled}"/>
+                                <TextBlock Text="NodeId" Foreground="White" Margin="10,0,5,0"/>
+                                <TextBox x:Name="NodeIdTb" Width="150"/>
+                                <Button Name="GoNodeBtn" Content="Go" Click="GoNodeBtn_Click" />
+                            </StackPanel>
+                            <ContentControl Grid.Row="1" Foreground="AliceBlue" Content="{Binding CurrentNode}" >
+                                <ContentControl.ContentTemplate>
+                                    <DataTemplate DataType="{x:Type local:Node}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" Foreground="Black" />
 
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Index" />
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Index}" />
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Index" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Index}" />
 
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="File" />
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding FileName}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="File" />
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding FileName}" />
 
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Line" />
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Line}" />
+                                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Line" />
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Line}" />
 
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Column" />
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Column}" />
+                                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Column" />
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Column}" />
 
-                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Token" />
-                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Token.Text}" />
+                                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Token" />
+                                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Token.Text}" />
 
-                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="TypeKind" />
-                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding TypeKind}" />
+                                            <TextBlock Grid.Row="6" Grid.Column="0" Text="TypeKind" />
+                                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding CppType.Kind}" />
 
-                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="TypeToken" />
-                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding TypeToken.Text}" />
+                                            <TextBlock Grid.Row="7" Grid.Column="0" Text="TypeToken" />
+                                            <Button Grid.Row="7" Grid.Column="1" Name="TypeTknBtn" Style="{StaticResource LinkButton}" Content="{Binding CppType}"
+                                                Click="TypeTknBtn_Click" />
 
-                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="RefNode" />
-                                        <Button Name="RefNodeBtn" Grid.Row="8" Grid.Column="1" Style="{StaticResource LinkButton}" Content="{Binding RefNode.Index}"
+                                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Parent" />
+                                            <Button Grid.Row="8" Grid.Column="1" Name="ParentBtn" Style="{StaticResource LinkButton}" Content="{Binding Parent.Index}"
+                                                Click="ParentBtn_Click" />
+
+                                            <TextBlock Grid.Row="9" Grid.Column="0" Text="RefNode" />
+                                            <Button Grid.Row="9" Grid.Column="1" Name="RefNodeBtn" Style="{StaticResource LinkButton}" Content="{Binding RefNode.Index}"
                                                 Click="RefNodeBtn_Click"/>
 
-                                    </Grid>
-                                </DataTemplate>
-                            </ContentControl.ContentTemplate>
-                        </ContentControl>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ContentControl.ContentTemplate>
+                            </ContentControl>
+                        </Grid>
+                    </Grid>
+                    <GridSplitter Grid.Row="6" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />
+                    <Grid Grid.Row="7">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0"  Orientation="Horizontal" >
+                                <TextBlock Text="TypeName" Foreground="White" Margin="10,0,5,0"/>
+                                <TextBox x:Name="TypeNameTb" Width="150"/>
+                                <Button Name="GoTypeBtn" Content="Go" Click="GoTypeBtn_Click" />
+                            </StackPanel>
+                            <ContentControl Grid.Row="1" Foreground="AliceBlue" Content="{Binding CurrentType}" >
+                                <ContentControl.ContentTemplate>
+                                    <DataTemplate DataType="{x:Type local:CppType}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" />
+
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Type" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Token.Text}" />
+
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Const" />
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Const}" />
+
+                                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Next" />
+                                            <Button Grid.Row="3" Grid.Column="1" Name="NextBtn" Style="{StaticResource LinkButton}" Content="{Binding Next}"
+                                                Click="NextBtn_Click" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ContentControl.ContentTemplate>
+                            </ContentControl>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Grid>
-        </Grid>
-        <GridSplitter Grid.Row="2" Height="5" ResizeDirection="Rows" HorizontalAlignment="Stretch" />
-        <Grid Grid.Row="3" >
-            <TextBox x:Name="OutputConsole" Background="Black" Foreground="AliceBlue" VerticalScrollBarVisibility="Visible">
-
-            </TextBox>
         </Grid>
     </Grid>
 </Window>

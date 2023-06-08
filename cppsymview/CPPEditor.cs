@@ -27,6 +27,7 @@ namespace cppsymview
 
         public string CPPName { get; set; }
 
+        public Brush TabBrush => Brushes.Aqua;
         public string FilePath { get; set; }
         public CPPEngineFile Engine { get; set; }
         int srcFileKey;

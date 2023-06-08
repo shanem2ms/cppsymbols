@@ -20,7 +20,7 @@
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal">
             <TextBlock Text="Search" Foreground="AliceBlue" Margin="5"/>
-            <ComboBox x:Name="SearchTb" Width="500" IsEditable="True" />
+            <ComboBox x:Name="SearchTb" Width="100" IsEditable="True" />
         </StackPanel>
         <TreeView Background="#00000000" Foreground="AliceBlue" Grid.Row="1" x:Name="FoldersTV" ItemsSource="{Binding TopItems}" />
     </Grid>

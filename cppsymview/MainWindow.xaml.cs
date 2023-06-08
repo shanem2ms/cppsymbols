@@ -20,6 +20,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using System.Xml.Linq;
 using ICSharpCode.AvalonEdit;
 
 namespace cppsymview
@@ -43,6 +44,16 @@ namespace cppsymview
         public bool ClearOutput { get; set; } = true;
         string projectDir;
         string curScriptFile;
+
+
+        public Node CurrentNode { get; set; } = null;
+
+        public CppType CurrentType { get; set; } = null;
+
+        public List<Node> NodeBkStack { get; } = new List<Node>();
+        public bool NodeBkEnabled => NodeBkStack.Count() > 0;
+        public List<Node> NodeFwdStack { get; } = new List<Node>();
+        public bool NodeFwdEnabled => NodeFwdStack.Count() > 0;
 
         public bool LiveSwitching { get; set; } = true;
 
@@ -132,9 +143,78 @@ namespace cppsymview
 
         private void NodesTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
+            SetCurrentNode((Node)(e.NewValue));
             this.engine.NotifySelectedNodeChanged((Node)e.NewValue);
         }
 
+        void SetCurrentNode(Node node)
+        {
+            if (CurrentNode != null)
+            {
+                NodeBkStack.Add(CurrentNode);
+            }
+            NodeFwdStack.Clear();
+            CurrentNode = node;            
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentNode)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NodeBkEnabled)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NodeFwdEnabled)));
+        }
+
+        private void ParentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Button btn = (Button)(sender);
+            if (btn.Content == null)
+                return;
+            long parentNodeIndex = (long)btn.Content;
+            Node node = engine.Nodes[parentNodeIndex];
+            SetCurrentNode(node);
+        }
+        private void RefNodeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Button btn = (Button)(sender);
+            if (btn.Content == null)
+                return;
+            long refNodeIndex = (long)btn.Content;
+            Node node = engine.Nodes[refNodeIndex];
+            node.SetEnabled(true, true);
+            this.engine.RefreshNodeTree();
+            node.Select();
+        }
+
+        private void NodeBkBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNode != null)
+            {
+                NodeFwdStack.Add(CurrentNode);
+            }
+            CurrentNode = NodeBkStack.LastOrDefault();
+            NodeBkStack.Remove(CurrentNode);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentNode)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NodeBkEnabled)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NodeFwdEnabled)));
+        }
+
+        private void NodeFwdBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNode != null)
+            {
+                NodeBkStack.Add(CurrentNode);
+            }
+            CurrentNode = NodeFwdStack.LastOrDefault();
+            NodeFwdStack.Remove(CurrentNode);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentNode)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NodeBkEnabled)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NodeFwdEnabled)));
+        }
+
+        private void GoNodeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            uint nodeId = 0;
+            if (uint.TryParse(NodeIdTb.Text, out nodeId) && nodeId < Engine.Nodes.Length)
+            {
+                SetCurrentNode(Engine.Nodes[nodeId]);
+            }
+        }
         private void CppTextEditor_NodeChanged(object? sender, Node e)
         {
         }
@@ -171,8 +251,6 @@ namespace cppsymview
             this.scriptEngine.Run(new List<Source>() { src }, this.engine);
         }
 
-        //void GotoFileAndLocation()
-
         TextEditor GetOrMakeTextEditor(string filename)
         {
             string srchfile = filename.ToLower();
@@ -203,14 +281,29 @@ namespace cppsymview
             Editors.Remove(te);
         }
 
-        private void RefNodeBtn_Click(object sender, RoutedEventArgs e)
+        private void GoTypeBtn_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void TypeTknBtn_Click(object sender, RoutedEventArgs e)
         {
             Button btn = (Button)(sender);
-            long refNodeIndex = (long)btn.Content;
-            Node node = engine.Nodes[refNodeIndex];
-            node.SetEnabled(true, true);
-            this.engine.RefreshNodeTree();
-            node.Select();
+            if (btn.Content == null)
+                return;
+            CppType type = (CppType)btn.Content;
+            CurrentType = type;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentType)));
+        }
+
+        private void NextBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Button btn = (Button)(sender);
+            if (btn.Content == null)
+                return;
+            CppType type = (CppType)btn.Content;
+            CurrentType = type;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentType)));
         }
     }
 

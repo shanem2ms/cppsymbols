@@ -6,6 +6,7 @@
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
 #include <unordered_map>
+#include <functional>
 
 Compiler *Compiler::m_sInstance = nullptr;
 
@@ -17,7 +18,7 @@ Compiler *Compiler::Inst()
 }
 
 std::vector<uint8_t> Compiler::CompileWithArgs(const std::string& fname,
-    const std::vector<std::string>& args, bool dolog)
+    const std::vector<std::string>& args, int loggingFlags)
 {
     std::vector<std::string> includeFiles;
     std::vector<std::string> defines;
@@ -73,13 +74,13 @@ void SanityCheckNodes(const std::vector<Node>& nodes);
 std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     const std::string &outpath, const std::vector<std::string>& includes,
     const std::vector<std::string>& defines, const std::vector<std::string> &miscArgs,
-    bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
+    bool buildPch, const std::string& pchfile, const std::string& rootdir, int loggingFlags)
 {    
     ProjectCache projectCache;
     std::vector<std::string> clgargs =
         GenerateCompileArgs(fname, outpath, includes, defines,
             miscArgs,
-            projectCache, buildPch, pchfile, rootdir, dolog);
+            projectCache, buildPch, pchfile, rootdir, loggingFlags);
   
     CXUnsavedFile unsavedFile;
     CXTranslationUnit translationUnit;
@@ -102,6 +103,8 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         return std::vector<uint8_t>();
     }    
 
+    bool dolog = (loggingFlags & 1) != 0;
+    bool doIsolate = (loggingFlags & 2) != 0;
     unsigned int numDiagnostics = clang_getNumDiagnostics(translationUnit);
     std::vector<ErrorPtr> errors;
     unsigned int defaultDiag = clang_defaultDiagnosticDisplayOptions();
@@ -139,13 +142,15 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     VisitContext* vc = new VisitContext();
     vc->pchFiles = std::set<std::string>();
     vc->dolog = dolog;
+    vc->logthisfile = false;
     vc->rootDir = rootdir;
     vc->compiledFileF = fname;
     vc->allocNodes.reserve(50000);
     vc->dbFile = new DbFile();    
+    vc->isolateFile = doIsolate ? fname : std::string();
     vc->compilingFilePtr =
         vc->dbFile->GetOrInsertFile(CPPSourceFile::FormatPath(fname), vc->compiledFileF);
-    //vc->isolateFile = fname;
+    vc->logFilterFile = fname;
 
     {
         clang_visitChildren(startCursor, Node::ClangVisitor, vc);
@@ -165,6 +170,8 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     // Setup pointers for remapping
     for (auto& node : vc->allocNodes)
     {
+        if (node.ReferencedIdx == node.Key)
+            dbgbreak();
         if (node.ParentNodeIdx != nullnode)
             node.pParentPtr = &vc->allocNodes[node.ParentNodeIdx];
         if (node.ReferencedIdx != nullnode)
@@ -204,8 +211,14 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
             !node.pRefPtr->alive)
         {
             if (node.pRefPtr->pRefPtr == nullptr)
-                __debugbreak();
-            node.pRefPtr = node.pRefPtr->pRefPtr;
+                dbgbreak();
+            if (node.pRefPtr->pRefPtr != &node)
+                node.pRefPtr = node.pRefPtr->pRefPtr;
+            else
+            {
+                node.ReferencedIdx = nullnode;
+                node.pRefPtr = nullptr;
+            }
         }
     }
 
@@ -233,30 +246,49 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
 
     std::vector<Token> tokens;
     std::unordered_map<std::string, size_t> tokenMap;
+    auto addToken = [&tokens, &tokenMap](const std::string tokenStr)
+    {
+        auto itToken = tokenMap.find(tokenStr);
+        if (itToken == tokenMap.end())
+        {
+            size_t tokenKey = tokens.size();
+            itToken = tokenMap.insert(std::make_pair(tokenStr, tokenKey)).first;
+            tokens.push_back(Token(tokenKey));
+            tokens.back().Text = tokenStr;
+        }
+        return itToken->second;
+    };
+
+    std::unordered_map<size_t, size_t> typesMap;
+    std::vector<TypeNode> typeNodes;
+
+    std::function<int64_t(TypeNode* tn)> addType;
+    addType = [&typeNodes, &typesMap, &addType, &addToken](TypeNode* tn) -> int64_t {
+        if (tn == nullptr || tn->TypeKind == CXType_Invalid)
+            return nullnode;
+
+        tn->tokenIdx = addToken(tn->tokenStr);
+        auto itType = typesMap.find(tn->tokenIdx);
+        if (itType == typesMap.end())
+        {
+            TypeNode typn;
+            typn.nextIdx = addType(tn->pNext);
+            typn.tokenIdx = tn->tokenIdx;
+            typn.Key = typeNodes.size();
+            typn.TypeKind = tn->TypeKind;
+            typn.isConst = tn->isConst;
+            itType = typesMap.insert(std::make_pair(tn->tokenIdx, typn.Key)).first;
+            typeNodes.push_back(typn);
+            tn->Key = typn.Key;
+        }
+
+        return itType->second;
+    };
+
     for (Node &node : newNodes0)
     {
-        {
-            auto itToken = tokenMap.find(node.tmpTokenString);
-            if (itToken == tokenMap.end())
-            {
-                size_t tokenKey = tokens.size();
-                itToken = tokenMap.insert(std::make_pair(node.tmpTokenString, tokenKey)).first;
-                tokens.push_back(Token(tokenKey));
-                tokens.back().Text = node.tmpTokenString;
-            }
-            node.token = itToken->second;
-        }
-        {
-            auto itToken = tokenMap.find(node.tmpTypeTokenStr);
-            if (itToken == tokenMap.end())
-            {
-                size_t tokenKey = tokens.size();
-                itToken = tokenMap.insert(std::make_pair(node.tmpTypeTokenStr, tokenKey)).first;
-                tokens.push_back(Token(tokenKey));
-                tokens.back().Text = node.tmpTypeTokenStr;
-            }
-            node.TypeToken = itToken->second;
-        }
+        node.token = addToken(node.tmpTokenString);
+        node.TypeIdx = addType(node.pTypePtr);
     }
   
     for (auto& e : errors)
@@ -272,6 +304,8 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         n.token = n.token == nulltoken ? 0 : n.token + tokenOffset;
         n.TypeToken = n.TypeToken == nulltoken ? 0 : n.TypeToken + tokenOffset;
     }
+
+    vc->dbFile->AddRows(typeNodes);
     vc->dbFile->AddRowsPtr(errors);
     for (auto& error : errors)
     {
@@ -311,7 +345,7 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
 std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
     const std::string& outpath, const std::vector<std::string>& includes,
     const std::vector<std::string>& defines, const std::vector<std::string>& miscArgs,
-    ProjectCache& pc, bool buildPch, const std::string& pchfile, const std::string& rootdir, bool dolog)
+    ProjectCache& pc, bool buildPch, const std::string& pchfile, const std::string& rootdir, int loggingFlags)
 {
     std::cout << "Compiling " << fname << std::endl;
 
@@ -321,11 +355,12 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
     vcincludes.insert(vcincludes.end(), includes.begin(), includes.end());
 
     std::vector<std::string> clgargs = {
+                "-O0",
+                /*
                 "-dI",
-                "--no-warnings",
                 "-g2",
                 "-Wall",
-                "-O0",
+                "--no-warnings",
                 "-fno-strict-aliasing",
                 "-fno-omit-frame-pointer",
                 "-fexceptions",
@@ -333,10 +368,10 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
                 "-fno-short-enums",
                 "-fms-compatibility",
                 "-fms-extensions",
-                "-fno-delayed-template-parsing",
-                "-fsyntax-only",
+                //"-fno-delayed-template-parsing",
+                //"-fsyntax-only",
                 "-Wno-invalid-token-paste",
-                "-Wno-c++11-narrowing" };
+                "-Wno-c++11-narrowing" */};
 
     clgargs.insert(clgargs.end(), miscArgs.begin(), miscArgs.end());
     for (auto define : defines)
@@ -385,16 +420,16 @@ void SanityCheckNodes(const std::vector<Node>& nodes)
     for (auto &node: nodes)
     { 
         if (node.Key != idx)
-            __debugbreak();
+            dbgbreak();
         if (node.ParentNodeIdx != nullnode &&
             node.ParentNodeIdx >= nodes.size())
-            __debugbreak();
+            dbgbreak();
         if (node.ParentNodeIdx != nullnode &&
             node.ParentNodeIdx == node.Key)
-            __debugbreak();
+            dbgbreak();
         if (node.ReferencedIdx != nullnode &&
             node.ReferencedIdx >= nodes.size())
-            __debugbreak();
+            dbgbreak();
         idx++;
     }
 }

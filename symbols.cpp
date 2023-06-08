@@ -37,6 +37,7 @@ int main(int argc, char* argv[])
     std::string outFile;
     std::string pchFile;
     bool dolog = false;
+    uint32_t loggingFlags = 0;
 
     if (!strcmp(argv[1], "-dump"))
     {
@@ -122,7 +123,8 @@ int main(int argc, char* argv[])
                     outFile = argv[i];
                     break;
                 case 'L':
-                    dolog = true;
+                    i++;
+                    loggingFlags = atoi(argv[i]);
                     i++;
                     break;
                 default:
@@ -134,16 +136,15 @@ int main(int argc, char* argv[])
                 misc_args.insert(str);
         }
 
-        if (dolog)
+        if (loggingFlags != 0)
             InitCx();
 
         std::filesystem::path p = std::filesystem::absolute(std::filesystem::path(srcFile));
         srcFile = p.string();
         bool doPch = misc_args.find("-emit-pch") != misc_args.end();
         std::vector<std::string> misc(misc_args.begin(), misc_args.end());
-        Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, misc, doPch, pchFile, "", dolog);
+        Compiler::Inst()->Compile(srcFile, outFile, includeFiles, defines, misc, doPch, pchFile, "", loggingFlags);
     }
 
     std::cout << "Complete." << std::endl;
 }
-

@@ -3,11 +3,6 @@
 #include "DbMgr.h"
 #include "Node.h"
 
-std::atomic<int64_t> BaseNode::nextKey(1);
-std::atomic<int64_t> BaseNode::numAlloc(0); 
-std::atomic<int64_t> Token::nextKey(1);
-std::atomic<int64_t> Token::numAlloc(0);
-
 
 BaseNode::BaseNode(int64_t key) :
     Linkage(CXLinkageKind::CXLinkage_Invalid),
@@ -15,7 +10,7 @@ BaseNode::BaseNode(int64_t key) :
     ParentNodeIdx(nullnode),
     ReferencedIdx(nullnode),
     Kind(CXCursorKind::CXCursor_FirstInvalid),
-    TypeKind(CXTypeKind::CXType_Invalid),
+    TypeIdx(nullnode),
     token(nulltoken),
     TypeToken(nulltoken),
     Line(0),
@@ -24,7 +19,6 @@ BaseNode::BaseNode(int64_t key) :
     EndOffset(0),
     SourceFile(nullptr)
 {
-    numAlloc++;
 }
 
 
@@ -146,16 +140,13 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
         offset = defoffset;
     }
 
-    CXType cxtype = clang_getCursorType(cursor);
-    node.TypeKind = cxtype.kind;
 
     std::string tokenStr = Str(clang_getCursorSpelling(cursor));
     trim(tokenStr);
 
+    node.pTypePtr = TypeFromCursor(cursor, vc);
+    //node.ty
     node.tmpTokenString = tokenStr;
-    std::string typeToken = Str(clang_getTypeSpelling(cxtype));
-    trim(typeToken);
-    node.tmpTypeTokenStr = typeToken;
     node.ParentNodeIdx = parentNode;
     node.Line = line;
     node.StartOffset = offset;
@@ -197,8 +188,67 @@ int64_t BaseNode::NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitCon
     return nodeIdx;
 }
 
+TypeNode* BaseNode::TypeFromCursor(CXCursor cursor, VisitContextPtr vc)
+{
+    CXType cxtype = clang_getCursorType(cursor);
+    return TypeFromCxType(cxtype, vc);
+}
+
+TypeNode* BaseNode::TypeFromCxType(CXType cxtype, VisitContextPtr vc)
+{
+    TypeNode* tn = new TypeNode();
+    tn->TypeKind = cxtype.kind;
+    tn->tokenStr = Str(clang_getTypeSpelling(cxtype));
+    tn->isConst = clang_isConstQualifiedType(cxtype);
+    trim(tn->tokenStr);
+
+    if (cxtype.kind == CXType_Pointer)
+    {
+        cxtype = clang_getPointeeType(cxtype);
+        tn->pNext = TypeFromCxType(cxtype, vc);
+    }
+    else if (cxtype.kind == CXType_LValueReference)
+    {
+        cxtype = clang_getNonReferenceType(cxtype);
+        tn->pNext = TypeFromCxType(cxtype, vc);
+    }
+    else if (cxtype.kind == CXType_Elaborated)
+    {
+        cxtype = clang_Type_getNamedType(cxtype);
+        tn->pNext = TypeFromCxType(cxtype, vc);
+    }
+    else if (cxtype.kind == CXType_Typedef)
+    {
+        CXCursor c = clang_getTypeDeclaration(cxtype);
+        cxtype = clang_getTypedefDeclUnderlyingType(c);
+        tn->pNext = TypeFromCxType(cxtype, vc);
+    }
+    else if (cxtype.kind == CXType_ConstantArray ||
+        cxtype.kind == CXType_IncompleteArray ||
+        cxtype.kind == CXType_VariableArray)
+    {
+        cxtype = clang_getElementType(cxtype);
+        tn->pNext = TypeFromCxType(cxtype, vc);
+    }
+    return tn;
+}
+
 extern std::string cxc[CXCursor_OverloadCandidate + 1];
 extern std::string cxt[CXType_Atomic + 1];
+
+void BaseNode::LogTypeInfo(VisitContextPtr vc, std::ostringstream & strm, TypeNode* ptype)
+{
+    size_t depth = vc->depth + 1;
+    
+    strm << std::endl << std::string(depth * 3, ' ') <<
+        " " << cxt[ptype->TypeKind] << ": " << ptype->tokenStr << " C:" << ptype->isConst;
+    if (ptype->pNext != nullptr)
+    {
+        vc->depth = depth;
+        LogTypeInfo(vc, strm, ptype->pNext);
+    }
+    vc->depth = depth - 1;
+}
 
 
 void BaseNode::LogNodeInfo(VisitContextPtr vc, int64_t nodeIdx, std::string tag)
@@ -208,15 +258,17 @@ void BaseNode::LogNodeInfo(VisitContextPtr vc, int64_t nodeIdx, std::string tag)
     std::ostringstream strm;
     strm << std::endl << std::string(depth * 3, ' ') <<
         tag << " " << (node.SourceFile != nullptr ? node.SourceFile->Name() : "") << " [" <<
-        node.Line << ", " << node.Column << "] " << cxc[node.Kind] << " " << cxt[node.TypeKind] <<
-        " " << node.tmpTokenString << " " << "t:" << node.tmpTypeTokenStr << " " << node.Linkage;
-
+        node.Line << ", " << node.Column << "] " << cxc[node.Kind] << " " << node.TypeIdx <<
+        " " << node.tmpTokenString << " " <<  " " << node.Linkage;
+    if (node.pTypePtr != nullptr)
+    {
+        LogTypeInfo(vc, strm, node.pTypePtr);
+    }
     vc->LogTree(strm.str());
 }
 
 BaseNode::~BaseNode()
 {
-    numAlloc--;
 }
 
 CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data)
@@ -240,6 +292,8 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
             {
                 vc->skipthisfile = true;
             }
+            ;
+            vc->logthisfile = vc->dolog && vc->logFilterFile == fileName;
 
             PrevFilePtr pv = new PrevFile(commitName, nullptr);
             auto itPv = std::find(vc->fileStack.rbegin(), vc->fileStack.rend(), pv);
@@ -278,14 +332,18 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
     auto itParNode = vc->nodesMap.find(parent);
     int64_t parNodeIdx = itParNode != vc->nodesMap.end() ? itParNode->second : nullnode;
     int64_t nodeIdx = NodeFromCursor(cursor, parNodeIdx, vc);
-    if (vc->dolog && !vc->skipthisfile)
+    if (vc->logthisfile && !vc->skipthisfile)
         LogNodeInfo(vc, nodeIdx, "node");
     vc->allocNodes[nodeIdx].ReferencedIdx = BaseNode::NodeRefFromCursor(clang_getCursorReferenced(cursor), nodeIdx, vc);
-    if (vc->dolog && !vc->skipthisfile && vc->allocNodes[nodeIdx].ReferencedIdx != nullnode)
+    if (vc->logthisfile && !vc->skipthisfile && vc->allocNodes[nodeIdx].ReferencedIdx != nullnode)
         LogNodeInfo(vc, vc->allocNodes[nodeIdx].ReferencedIdx, "noderef");
 
     vc->nodesMap.insert(std::make_pair(cursor, nodeIdx));
    
     return vc->skipthisfile ? CXChildVisitResult::CXChildVisit_Continue : CXChildVisitResult::CXChildVisit_Recurse;
 
+}
+
+std::ostream& operator<<(std::ostream& os, TypeNode const& m) {
+    return os << "T: " << m.TypeKind;
 }

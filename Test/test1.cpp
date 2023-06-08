@@ -2,8 +2,15 @@
 
 class ShaneIsTheBest
 {
-    std::string YouKnowIt(const std::string *howcome)
+
+    template <typename T> class TestTemplate
     {
-        return std::string(*howcome + "because he is");
+    public:
+        T myMember;
+    };
+
+    std::string YouKnowIt(const TestTemplate<int> &howcome, char extradata[512])
+    {
+        return std::to_string(howcome.myMember);
     }
 };

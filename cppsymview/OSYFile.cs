@@ -15,6 +15,7 @@ namespace cppsymview
         public ulong Key { get; set; }
         public string Text { get; set; } = string.Empty;
     }
+
     public class OSYFile
     {
         public class DbNode
@@ -24,9 +25,8 @@ namespace cppsymview
             public long parentNodeIdx;
             public long referencedIdx;
             public CXCursorKind kind;
-            public CXTypeKind typeKind;
+            public long typeIdx;
             public long token;
-            public long typetoken;
             public uint line;
             public uint column;
             public uint startOffset;
@@ -34,19 +34,37 @@ namespace cppsymview
             public long sourceFile;
         };
 
-        string []filenames;
+        public class DbType
+        {
+            public long Key { get; set; }
+            public long Next { get; set; }
+            public long Token { get; set; }
+            public CXTypeKind Kind { get; set; }
+
+            public byte IsConst { get; set; }
+        }
+
+        string[]filenames;
         string[] filenamesLwr;
         Token []tokens;
         DbNode []nodes;
+        DbType[]types;  
 
         public string []Filenames => filenames;
         public string[] FilenamesLower => filenamesLwr;
         public Token []Tokens => tokens;
         public DbNode []Nodes => nodes;
-
+        public DbType []DbTypes => types;
         public OSYFile(string filename)
         {
             ParseOsyFile(filename);
+        }
+
+        byte ReadByte(MemoryStream stream)
+        {
+            byte[] bytes = new byte[1];
+            stream.Read(bytes, 0, bytes.Length);
+            return bytes[0];
         }
 
         ulong ReadUint64(MemoryStream stream)
@@ -96,6 +114,17 @@ namespace cppsymview
             t.Text = ReadString(stream);
             return t;
         }
+
+        DbType ReadType(MemoryStream stream)
+        {
+            DbType t = new DbType();
+            t.Key = ReadInt64(stream);
+            t.Next = ReadInt64(stream);
+            t.Token = ReadInt64(stream);
+            t.Kind = (CXTypeKind)ReadInt32(stream);
+            t.IsConst = ReadByte(stream);
+            return t;
+        }
         DbNode ReadNode(MemoryStream stream)
         {
             DbNode n = new DbNode();
@@ -104,9 +133,9 @@ namespace cppsymview
             n.parentNodeIdx = ReadInt64(stream);
             n.referencedIdx = ReadInt64(stream);
             n.kind = (CXCursorKind)ReadInt32(stream);
-            n.typeKind = (CXTypeKind)ReadInt32(stream);
+            int padding = ReadInt32(stream);
+            n.typeIdx = ReadInt64(stream);
             n.token = ReadInt64(stream);
-            n.typetoken = ReadInt64(stream);
             n.line = ReadUInt32(stream);
             n.column = ReadUInt32(stream);
             n.startOffset = ReadUInt32(stream);
@@ -127,6 +156,10 @@ namespace cppsymview
             else if (typeof(T) == typeof(DbNode))
             {
                 return ReadNode(stream) as T;
+            }
+            else if (typeof(T) == typeof(DbType))
+            {
+                return ReadType(stream) as T;
             }
 
             return null;
@@ -167,6 +200,7 @@ namespace cppsymview
             filenames = ReadList<string>(stream);
             filenamesLwr = filenames.Select(f => f.ToLower()).ToArray();
             tokens = ReadList<Token>(stream);
+            types = ReadList<DbType>(stream);
             nodes = ReadList<DbNode>(stream);           
         }
     }

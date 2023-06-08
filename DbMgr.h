@@ -21,6 +21,7 @@ typedef CPPSourceFile* CPPSourceFilePtr;
 class IncludeNode;
 typedef IncludeNode IncludeNodePtr;
 struct Token;
+class TypeNode;
 
 struct DbCPPSourcefile
 {
@@ -35,9 +36,9 @@ struct DbNode
     int64_t parentNodeIdx;
     int64_t referencedIdx;
     CXCursorKind kind;
-    CXTypeKind typeKind;
+    int32_t padding;
+    int64_t typeIdx;
     int64_t token;
-    int64_t typetoken;
     unsigned int line;
     unsigned int column;
     unsigned int startOffset;
@@ -76,6 +77,64 @@ struct DbToken : public CppStreamable
     }
 };
 
+struct DbType : public CppStreamable
+{
+    int64_t key;
+    int64_t next;
+    int64_t token;
+    CXTypeKind kind;
+    uint8_t isconst;
+
+    DbType() :
+        key(-1),
+        token(-1),
+        next(-1),
+        kind(CXType_Invalid),
+        isconst(0)
+    {}
+
+    inline static int64_t UidCalc(CXTypeKind k, int64_t t)
+    {
+        return (t << 8) + k;
+    }
+    inline int64_t Uid() const
+    {
+        return UidCalc(kind, token);
+    }
+
+    DbType(int64_t _key,
+    int64_t _next,
+    int64_t _token,
+    CXTypeKind _kind,
+    uint8_t _isconst) :
+        key(_key),
+        next(_next),
+        token(_token),
+        kind(_kind),
+        isconst(_isconst)
+    {
+
+    }
+    void WriteBinaryData(ICppStreamWriter& data, void* pUserContext) const override
+    {
+        CppStream::Write(data, key);
+        CppStream::Write(data, next);
+        CppStream::Write(data, token);
+        CppStream::Write(data, kind);
+        CppStream::Write(data, isconst);
+    }
+
+    size_t ReadBinaryData(const ICppStreamReader& data, size_t offset, void* pUserContext) override
+    {
+        offset = CppStream::Read(data, offset, key);
+        offset = CppStream::Read(data, offset, next);
+        offset = CppStream::Read(data, offset, token);
+        offset = CppStream::Read(data, offset, kind);
+        offset = CppStream::Read(data, offset, isconst);
+        return offset;
+    }
+};
+
 struct DbError
 {
     int64_t key;
@@ -93,6 +152,7 @@ class CPPEXPORT DbFile
     std::map<std::string, CPPSourceFilePtr> m_sourceFiles;
     std::vector<DbNode> m_dbNodes;
     std::vector<DbToken> m_dbTokens;
+    std::vector<DbType> m_dbTypes;
     std::vector<DbError> m_dbErrors;
     std::vector<std::string> m_dbSourceFiles;
 public:
@@ -100,6 +160,7 @@ public:
     void UpdateRow(CPPSourceFilePtr node);
     void AddRowsPtr(std::vector<ErrorPtr>& range);
     int64_t AddRows(std::vector<Token>& range);
+    int64_t AddRows(std::vector<TypeNode>& types);
     CPPSourceFilePtr GetOrInsertFile(const std::string& commitName, const std::string& fileName);
     void AddNodes(std::vector<Node>& range);
     void WriteStream(std::vector<uint8_t>& data);

@@ -38,23 +38,23 @@ private:
         const std::string &outpath, const std::vector<std::string>& includes,
         const std::vector<std::string>& defines, const std::vector<std::string>& miscArgs, 
         ProjectCache &pc, bool buildPch, const std::string& usePch, 
-        const std::string& rootdir, bool dolog);
+        const std::string& rootdir, int loggingFlags);
 
     std::vector<std::string> GenerateCompileArgs(const std::string& fname,
         const std::string& outpath, const std::vector<std::string>& includes,
         const std::vector<std::string>& defines, const std::vector<std::string>& miscArgs,
         ProjectCache& pc, bool buildPch, const std::string& usePch, 
-        const std::string& rootdir, bool dolog);
+        const std::string& rootdir, int loggingFlags);
 
 public:
     static Compiler* Inst();
 
     std::vector<uint8_t> CompileWithArgs(const std::string& fname,        
-        const std::vector<std::string>& args, bool dolog);
+        const std::vector<std::string>& args, int loggingFlags);
 
     std::vector<uint8_t> Compile(const std::string& fname,
         const std::string& outpath, const std::vector<std::string>& includes,
         const std::vector<std::string>& defines,
         const std::vector<std::string>& miscArgs,
-        bool buildPch, const std::string& usePch, const std::string& rootdir, bool dolog);
+        bool buildPch, const std::string& usePch, const std::string& rootdir, int loggingFlags);
 };

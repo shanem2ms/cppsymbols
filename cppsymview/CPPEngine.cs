@@ -30,17 +30,18 @@ namespace cppsymview
         OSYFile curFile;
 
         public Node[] nodesArray;
+        public CppType[] cppTypesArray; 
         public List<Node> topNodes = new List<Node>();
         public IEnumerable<Node> TopNodes => topNodes.Where(n => n.enabled);
         public Node[] Nodes => nodesArray;
         public event EventHandler<Node> SelectedNodeChanged;
         public event PropertyChangedEventHandler? PropertyChanged;
+        List<Node> sortedNodes;
 
         List<Node> queryNodes = new List<Node>();
         public List<Node> QueryNodes => queryNodes;
 
         Dictionary<CXCursorKind, int> cursorKindCounts;
-        Dictionary<CXTypeKind, int> typeKindCounts;
         public Token []Tokens => curFile.Tokens;
 
         public CXCursorKind CursorFilter { get; set; } = CXCursorKind.None;
@@ -70,8 +71,22 @@ namespace cppsymview
             if (File.Exists(osypath))
             {
                 curFile = new OSYFile(osypath);
-
+                List<CppType> cppTypes = new List<CppType>();
                 List<Node> nodes = new List<Node>();
+
+                foreach (OSYFile.DbType dbtype in curFile.DbTypes)
+                {
+                    CppType cppType = new CppType();
+                    if (dbtype.Token >= 0)
+                        cppType.Token = curFile.Tokens[(int)dbtype.Token];
+                    cppType.Kind = dbtype.Kind;
+                    if (dbtype.Next >= 0)
+                        cppType.Next = cppTypes[(int)dbtype.Next];
+                    cppType.Const = dbtype.IsConst != 0;
+                    cppTypes.Add(cppType);
+                }
+                cppTypesArray = cppTypes.ToArray();
+
                 long index = 0;
                 foreach (OSYFile.DbNode dbnode in curFile.Nodes)
                 {
@@ -85,12 +100,10 @@ namespace cppsymview
                     node.dbNode = dbnode;
                     if (dbnode.token >= 0)
                         node.Token = curFile.Tokens[(int)dbnode.token];
-                    if (dbnode.typetoken >= 0)
-                        node.TypeToken = curFile.Tokens[(int)dbnode.typetoken];
 
-
+                    if (dbnode.typeIdx >= 0)
+                        node.CppType = cppTypesArray[(int)dbnode.typeIdx];
                     node.Kind = dbnode.kind;
-                    node.TypeKind = dbnode.typeKind;
                     node.Line = dbnode.line;
                     node.Column = dbnode.column;
                     node.StartOffset = dbnode.startOffset;
@@ -110,8 +123,8 @@ namespace cppsymview
                     idx++;
                 }
 
-
-                nodes.Sort();
+                sortedNodes = new List<Node>(nodes);
+                sortedNodes.Sort();
                 nodesArray = nodes.ToArray();
                 topNodes = nodesArray.Where(n => n.parent == null).ToList();
             }
@@ -128,18 +141,7 @@ namespace cppsymview
             }
 
             var sortedCursorKinds = cursorKindCounts.ToList();
-            sortedCursorKinds.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
-
-            typeKindCounts = new Dictionary<CXTypeKind, int>();
-            foreach (Node node in nodesArray)
-            {
-                if (!typeKindCounts.ContainsKey(node.TypeKind))
-                {
-                    typeKindCounts.Add(node.TypeKind, 1);
-                }
-                else
-                    typeKindCounts[node.TypeKind]++;
-            }
+            sortedCursorKinds.Sort((a, b) => { return b.Value.CompareTo(a.Value); });         
         }
 
         public void SetCurrentFile(string file)
@@ -190,7 +192,7 @@ namespace cppsymview
             
             HashSet<Token> tokens = curFile.Tokens.Where(t => t.Text.Contains(tokenstr)).ToHashSet();
             
-            queryNodes = nodesArray.Where(n => (n.Token != null && tokens.Contains(n.Token)) || (n.TypeToken != null && tokens.Contains(n.TypeToken))).ToList();
+            queryNodes = nodesArray.Where(n => (n.Token != null && tokens.Contains(n.Token))).ToList();
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(QueryNodes)));
         }
 
@@ -207,14 +209,14 @@ namespace cppsymview
 
         public Node GetNodeFor(int filenameKey, uint offset)
         {
-            if (this.nodesArray == null)
+            if (this.sortedNodes == null)
                 return null;
             Node srchNode = new Node(this, 0) { SourceFile = filenameKey, StartOffset = offset };
-            int nodeIdx = Array.BinarySearch(this.nodesArray, srchNode);
+            int nodeIdx = this.sortedNodes.BinarySearch(srchNode);
             if (nodeIdx < 0) nodeIdx = (~nodeIdx) - 1;
-            if (nodeIdx < 0 || nodeIdx >= nodesArray.Length)
+            if (nodeIdx < 0 || nodeIdx >= sortedNodes.Count())
                 return null;
-            return nodesArray[nodeIdx];
+            return sortedNodes[nodeIdx];
         }
     }
 }
