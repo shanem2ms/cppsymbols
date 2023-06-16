@@ -40,11 +40,17 @@ namespace cppsymview
         public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
         ScriptEngine scriptEngine = new ScriptEngine();
-        CSEditor scriptTextEditor;
+        
         public bool ClearOutput { get; set; } = true;
-        string projectDir;
-        string curScriptFile;
+        string scriptDir;
 
+        class Script
+        {
+            public CSEditor editor;
+            public string filename;
+        }
+
+        List<Script> curScriptFiles = new List<Script>();
 
         public Node CurrentNode { get; set; } = null;
 
@@ -57,27 +63,39 @@ namespace cppsymview
 
         public bool LiveSwitching { get; set; } = true;
 
+        StringBuilder scriptWriteBuffer = new StringBuilder();
+
         public MainWindow()
         {
             this.DataContext = this;
             InitializeComponent();
 
             script.Api.WriteLine = WriteOutput;
+            script.Api.Flush = Flush;
             folderView.Root = root;
             folderView.OnFileSelected += FolderView_OnFileSelected;
             
             DirectoryInfo di = new DirectoryInfo(Directory.GetCurrentDirectory());
             while (di.Name.ToLower() != "cppsymview")
                 di = di.Parent;
-
-            this.projectDir = di.FullName;
-            this.curScriptFile = Path.Combine(projectDir, "Script.cs");
-
+            
             //ConnectTcp();
             //engine.Init(root, root + @"\build\debugclg\clouds\Particle.cpp.osy");        
             engine.Init(root, root + @"\build\debugclg\flash.osy");
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
+
+            this.scriptDir = Path.Combine(di.FullName, "Scripts");
+            scriptsView.Root = this.scriptDir;
+            scriptsView.OnFileSelected += FolderView_OnFileSelected;
+
+            DirectoryInfo diScripts = new DirectoryInfo(this.scriptDir);
+            foreach (FileInfo fi in diScripts.GetFiles())
+            {
+                Script script = new Script();
+                script.filename = fi.FullName;
+                curScriptFiles.Add(script);
+            }
 
             foreach (string openfile in settings.Files)
             {
@@ -85,10 +103,10 @@ namespace cppsymview
             }
             this.EditorsCtrl.SelectionChanged += EditorsCtrl_SelectionChanged;
 
-            scriptTextEditor = new CSEditor(curScriptFile, scriptEngine);
-            Editors.Add(scriptTextEditor);
-            EditorsCtrl.SelectedItem = scriptTextEditor;
+
             Editors.CollectionChanged += Editors_CollectionChanged;
+            EditorsCtrl.SelectedItem = curScriptFiles[0].editor;
+
         }
 
         private void Editors_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -96,11 +114,7 @@ namespace cppsymview
             settings.Files.Clear();
             foreach (TextEditor editor in Editors)
             {
-                if (editor is CPPTextEditor)
-                {
-                    CPPTextEditor cppeditor = (CPPTextEditor)editor;
-                    settings.Files.Add(editor.Document.FileName);
-                }
+                settings.Files.Add(editor.Document.FileName);
             }
             settings.Save();
         }
@@ -116,20 +130,41 @@ namespace cppsymview
 
         private void FolderView_OnFileSelected(object? sender, string e)
         {
-            CreateEditor(e);
+            TextEditor te = GetOrMakeTextEditor(e);
+            EditorsCtrl.SelectedItem = te;
         }
 
-        CPPTextEditor CreateEditor(string path)
+
+        TextEditor CreateEditor(string path)
         {
-            CPPTextEditor cppTextEditor = new CPPTextEditor(path, engine);
-            cppTextEditor.NodeChanged += CppTextEditor_NodeChanged;
-            Editors.Add(cppTextEditor);
-            return cppTextEditor;
+            string ext = Path.GetExtension(path);
+            TextEditor te;
+            if (ext == ".cs")
+            {
+                CSEditor ce = new CSEditor(path, this.scriptEngine);
+                Script script = this.curScriptFiles.First((s) => s.filename == path);
+                script.editor = ce;
+                te = ce;
+            }
+            else
+            {
+                CPPTextEditor cppTextEditor = new CPPTextEditor(path, engine);
+                cppTextEditor.NodeChanged += CppTextEditor_NodeChanged;
+                te = cppTextEditor;
+            }
+            Editors.Add(te);
+            return te;
         }
 
         void WriteOutput(string text)
         {
-            this.OutputConsole.Text += text + "\n";
+            scriptWriteBuffer.AppendLine(text);
+        }
+
+        void Flush()
+        {
+            this.OutputConsole.Text += scriptWriteBuffer.ToString();
+            scriptWriteBuffer.Clear();
         }
         private void NodesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -246,9 +281,22 @@ namespace cppsymview
         private void RunScript_Click(object sender, RoutedEventArgs e)
         {
             if (this.ClearOutput) { OutputConsole.Text = ""; }
-            this.scriptTextEditor.Save();
-            Source src = new Source() { code = this.scriptTextEditor.Document.Text, filepath = curScriptFile };
-            this.scriptEngine.Run(new List<Source>() { src }, this.engine);
+
+            List<Source> sources = new List<Source>();
+            foreach (var script in this.curScriptFiles)
+            {
+                if (script.editor != null)
+                {
+                    script.editor.Save();
+                    sources.Add(new Source() { code = script.editor.Document.Text, filepath = script.filename });
+                }
+                else
+                {
+                    string text = File.ReadAllText(script.filename);
+                    sources.Add(new Source() { code = text, filepath = script.filename });
+                }
+            }
+            this.scriptEngine.Run(sources, this.engine);
         }
 
         TextEditor GetOrMakeTextEditor(string filename)

@@ -6,8 +6,16 @@
         xmlns:s="clr-namespace:System;assembly=mscorlib" 
         xmlns:local="clr-namespace:cppsymview"
         mc:Ignorable="d"
+        Background="#335588"
         Title="MainWindow" Height="1200" Width="1600">
     <Window.Resources>
+        <Style TargetType="GridSplitter">
+            <Setter Property="Background" Value="#335588" />
+        </Style>
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="#556688" />
+            <Setter Property="BorderBrush" Value="#335588" />
+        </Style>
         <HierarchicalDataTemplate x:Key="treeNodeTemplate" DataType="{x:Type local:Node}"
                                 ItemsSource="{Binding Path=Children}">
             <Grid>
@@ -90,15 +98,22 @@
             <Button Margin="5" Name="RunScript" Content="Run Script" Click="RunScript_Click"/>
             <ToggleButton Margin="5" Content="Clear Output" IsChecked="{Binding Path=ClearOutput,Mode=TwoWay}"/>
         </StackPanel>
-        <Grid Grid.Row="1" Background="#202020">
+        <Grid Grid.Row="1" Background="#203055">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="6*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
-            <local:FolderView x:Name="folderView"/>
+            <TabControl Background="#335588">
+                <TabItem Header="Scripts">
+                    <local:FolderView x:Name="scriptsView"/>
+                </TabItem>
+                <TabItem Header="Folders">
+                    <local:FolderView x:Name="folderView"/>
+                </TabItem>
+            </TabControl>
             <GridSplitter Grid.Column="1" Width="8" VerticalAlignment="Stretch" HorizontalAlignment="Center" />
             <GridSplitter Grid.Column="3" Width="8" VerticalAlignment="Stretch" HorizontalAlignment="Center" />
             <Grid Grid.Column="0"/>
@@ -213,6 +228,8 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -238,16 +255,22 @@
                                             <TextBlock Grid.Row="6" Grid.Column="0" Text="TypeKind" />
                                             <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding CppType.Kind}" />
 
-                                            <TextBlock Grid.Row="7" Grid.Column="0" Text="TypeToken" />
-                                            <Button Grid.Row="7" Grid.Column="1" Name="TypeTknBtn" Style="{StaticResource LinkButton}" Content="{Binding CppType}"
+                                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Access" />
+                                            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Access}" />
+
+                                            <TextBlock Grid.Row="8" Grid.Column="0" Text="StorageClass" />
+                                            <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding StorageClass}" />
+
+                                            <TextBlock Grid.Row="9" Grid.Column="0" Text="TypeToken" />
+                                            <Button Grid.Row="9" Grid.Column="1" Name="TypeTknBtn" Style="{StaticResource LinkButton}" Content="{Binding CppType}"
                                                 Click="TypeTknBtn_Click" />
 
-                                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Parent" />
-                                            <Button Grid.Row="8" Grid.Column="1" Name="ParentBtn" Style="{StaticResource LinkButton}" Content="{Binding Parent.Index}"
+                                            <TextBlock Grid.Row="10" Grid.Column="0" Text="Parent" />
+                                            <Button Grid.Row="10" Grid.Column="1" Name="ParentBtn" Style="{StaticResource LinkButton}" Content="{Binding Parent.Index}"
                                                 Click="ParentBtn_Click" />
 
-                                            <TextBlock Grid.Row="9" Grid.Column="0" Text="RefNode" />
-                                            <Button Grid.Row="9" Grid.Column="1" Name="RefNodeBtn" Style="{StaticResource LinkButton}" Content="{Binding RefNode.Index}"
+                                            <TextBlock Grid.Row="11" Grid.Column="0" Text="RefNode" />
+                                            <Button Grid.Row="11" Grid.Column="1" Name="RefNodeBtn" Style="{StaticResource LinkButton}" Content="{Binding RefNode.Index}"
                                                 Click="RefNodeBtn_Click"/>
 
                                         </Grid>

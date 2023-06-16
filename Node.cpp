@@ -17,7 +17,10 @@ BaseNode::BaseNode(int64_t key) :
     Column(0),
     StartOffset(0),
     EndOffset(0),
-    SourceFile(nullptr)
+    SourceFile(nullptr),
+    AcessSpecifier(CX_CXXInvalidAccessSpecifier),
+    isAbstract(false),
+    StorageClass(CX_SC_Invalid)
 {
 }
 
@@ -121,6 +124,9 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     }
 
     node.Linkage = clang_getCursorLinkage(cursor);
+    node.AcessSpecifier = clang_getCXXAccessSpecifier(cursor);
+    node.StorageClass = clang_Cursor_getStorageClass(cursor);
+
     CXFile file;
     unsigned int line;
     unsigned int column;
@@ -146,6 +152,7 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
 
     node.pTypePtr = TypeFromCursor(cursor, vc);
     //node.ty
+    node.isAbstract = clang_CXXRecord_isAbstract(cursor) != 0;
     node.tmpTokenString = tokenStr;
     node.ParentNodeIdx = parentNode;
     node.Line = line;
@@ -191,6 +198,7 @@ int64_t BaseNode::NodeRefFromCursor(CXCursor cursor, int64_t parentIdx, VisitCon
 TypeNode* BaseNode::TypeFromCursor(CXCursor cursor, VisitContextPtr vc)
 {
     CXType cxtype = clang_getCursorType(cursor);
+
     return TypeFromCxType(cxtype, vc);
 }
 
@@ -230,6 +238,11 @@ TypeNode* BaseNode::TypeFromCxType(CXType cxtype, VisitContextPtr vc)
         cxtype = clang_getElementType(cxtype);
         tn->pNext = TypeFromCxType(cxtype, vc);
     }
+    else if (cxtype.kind == CXType_FunctionProto)
+    {
+        cxtype = clang_getResultType(cxtype);
+        tn->pNext = TypeFromCxType(cxtype, vc);
+    }
     return tn;
 }
 
@@ -250,6 +263,25 @@ void BaseNode::LogTypeInfo(VisitContextPtr vc, std::ostringstream & strm, TypeNo
     vc->depth = depth - 1;
 }
 
+const char *vals[4] =
+{
+    "",
+    "Public",
+    "Protected",
+    "Private"
+};
+
+const char* stgvals[] =
+{
+  "",
+  "None",
+  "Extern",
+  "Static",
+  "PrivateExtern",
+  "OpenCLWorkGroupLocal",
+  "Auto",
+  "Register"
+};
 
 void BaseNode::LogNodeInfo(VisitContextPtr vc, int64_t nodeIdx, std::string tag)
 {
@@ -259,7 +291,7 @@ void BaseNode::LogNodeInfo(VisitContextPtr vc, int64_t nodeIdx, std::string tag)
     strm << std::endl << std::string(depth * 3, ' ') <<
         tag << " " << (node.SourceFile != nullptr ? node.SourceFile->Name() : "") << " [" <<
         node.Line << ", " << node.Column << "] " << cxc[node.Kind] << " " << node.TypeIdx <<
-        " " << node.tmpTokenString << " " <<  " " << node.Linkage;
+        " " << node.tmpTokenString << " " <<  " " << vals[node.AcessSpecifier] << " " << stgvals[node.StorageClass];
     if (node.pTypePtr != nullptr)
     {
         LogTypeInfo(vc, strm, node.pTypePtr);

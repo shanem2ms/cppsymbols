@@ -69,6 +69,9 @@ public:
     CXCursorKind Kind;
     int64_t TypeIdx;
     CXLinkageKind Linkage;
+    CX_CXXAccessSpecifier AcessSpecifier;
+    CX_StorageClass StorageClass;
+    bool isAbstract;
 public:
     BaseNode(int64_t key);
     ~BaseNode();

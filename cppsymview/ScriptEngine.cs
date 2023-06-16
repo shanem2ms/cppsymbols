@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Windows;
 using System.Reflection.Metadata.Ecma335;
+using System.Drawing.Drawing2D;
 
 namespace cppsymview
 {
@@ -20,6 +21,8 @@ namespace cppsymview
         {
             public delegate void WriteDel(string text);
             public static WriteDel WriteLine;
+            public delegate void FlushDel();
+            public static FlushDel Flush;
 
             public static string ScriptFolder = null;
             public static CPPEngineFile Engine = null;
@@ -36,7 +39,6 @@ namespace cppsymview
     }
     public class ScriptEngine
     {
-        static Action<string> Write = (string? message) => { System.Diagnostics.Debug.WriteLine(message); };
         public event EventHandler<bool> OnCompileErrors;
 
         MetadataReference[] references;
@@ -109,7 +111,15 @@ namespace cppsymview
                         if (meth != null)
                         {
                             script.Api.Reset(scene);
-                            meth.Invoke(instance, new object[] { });
+                            try
+                            {
+                                meth.Invoke(instance, new object[] { });
+                            }
+                            catch
+                            (Exception ex)
+                            {
+                                script.Api.WriteLine(ex.ToString());
+                            }
                         }
                         else
                         {
@@ -123,6 +133,8 @@ namespace cppsymview
                         OnCompileErrors?.Invoke(this, true);
                     }
                 }
+
+                script.Api.Flush();
             }
 
 

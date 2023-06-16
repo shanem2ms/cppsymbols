@@ -36,7 +36,7 @@ struct DbNode
     int64_t parentNodeIdx;
     int64_t referencedIdx;
     CXCursorKind kind;
-    int32_t padding;
+    int32_t flags;
     int64_t typeIdx;
     int64_t token;
     unsigned int line;

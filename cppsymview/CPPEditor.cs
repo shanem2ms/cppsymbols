@@ -1,21 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Windows;
-using System.Windows.Media;
-using ICSharpCode.AvalonEdit;
-using ICSharpCode.AvalonEdit.Rendering;
+﻿using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.CodeCompletion;
+using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
-using ICSharpCode.AvalonEdit.Document;
-using ICSharpCode.AvalonEdit.CodeCompletion;
-using ICSharpCode.AvalonEdit.Editing;
-using System.Reflection;
-using System.Xml;
-using System.IO.Packaging;
-using System.ComponentModel;
+using ICSharpCode.AvalonEdit.Rendering;
 using ICSharpCode.AvalonEdit.Search;
-using ICSharpCode.AvalonEdit.Folding;
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Media;
+using System.Xml;
+using static ICSharpCode.AvalonEdit.Document.TextDocumentWeakEventManager;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace cppsymview
 {
@@ -33,6 +32,7 @@ namespace cppsymview
         int srcFileKey;
 
         public event EventHandler<Node> NodeChanged;
+        FileSystemWatcher watcher;
 
         public CPPTextEditor(string path, CPPEngineFile engine)
         {
@@ -66,6 +66,30 @@ namespace cppsymview
             //Reload();
             SearchPanel.Install(this);
             Reload();
+
+            watcher = new FileSystemWatcher(Path.GetDirectoryName(path));
+
+            watcher.NotifyFilter = NotifyFilters.Attributes
+                                 | NotifyFilters.CreationTime
+                                 | NotifyFilters.DirectoryName
+                                 | NotifyFilters.FileName
+                                 | NotifyFilters.LastAccess
+                                 | NotifyFilters.LastWrite
+                                 | NotifyFilters.Security
+                                 | NotifyFilters.Size;
+
+            watcher.Changed += Watcher_Changed;
+
+            watcher.Filter = Path.GetFileName(path);
+            watcher.EnableRaisingEvents = true;
+
+            Console.WriteLine("Press enter to exit.");
+            Console.ReadLine();
+        }
+
+        private void Watcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            Dispatcher.BeginInvoke(() => { Reload(); });                
         }
 
         OffsetColorizer curNodeColorizer = null;

@@ -1211,6 +1211,25 @@ namespace cppsymview
         Atomic = 177,
         BTFTagAttributed = 178
     }
+
+    public enum CX_StorageClass
+    {
+        Invalid = 0,
+        None,
+        Extern,
+        Static,
+        PrivateExtern,
+        OpenCLWorkGroupLocal,
+        Auto,
+        Register
+    };
+    public enum CXXAccessSpecifier
+    {
+        Invalid = 0,
+        Public = 1,
+        Protected = 2,
+        Private = 3
+    };
     public static class ClangTypes
     {
         public static List<CXCursorKind> CursorKindsMRU = new List<CXCursorKind> {

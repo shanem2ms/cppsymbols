@@ -39,6 +39,7 @@ bool DbNode::operator == (const DbNode& other) const
         column == other.column &&
         startOffset == other.startOffset &&
         endOffset == other.endOffset &&
+        flags == other.flags &&
         sourceFile == other.sourceFile;
 }
 
@@ -73,6 +74,8 @@ DbNode::DbNode(const Node& n) :
     column(n.Column),
     startOffset(n.StartOffset),
     endOffset(n.EndOffset),
+    // Bits (0-3) - AccessSpecifier, 4 - IsAbstract, (5-8) - StorageClass
+    flags(((n.AcessSpecifier) & 0x03) | (n.isAbstract ? 4 : 0) | (n.StorageClass << 3)),
     sourceFile(n.SourceFile != nullptr ? n.SourceFile->Key : nullnode)
 {
 
@@ -388,11 +391,12 @@ void DbFile::RemoveDuplicates()
         if (nodeCur.parentNodeIdx != nullnode && nodeCur.parentNodeIdx >= idx)
             __debugbreak();
         size_t hash_val = nodesTreeHash0[idx];
+        /*
         if (nodeCur.referencedIdx != nullnode)
         {
             size_t hash0 = nodesTreeHash0[nodeCur.referencedIdx];
             hash_val = HashFunc(&hash0, &hash0 + 1, nodesTreeHash0[idx]);
-        }
+        }*/
 
         auto itNode = nodesMap.find(hash_val);
         if (itNode == nodesMap.end())
@@ -404,6 +408,12 @@ void DbFile::RemoveDuplicates()
         else
         {
             nodeRemapping[idx] = itNode->second;
+            if (nodeCur.referencedIdx != nullnode &&
+                newNodes[nodeRemapping[itNode->second]].referencedIdx == nullnode &&
+                nodeCur.referencedIdx != itNode->second)
+            {
+                newNodes[nodeRemapping[itNode->second]].referencedIdx = nodeCur.referencedIdx;
+            }
         }
     }
 

@@ -38,6 +38,9 @@ namespace cppsymview
         public Token? Token { get; set; }
         public CppType CppType { get; set; }
         public CXCursorKind Kind { get; set; }
+        public CXXAccessSpecifier Access { get; set; }
+        public CX_StorageClass StorageClass { get; set; }
+        public bool IsAbstract { get; set; }
         public uint Line { get; set; }
         public uint Column { get; set; }
         public uint StartOffset { get; set; }

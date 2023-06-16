@@ -25,6 +25,7 @@ namespace cppsymview
             public long parentNodeIdx;
             public long referencedIdx;
             public CXCursorKind kind;
+            public int flags;
             public long typeIdx;
             public long token;
             public uint line;
@@ -133,7 +134,7 @@ namespace cppsymview
             n.parentNodeIdx = ReadInt64(stream);
             n.referencedIdx = ReadInt64(stream);
             n.kind = (CXCursorKind)ReadInt32(stream);
-            int padding = ReadInt32(stream);
+            n.flags = ReadInt32(stream);
             n.typeIdx = ReadInt64(stream);
             n.token = ReadInt64(stream);
             n.line = ReadUInt32(stream);

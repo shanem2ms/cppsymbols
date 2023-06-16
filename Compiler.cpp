@@ -355,23 +355,7 @@ std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,
     vcincludes.insert(vcincludes.end(), includes.begin(), includes.end());
 
     std::vector<std::string> clgargs = {
-                "-O0",
-                /*
-                "-dI",
-                "-g2",
-                "-Wall",
-                "--no-warnings",
-                "-fno-strict-aliasing",
-                "-fno-omit-frame-pointer",
-                "-fexceptions",
-                "-fstack-protector",
-                "-fno-short-enums",
-                "-fms-compatibility",
-                "-fms-extensions",
-                //"-fno-delayed-template-parsing",
-                //"-fsyntax-only",
-                "-Wno-invalid-token-paste",
-                "-Wno-c++11-narrowing" */};
+                "-O0" };
 
     clgargs.insert(clgargs.end(), miscArgs.begin(), miscArgs.end());
     for (auto define : defines)

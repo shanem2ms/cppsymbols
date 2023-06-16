@@ -1,24 +1,10 @@
-﻿using System;
-using System.IO;
+﻿using Microsoft.CodeAnalysis;
+using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Linq;
-using static cppsymview.ClangTypes;
 using System.ComponentModel;
-using System.Linq.Expressions;
-using System.Windows.Forms;
-using System.Windows.Media;
-using System.Diagnostics;
-using System.Windows.Automation;
-using static cppsymview.OSYFile;
-using System.Xml.Linq;
-using System.Windows.Forms.Design;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
+using System.IO;
+using System.Linq;
+using System.Security;
 
 namespace cppsymview
 {
@@ -104,6 +90,9 @@ namespace cppsymview
                     if (dbnode.typeIdx >= 0)
                         node.CppType = cppTypesArray[(int)dbnode.typeIdx];
                     node.Kind = dbnode.kind;
+                    node.Access = (CXXAccessSpecifier)(dbnode.flags & 0x3);
+                    node.IsAbstract = (dbnode.flags & 0x4) != 0;
+                    node.StorageClass = (CX_StorageClass)((dbnode.flags >> 3) & 0x7);
                     node.Line = dbnode.line;
                     node.Column = dbnode.column;
                     node.StartOffset = dbnode.startOffset;
@@ -141,7 +130,53 @@ namespace cppsymview
             }
 
             var sortedCursorKinds = cursorKindCounts.ToList();
-            sortedCursorKinds.Sort((a, b) => { return b.Value.CompareTo(a.Value); });         
+            sortedCursorKinds.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+
+            MergeNamespaces(topNodes);
+        }
+
+        void MergeNamespaces(List<Node> nodes)
+        {
+            Dictionary<string, List<Node>> namespaces =
+                new Dictionary<string, List<Node>>();
+            foreach(Node n in nodes)
+            {
+                if (n.Kind == CXCursorKind.Namespace)
+                {
+                    List<Node> nsNodes;
+                    if (!namespaces.TryGetValue(n.Token.Text, out nsNodes))
+                    {
+                        nsNodes = new List<Node>();
+                        namespaces.Add(n.Token.Text, nsNodes);
+                    }
+                    nsNodes.Add(n);
+                }
+            }
+
+            foreach (var kv in namespaces)
+            {
+                if (kv.Value.Count <= 1)
+                    continue;
+                List<Node> lnodes = kv.Value;
+                Node keepNode = lnodes.First();
+                lnodes.RemoveAt(0);
+                List<Node> children = keepNode.allChildren;
+                foreach (var n in lnodes)
+                {
+                    children.AddRange(n.allChildren);
+                    nodes.Remove(n);
+                }
+
+                foreach (Node n in children)
+                {
+                    n.parent = keepNode;
+                }
+            }
+
+            foreach (Node cn in nodes)
+            {
+                MergeNamespaces(cn.allChildren);
+            }
         }
 
         public void SetCurrentFile(string file)
