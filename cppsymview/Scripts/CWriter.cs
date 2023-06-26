@@ -23,7 +23,6 @@ namespace cppsymview.script
 			List<string> lines = new List<string>();
 			string dirname = Path.GetDirectoryName(outfile);
 			dirname = dirname.ToLower();
-			Api.WriteLine(dirname);
 			foreach (var ifile in IncludeFiles)
 			{
 				string lf = ifile.ToLower();
@@ -45,7 +44,7 @@ namespace cppsymview.script
 			string cclass = f.classname.Replace("::", "_");
 			string ctornum = f.idx >= 0 ? f.idx.ToString() : "";
 			bool isConstructor = f.funcname == null;
-			f.cppname = isConstructor ? $"{cclass}_Ctor{ctornum}" : $"{cclass}_{f.cexportname}";
+			f.cppname = isConstructor ? $"{cclass}_Ctor{ctornum}" : $"{cclass}{f.cexportname}";
 			string retarg = isConstructor ? $"{f.classname} *" : f.returnType.Name;
 			bool hasThisArg = !isConstructor && !f.isStatic;
 			string thisarg = hasThisArg ? $"{f.classname} *pthis" : "";
@@ -72,14 +71,14 @@ namespace cppsymview.script
 			else if (f.isStatic)
 			{
 				ctorLines.Add(line + ") {");
-				ctorLines.AddRange(f.returnType.GetReturnString(
+				ctorLines.AddRange(f.returnType.GetCppReturnString(
 					f.classname + "::" + f.funcname + "(" + callline + ")"));
 				ctorLines.Add(" }");
 			}
 			else
 			{
 				ctorLines.Add(line + ") {");
-				ctorLines.AddRange(f.returnType.GetReturnString(
+				ctorLines.AddRange(f.returnType.GetCppReturnString(
 					"pthis->" + f.funcname + "(" + callline + ")"));
 				ctorLines.Add(" }");
 			}

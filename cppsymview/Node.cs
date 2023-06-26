@@ -16,7 +16,9 @@ namespace cppsymview
     {
         public CppType() { }
         public Token Token { get; set;}
-        public CppType Next { get; set; }
+        public CppType []Children { get; set; }
+
+        public CppType Next => Children.Length > 0 ? Children[0] : null;
         public CXTypeKind Kind { get; set; }
         public bool Const { get; set; }
 
@@ -58,7 +60,7 @@ namespace cppsymview
 
         public List<Node> allChildren = new List<Node>();
 
-        public string FileName => engine.GetFileNameFromIdx(this.SourceFile);
+        public string FileName => this.SourceFile >= 0 ? engine.GetFileNameFromIdx(this.SourceFile) : "";
 
         public enum FindChildResult
         {

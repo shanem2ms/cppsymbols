@@ -299,7 +299,7 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="*" />
                                             </Grid.RowDefinitions>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -314,8 +314,14 @@
                                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Const}" />
 
                                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Next" />
-                                            <Button Grid.Row="3" Grid.Column="1" Name="NextBtn" Style="{StaticResource LinkButton}" Content="{Binding Next}"
-                                                Click="NextBtn_Click" />
+                                            <ListBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Children}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Name="NextBtn" Style="{StaticResource LinkButton}" Content="{Binding }"
+                                                            Click="NextBtn_Click" />
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
                                         </Grid>
                                     </DataTemplate>
                                 </ContentControl.ContentTemplate>

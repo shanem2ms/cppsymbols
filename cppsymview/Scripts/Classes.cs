@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms.VisualStyles;
 
 namespace cppsymview.script
 {    
@@ -15,17 +14,36 @@ namespace cppsymview.script
     	CSApiWriter csapiwriter = new CSApiWriter(@"C:\flash\cslib\flashnet\Api.cs");
     	
     	NS classTree = new NS();
-    
+
         public void AddAllClasses(Node pn, string ns)
+        {
+			ProcessFunctions(pn);        
+			AddClasses(pn, ns);
+		}
+        
+        void AddClasses(Node pn, string ns)
         {
         	foreach (Node n in pn.allChildren)
         	{
-        		if (n.Kind == CXCursorKind.ClassDecl || 
-        			n.Kind == CXCursorKind.Namespace)
+        		if (n.Kind == CXCursorKind.ClassDecl &&
+        			n.CppType.Kind == CXTypeKind.Record)
         		{
         			string nm = ns + n.Token.Text;
-        			Api.WriteLine(nm);
-        			AddAllClasses(n, nm + ".");
+        			if (ProcessClass(n))
+        			{
+	        			AddClasses(n, nm + ".");
+	        			csapiwriter.PopClass();
+        			}
+        		}
+        		if (n.Kind == CXCursorKind.Namespace)
+        		{
+        			bool donamespace = n.Token.Text.Length > 0;
+        			if (donamespace)
+        				csapiwriter.PushNamespace(n.Token.Text);
+        			string nm = ns + n.Token.Text;
+        			AddClasses(n, nm + ".");
+        			if (donamespace)
+	        			csapiwriter.PopNamespace();
         		}
         	}
         }        
@@ -35,20 +53,23 @@ namespace cppsymview.script
        		if (classNode.Access == CXXAccessSpecifier.Private ||
        			classNode.Access == CXXAccessSpecifier.Protected ||
        			classNode.IsAbstract)
-       			return false;       			
+       			return false;
+       		if (classNode.Children.Count() == 0)
+       			return false;
         	string filename = Api.Engine.SourceFiles[classNode.SourceFile - 1];     
         	if (filename.EndsWith(".cpp")) 
        			return false;
        			
+      			
 			List<NS> nodes = new List<NS>();
 			NS.GetCanonicalNodes(classNode, nodes);
 			NS nsclass = classTree.AddClass(nodes);
 			
-       		csapiwriter.AddClass(classNode);
+       		csapiwriter.PushClass(classNode);
        		bool found = ProcessConstructors(classNode);
-        	found |= ProcessFunctions(classNode);        	
+        	found |= ProcessMembers(classNode);        	
 
-			return found;
+			return true;
 		}	
 			
 		bool ProcessConstructors(Node classNode)
@@ -99,13 +120,15 @@ namespace cppsymview.script
 					f.returnType = null;
 					f.idx = ctorIdx++;
 					cppwriter.AddFunction(f);
+					csnativewriter.AddFunction(f);
+					csapiwriter.AddFunction(f);
 				}
 			}	        	
 			
 			return true;
 		}
  
- 		bool ProcessFunctions(Node classNode)
+ 		bool ProcessMembers(Node classNode)
 		{
         	long clsSrcFileIdx = classNode.SourceFile;
 			List<Node> funcs = classNode.FindChildren((n) => 
@@ -162,12 +185,83 @@ namespace cppsymview.script
 					f.idx = -1;
 					cppwriter.AddFunction(f);
 					csnativewriter.AddFunction(f);
+					csapiwriter.AddFunction(f);					
 				}
 			}	        	
 			
 			return true;
 		}		
 						
+						
+ 		bool ProcessFunctions(Node namespaceNode)
+		{
+			List<Node> funcs = namespaceNode.FindChildren((n) => 
+	        	{
+	        		return (n.Kind == CXCursorKind.FunctionDecl) ?
+	        			Node.FindChildResult.eTrue : Node.FindChildResult.eFalseNoTraverse;
+	        	});
+	        	
+			string nsname = Utils.GetCanonicalName(namespaceNode);
+			List<Node> validFuncs = new List<Node>();
+			foreach (Node func in funcs)
+			{
+				string filename = Api.Engine.SourceFiles[func.SourceFile - 1];
+	        	if (filename.EndsWith(".cpp")) 
+	       			continue;
+	       		validFuncs.Add(func);
+			}
+			
+			if (validFuncs.Count() == 0)
+				return false;
+
+			csapiwriter.PushStaticClass(nsname);
+			foreach (Node func in validFuncs)
+			{
+				string filename = Api.Engine.SourceFiles[func.SourceFile - 1];
+	        	cppwriter.IncludeFiles.Add(filename);
+				func.SetEnabled(true, true);
+								
+	        	List<Node> pars = func.FindChildren((n) => 
+	        	{
+        		return (n.Kind == CXCursorKind.ParmDecl) ?
+        			Node.FindChildResult.eTrue : Node.FindChildResult.eFalseTraverse;
+	        	});
+			
+			
+			    bool supported = true;
+
+				EType returnType = new EType(func.CppType.Next);
+				supported &= returnType.IsSupported;
+				
+				List<EType> etypes = pars.Select(p => new EType(p.CppType)).ToList();
+				foreach (EType t in etypes)				
+				{
+					supported &= t.IsSupported;
+				}
+				
+				if (supported)
+				{
+					Function f = new Function();
+					f.classname = nsname;
+					f.funcname = func.Token.Text;
+					f.cexportname = Utils.GetCFuncName(nsname, func.Token.Text);
+					f.isStatic = true;
+					
+					foreach (var tp in pars.Zip(etypes, Tuple.Create))				
+					{
+						f.parameters.Add(new Parameter() { param = tp.Item1, type = tp.Item2 });
+					}				
+					f.returnType = returnType;
+					f.idx = -1;
+					cppwriter.AddFunction(f);
+					csnativewriter.AddFunction(f);
+					csapiwriter.AddFunction(f);					
+				}
+			}
+			csapiwriter.PopClass();
+			return true;
+		}		
+		
 		public void Write()
 		{
 			cppwriter.Write();

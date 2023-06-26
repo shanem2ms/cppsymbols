@@ -23,25 +23,35 @@ namespace cppsymview.script
     		{
     			string fp = Path.GetFullPath(file);
     			fp = fp.ToLower();
-    			if (fp.StartsWith(@"c:\flash\src") &&
-    				!fp.StartsWith(@"c:\flash\src\engine\thirdparty\imgui"))
+    			//if (fp.StartsWith(@"c:\flash\src") &&
+    			//	!fp.StartsWith(@"c:\flash\src\engine\thirdparty\imgui"))
     			{
 	    			myFiles.Add(idx, file);
 	    		}
 	    		idx++;
     		}    		
-    		Node samnode = engine.TopNodes.First(tn => tn.Token?.Text == "sam");
-    		foreach (var node in engine.Nodes)
+    		Node samnode = engine.TopNodes.FirstOrDefault(tn => 
+    			tn.Kind == CXCursorKind.Namespace && tn.Token?.Text == "sam");
+
+    		Node bgfxnode = engine.TopNodes.FirstOrDefault(tn => 
+    			tn.Kind == CXCursorKind.Namespace && tn.Token?.Text == "bgfx");
+    			
+			foreach (var node in engine.Nodes)
     		{
     			node.enabled = true;
 			}
 
+			classes.AddAllClasses(bgfxnode, "");
 			classes.AddAllClasses(samnode, "");
     		
-    		Api.Engine.RefreshNodeTree();    		    	
+    		//Api.Engine.RefreshNodeTree();    		    	
     		//LogTypes();
     		
     		classes.Write();
+    		foreach (string utype in EType.utypes)
+    		{
+    			//Api.WriteLine(utype);
+    		}
         }
         
     

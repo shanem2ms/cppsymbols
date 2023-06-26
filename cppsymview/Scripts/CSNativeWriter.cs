@@ -16,7 +16,7 @@ using System.Runtime.InteropServices;
 
 namespace flashnet
 {
-    public static class NativeLib
+    static class NativeLib
     {";
 
 			string footer = @"        
@@ -35,11 +35,14 @@ namespace flashnet
 			bool hasThisArg = !isConstructor && !f.isStatic;
 
 			fileLines.Add(@"[DllImport(@""flashlib.dll"")]");
-	        string funcline = $"public static extern void {f.cppname}(";
+			string retarg = isConstructor ? $"IntPtr" : f.returnType.GetCSNativeType();
+
+	        string funcline = $"public static extern {retarg} {f.cppname}(";
 	        funcline += hasThisArg ? "IntPtr pthis" : "";
 			bool first = true;
 			int tmpvaridx = 0;
 			
+
 	        foreach (var tp in f.parameters)
 			{
 				if (!first || hasThisArg)

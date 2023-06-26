@@ -118,7 +118,13 @@ int64_t DbFile::AddRows(std::vector<TypeNode>& types)
     m_dbTypes.reserve(m_dbTypes.size() + types.size());
     for (TypeNode& typ : types)
     {
-        m_dbTypes.push_back(DbType(typ.Key, typ.nextIdx, typ.tokenIdx, typ.TypeKind, typ.isConst));
+        std::vector<int64_t> children;
+        children.reserve(typ.children.size());
+        for (auto& child : typ.children)
+        {
+            children.push_back(child.idx);
+        }
+        m_dbTypes.push_back(DbType(typ.Key, children, typ.tokenIdx, typ.TypeKind, typ.isConst));
     }
     return 0;
 }
@@ -509,7 +515,10 @@ void DbFile::Merge(const DbFile& other)
                 DbType tn = otype;
                 tn.key = m_dbTypes.size();
                 tn.token = tokenIdx;
-                tn.next = tn.next != nullnode ? typeRemapping[tn.next] : nullnode;
+                for (int64_t &child : tn.children)
+                {
+                    child = typeRemapping[child];
+                }
                 uidTypeMap.insert(std::make_pair(uid, tn.key));
                 m_dbTypes.push_back(tn);
                 typeRemapping[typeIdx] = tn.key;

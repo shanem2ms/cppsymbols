@@ -66,8 +66,8 @@ namespace cppsymview
                     if (dbtype.Token >= 0)
                         cppType.Token = curFile.Tokens[(int)dbtype.Token];
                     cppType.Kind = dbtype.Kind;
-                    if (dbtype.Next >= 0)
-                        cppType.Next = cppTypes[(int)dbtype.Next];
+                    if (dbtype.Children.Length > 0)
+                        cppType.Children = dbtype.Children.Select(c => cppTypes[(int)c]).ToArray();
                     cppType.Const = dbtype.IsConst != 0;
                     cppTypes.Add(cppType);
                 }

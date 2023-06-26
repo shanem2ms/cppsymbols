@@ -49,6 +49,7 @@ namespace cppsymview.script
 		
 		CppType mainType;
 		Category category;
+		public static HashSet<string> utypes = new HashSet<string>();
 		
 		public string Name => GetName();
 		
@@ -56,6 +57,8 @@ namespace cppsymview.script
 		{
 			mainType = t;
 			category = GetCategory();
+			if (category == Category.Unsupported)
+				utypes.Add(GetBaseType(t).ToString());
 		}
 		
 		public bool IsSupported => category != Category.Unsupported;
@@ -80,6 +83,32 @@ namespace cppsymview.script
 			else if (nativeTypes.ContainsKey(baseType.Kind))
 			{
 				return nativeTypes[baseType.Kind];
+			}
+			else if (baseType.Kind == CXTypeKind.Void)
+			{
+				return "void";
+			}
+			else
+			{
+				Api.WriteLine(mainType.Token.Text);
+				return "unk";
+			}
+		}
+		
+		public string GetCSApiType()
+		{
+			CppType baseType = GetBaseType(mainType);
+			if (category == Category.String)
+				return "string";
+			else if (IsPointerRefArray(mainType))
+				return "IntPtr";
+			else if (nativeTypes.ContainsKey(baseType.Kind))
+			{
+				return nativeTypes[baseType.Kind];
+			}
+			else if (baseType.Kind == CXTypeKind.Void)
+			{
+				return "void";
 			}
 			else
 			{
@@ -120,7 +149,10 @@ namespace cppsymview.script
 			string tmp = "";
 			int curStack = 0;
 			
+			Api.WriteLine(templateType);
 			int startParams = templateType.IndexOf('<');
+			ParseTemplateTypeRec(templateType, startParams + 1, 2);
+			
 			int endParams = templateType.LastIndexOf('>');
 		
 			string template = templateType.Substring(0, startParams);
@@ -131,6 +163,38 @@ namespace cppsymview.script
 				return Category.String;
 			else
 				return Category.Unsupported;
+		}
+		
+		static char []srchChars = new char[3] { '<', '>', ',' };
+		static int ParseTemplateTypeRec(string templateType, int startOffset, int level)
+		{
+			int curPos = startOffset;
+			while (curPos < templateType.Length)
+			{
+				curPos = templateType.IndexOfAny(srchChars, curPos);
+				if (curPos < 0)
+					break;
+				else if (templateType[curPos] == '<')
+				{
+					curPos = ParseTemplateTypeRec(templateType, curPos + 1, level + 1);
+				}
+				else if (templateType[curPos] == '>')
+				{
+					Api.WriteLine(new String(' ', level * 4) + templateType.Substring(startOffset, curPos - startOffset));
+					return curPos + 1;
+				}
+				else if (templateType[curPos] == ',')
+				{
+					Api.WriteLine(new String(' ', level * 4) + templateType.Substring(startOffset, curPos - startOffset));
+					curPos++;
+					startOffset = curPos;
+				}
+				else 
+				{
+					curPos++;
+				}
+			}
+			return curPos;
 		}
 		
 		static bool IsPrimitiveType(CppType b)
@@ -172,7 +236,7 @@ namespace cppsymview.script
 			return "";
         }	
         
-        public List<string> GetReturnString(string callstring)
+        public List<string> GetCppReturnString(string callstring)
         {
         	List<string> outlines = new List<string>();
         	if (category == Category.Void)
@@ -193,5 +257,23 @@ namespace cppsymview.script
 			return outlines;
         }
 				
+		public List<string> GetCsReturnString(string callstring)
+        {
+        	List<string> outlines = new List<string>();
+        	if (category == Category.Void)
+        	{
+        		outlines.Add($"    {callstring};");
+        	}
+        	else if (category == Category.String)
+        	{
+        		outlines.Add($"    IntPtr strtmp = {callstring};");
+        		outlines.Add($"    return Marshal.PtrToStringAnsi(strtmp);");
+        	}
+			else
+			{
+        		outlines.Add($"    return {callstring};");
+			}			
+			return outlines;
+		}
     }
 }

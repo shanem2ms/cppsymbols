@@ -272,7 +272,12 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         if (itType == typesMap.end())
         {
             TypeNode typn;
-            typn.nextIdx = addType(tn->pNext);
+            for (auto& child : tn->children)
+            {
+                int64_t typeIdx = addType(child.ptr);
+                if (typeIdx != nullnode)
+                    typn.children.push_back(TypeNode::Child(typeIdx));
+            }
             typn.tokenIdx = tn->tokenIdx;
             typn.Key = typeNodes.size();
             typn.TypeKind = tn->TypeKind;

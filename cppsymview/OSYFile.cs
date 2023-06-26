@@ -38,7 +38,7 @@ namespace cppsymview
         public class DbType
         {
             public long Key { get; set; }
-            public long Next { get; set; }
+            public long[] Children { get; set; } = new long[0];
             public long Token { get; set; }
             public CXTypeKind Kind { get; set; }
 
@@ -120,12 +120,13 @@ namespace cppsymview
         {
             DbType t = new DbType();
             t.Key = ReadInt64(stream);
-            t.Next = ReadInt64(stream);
+            t.Children = ReadListLong(stream);
             t.Token = ReadInt64(stream);
             t.Kind = (CXTypeKind)ReadInt32(stream);
             t.IsConst = ReadByte(stream);
             return t;
         }
+
         DbNode ReadNode(MemoryStream stream)
         {
             DbNode n = new DbNode();
@@ -172,6 +173,19 @@ namespace cppsymview
             for (ulong idx = 0; idx < vecLength; ++idx)
             {
                 T val = ReadItem<T>(stream);
+                items[idx] = val;
+            }
+
+            return items;
+        }
+
+        long[] ReadListLong(MemoryStream stream) 
+        {
+            ulong vecLength = ReadUint64(stream);
+            long[] items = new long[vecLength];
+            for (ulong idx = 0; idx < vecLength; ++idx)
+            {
+                long val = ReadInt64(stream);
                 items[idx] = val;
             }
 

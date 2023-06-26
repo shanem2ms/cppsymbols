@@ -20,6 +20,7 @@ BaseNode::BaseNode(int64_t key) :
     SourceFile(nullptr),
     AcessSpecifier(CX_CXXInvalidAccessSpecifier),
     isAbstract(false),
+    nTemplateArgs(0),
     StorageClass(CX_SC_Invalid)
 {
 }
@@ -126,6 +127,7 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     node.Linkage = clang_getCursorLinkage(cursor);
     node.AcessSpecifier = clang_getCXXAccessSpecifier(cursor);
     node.StorageClass = clang_Cursor_getStorageClass(cursor);
+    node.nTemplateArgs = clang_Cursor_getNumTemplateArguments(cursor);
 
     CXFile file;
     unsigned int line;
@@ -199,10 +201,10 @@ TypeNode* BaseNode::TypeFromCursor(CXCursor cursor, VisitContextPtr vc)
 {
     CXType cxtype = clang_getCursorType(cursor);
 
-    return TypeFromCxType(cxtype, vc);
+    return TypeFromCxType(cursor, cxtype, vc);
 }
 
-TypeNode* BaseNode::TypeFromCxType(CXType cxtype, VisitContextPtr vc)
+TypeNode* BaseNode::TypeFromCxType(CXCursor cursor, CXType cxtype, VisitContextPtr vc)
 {
     TypeNode* tn = new TypeNode();
     tn->TypeKind = cxtype.kind;
@@ -213,37 +215,105 @@ TypeNode* BaseNode::TypeFromCxType(CXType cxtype, VisitContextPtr vc)
     if (cxtype.kind == CXType_Pointer)
     {
         cxtype = clang_getPointeeType(cxtype);
-        tn->pNext = TypeFromCxType(cxtype, vc);
+        tn->children.push_back(TypeNode::Child(TypeFromCxType(cursor, cxtype, vc)));
     }
     else if (cxtype.kind == CXType_LValueReference)
     {
         cxtype = clang_getNonReferenceType(cxtype);
-        tn->pNext = TypeFromCxType(cxtype, vc);
+        tn->children.push_back(TypeNode::Child(TypeFromCxType(cursor, cxtype, vc)));
     }
     else if (cxtype.kind == CXType_Elaborated)
     {
         cxtype = clang_Type_getNamedType(cxtype);
-        tn->pNext = TypeFromCxType(cxtype, vc);
+        tn->children.push_back(TypeNode::Child(TypeFromCxType(cursor, cxtype, vc)));
     }
     else if (cxtype.kind == CXType_Typedef)
     {
         CXCursor c = clang_getTypeDeclaration(cxtype);
         cxtype = clang_getTypedefDeclUnderlyingType(c);
-        tn->pNext = TypeFromCxType(cxtype, vc);
+        tn->children.push_back(TypeNode::Child(TypeFromCxType(cursor, cxtype, vc)));
     }
     else if (cxtype.kind == CXType_ConstantArray ||
         cxtype.kind == CXType_IncompleteArray ||
         cxtype.kind == CXType_VariableArray)
     {
         cxtype = clang_getElementType(cxtype);
-        tn->pNext = TypeFromCxType(cxtype, vc);
+        tn->children.push_back(TypeNode::Child(TypeFromCxType(cursor, cxtype, vc)));
     }
     else if (cxtype.kind == CXType_FunctionProto)
     {
         cxtype = clang_getResultType(cxtype);
-        tn->pNext = TypeFromCxType(cxtype, vc);
+        tn->children.push_back(TypeNode::Child(TypeFromCxType(cursor, cxtype, vc)));
+    }
+    else if (cxtype.kind == CXType_Unexposed)
+    {
+        TypeNode* tnret = ParseTemplateType(tn->tokenStr);
+        if (tnret != nullptr)
+            return tnret;
     }
     return tn;
+}
+
+TypeNode* BaseNode::ParseTemplateType(const std::string& templateType)
+{
+    size_t startPos = templateType.find('<');
+    if (startPos == std::string::npos)
+        return nullptr;
+    TypeNode* tn = new TypeNode();
+    tn->TypeKind = CXType_Unexposed;
+    tn->tokenStr = templateType;
+
+    {
+        TypeNode* tntemplate = new TypeNode();
+        tntemplate->TypeKind = CXType_OCLReserveID;
+        tntemplate->tokenStr = templateType.substr(0, startPos);
+        tn->children.push_back(tntemplate);
+    }
+    BaseNode::ParseTemplateParmsRec(templateType, startPos+1, tn->children);
+    return tn;
+}
+
+size_t BaseNode::ParseTemplateParmsRec(const std::string& templateType, size_t startOffset, std::vector<TypeNode::Child>& outchildren)
+{
+    static char srchChars[] = { '<', '>', ',' };
+    constexpr int nchars = sizeof(srchChars) / sizeof(srchChars[0]);
+    int curPos = startOffset;
+
+    TypeNode* tn = new TypeNode();
+    tn->TypeKind = CXType_OCLReserveID;
+
+    std::vector<TypeNode*> typenodes;
+    while (curPos < templateType.size())
+    {
+        curPos = templateType.find_first_of(srchChars, curPos, nchars);
+        if (curPos < 0)
+            break;
+        else if (templateType[curPos] == '<')
+        {
+            std::vector<TypeNode::Child> children;
+            curPos = ParseTemplateParmsRec(templateType, curPos + 1, children);
+        }
+        else if (templateType[curPos] == '>')
+        {
+            tn->tokenStr = templateType.substr(startOffset, curPos - startOffset);
+            outchildren.push_back(tn);
+            return curPos + 1;
+        }
+        else if (templateType[curPos] == ',')
+        {
+            tn->tokenStr = templateType.substr(startOffset, curPos - startOffset);
+            outchildren.push_back(tn);
+            curPos++;
+            startOffset = curPos;
+            tn = new TypeNode();
+            tn->TypeKind = CXType_OCLReserveID;
+        }
+        else
+        {
+            curPos++;
+        }
+    }
+    return curPos;
 }
 
 extern std::string cxc[CXCursor_OverloadCandidate + 1];
@@ -255,10 +325,10 @@ void BaseNode::LogTypeInfo(VisitContextPtr vc, std::ostringstream & strm, TypeNo
     
     strm << std::endl << std::string(depth * 3, ' ') <<
         " " << cxt[ptype->TypeKind] << ": " << ptype->tokenStr << " C:" << ptype->isConst;
-    if (ptype->pNext != nullptr)
+    for (auto &child : ptype->children)
     {
         vc->depth = depth;
-        LogTypeInfo(vc, strm, ptype->pNext);
+        LogTypeInfo(vc, strm, child.ptr);
     }
     vc->depth = depth - 1;
 }
@@ -292,6 +362,8 @@ void BaseNode::LogNodeInfo(VisitContextPtr vc, int64_t nodeIdx, std::string tag)
         tag << " " << (node.SourceFile != nullptr ? node.SourceFile->Name() : "") << " [" <<
         node.Line << ", " << node.Column << "] " << cxc[node.Kind] << " " << node.TypeIdx <<
         " " << node.tmpTokenString << " " <<  " " << vals[node.AcessSpecifier] << " " << stgvals[node.StorageClass];
+    if (node.nTemplateArgs > -1)
+        strm << " " << "TA=" << node.nTemplateArgs;
     if (node.pTypePtr != nullptr)
     {
         LogTypeInfo(vc, strm, node.pTypePtr);

@@ -9,9 +9,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Windows;
-using System.Reflection.Metadata.Ecma335;
-using System.Drawing.Drawing2D;
+using System.Diagnostics;
+using cppsymview.script;
 
 namespace cppsymview
 {
@@ -81,6 +80,8 @@ namespace cppsymview
         {
             using (var ms = new MemoryStream())
             {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 var compilation = Compile(codeToCompile);
                 EmitResult result = compilation.Emit(ms);
 
@@ -133,7 +134,13 @@ namespace cppsymview
                         OnCompileErrors?.Invoke(this, true);
                     }
                 }
+                sw.Stop();
+                TimeSpan ts = sw.Elapsed;
+                string elapsedTime = String.Format("{0:00}.{1:00}",
+                    ts.TotalSeconds,
+                    ts.Milliseconds / 10);
 
+                script.Api.WriteLine("TotalTime " + elapsedTime);
                 script.Api.Flush();
             }
 

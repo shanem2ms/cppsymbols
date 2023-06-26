@@ -32,19 +32,23 @@ struct Token
 class TypeNode
 {
 public:
+    struct Child
+    {
+        Child(TypeNode* _ptr) : ptr(_ptr), idx(-1){}
+        Child(int64_t _idx) : idx(_idx), ptr(nullptr) {}
+        TypeNode* ptr;
+        int64_t idx;
+    };
     int64_t Key;
     CXTypeKind TypeKind;
     std::string tokenStr;
     int64_t tokenIdx;
     bool isConst;
-    TypeNode* pNext;
-    int64_t nextIdx;
+    std::vector<Child> children;
     TypeNode() :
         TypeKind(CXType_Invalid),
         Key(nullnode),
-        pNext(nullptr),
-        isConst(false),
-        nextIdx(nullnode)
+        isConst(false)
     {}
 };
 
@@ -72,6 +76,7 @@ public:
     CX_CXXAccessSpecifier AcessSpecifier;
     CX_StorageClass StorageClass;
     bool isAbstract;
+    int nTemplateArgs;
 public:
     BaseNode(int64_t key);
     ~BaseNode();
@@ -110,8 +115,10 @@ public:
     static void LogNodeInfo(VisitContextPtr vc, int64_t node, std::string tag);
     static void LogTypeInfo(VisitContextPtr vc, std::ostringstream& strm, TypeNode *ptype);
     static CXChildVisitResult ClangVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
-    static TypeNode* TypeFromCxType(CXType cxtype, VisitContextPtr vc);
+    static TypeNode* TypeFromCxType(CXCursor cursor, CXType cxtype, VisitContextPtr vc);
     static TypeNode *TypeFromCursor(CXCursor cursor, VisitContextPtr vc);
+    static TypeNode* ParseTemplateType(const std::string& templateType);
+    static size_t ParseTemplateParmsRec(const std::string& templateType, size_t startOffset, std::vector<TypeNode::Child> &outchildren);
 };
 
 class Node : public BaseNode

@@ -80,7 +80,7 @@ struct DbToken : public CppStreamable
 struct DbType : public CppStreamable
 {
     int64_t key;
-    int64_t next;
+    std::vector<int64_t> children;
     int64_t token;
     CXTypeKind kind;
     uint8_t isconst;
@@ -88,7 +88,6 @@ struct DbType : public CppStreamable
     DbType() :
         key(-1),
         token(-1),
-        next(-1),
         kind(CXType_Invalid),
         isconst(0)
     {}
@@ -103,12 +102,12 @@ struct DbType : public CppStreamable
     }
 
     DbType(int64_t _key,
-    int64_t _next,
+    const std::vector<int64_t> &_children,
     int64_t _token,
     CXTypeKind _kind,
     uint8_t _isconst) :
         key(_key),
-        next(_next),
+        children(_children),
         token(_token),
         kind(_kind),
         isconst(_isconst)
@@ -118,7 +117,7 @@ struct DbType : public CppStreamable
     void WriteBinaryData(ICppStreamWriter& data, void* pUserContext) const override
     {
         CppStream::Write(data, key);
-        CppStream::Write(data, next);
+        CppStream::Write(data, children);
         CppStream::Write(data, token);
         CppStream::Write(data, kind);
         CppStream::Write(data, isconst);
@@ -127,7 +126,7 @@ struct DbType : public CppStreamable
     size_t ReadBinaryData(const ICppStreamReader& data, size_t offset, void* pUserContext) override
     {
         offset = CppStream::Read(data, offset, key);
-        offset = CppStream::Read(data, offset, next);
+        offset = CppStream::Read(data, offset, children);
         offset = CppStream::Read(data, offset, token);
         offset = CppStream::Read(data, offset, kind);
         offset = CppStream::Read(data, offset, isconst);
