@@ -265,7 +265,7 @@ TypeNode* BaseNode::ParseTemplateType(const std::string& templateType)
 
     {
         TypeNode* tntemplate = new TypeNode();
-        tntemplate->TypeKind = CXType_OCLReserveID;
+        tntemplate->TypeKind = CXType_TemplateType;
         tntemplate->tokenStr = templateType.substr(0, startPos);
         tn->children.push_back(tntemplate);
     }
@@ -280,7 +280,7 @@ size_t BaseNode::ParseTemplateParmsRec(const std::string& templateType, size_t s
     int curPos = startOffset;
 
     TypeNode* tn = new TypeNode();
-    tn->TypeKind = CXType_OCLReserveID;
+    tn->TypeKind = CXType_TemplateParam;
 
     std::vector<TypeNode*> typenodes;
     while (curPos < templateType.size())
@@ -306,7 +306,7 @@ size_t BaseNode::ParseTemplateParmsRec(const std::string& templateType, size_t s
             curPos++;
             startOffset = curPos;
             tn = new TypeNode();
-            tn->TypeKind = CXType_OCLReserveID;
+            tn->TypeKind = CXType_TemplateParam;
         }
         else
         {

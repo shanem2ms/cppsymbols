@@ -383,8 +383,8 @@ void InitCx()
     cxt[CXType_OCLImage3dRW] = "OCLImage3dRW";
     cxt[CXType_OCLSampler] = "OCLSampler";
     cxt[CXType_OCLEvent] = "OCLEvent";
-    cxt[CXType_OCLQueue] = "OCLQueue";
-    cxt[CXType_OCLReserveID] = "OCLReserveID";
+    cxt[CXType_TemplateType] = "TemplateType";
+    cxt[CXType_TemplateParam] = "TemplateParam";
     cxt[CXType_ObjCObject] = "ObjCObject";
     cxt[CXType_ObjCTypeParam] = "ObjCTypeParam";
     cxt[CXType_Attributed] = "Attributed";

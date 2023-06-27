@@ -1186,8 +1186,8 @@ namespace cppsymview
         OCLImage3dRW = 156,
         OCLSampler = 157,
         OCLEvent = 158,
-        OCLQueue = 159,
-        OCLReserveID = 160,
+        TemplateName = 159,
+        TempalteParam = 160,
 
         ObjCObject = 161,
         ObjCTypeParam = 162,

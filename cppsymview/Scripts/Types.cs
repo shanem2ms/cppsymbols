@@ -43,6 +43,7 @@ namespace cppsymview.script
 			Unsupported,
 			Primitive,
 			String,
+			Template,
 			Void
 		};
 		
@@ -57,8 +58,8 @@ namespace cppsymview.script
 		{
 			mainType = t;
 			category = GetCategory();
-			if (category == Category.Unsupported)
-				utypes.Add(GetBaseType(t).ToString());
+			if (category == Category.Template)
+				utypes.Add(t.ToString());
 		}
 		
 		public bool IsSupported => category != Category.Unsupported;
@@ -87,10 +88,10 @@ namespace cppsymview.script
 			else if (baseType.Kind == CXTypeKind.Void)
 			{
 				return "void";
-			}
+			}			
 			else
 			{
-				Api.WriteLine(mainType.Token.Text);
+				//Api.WriteLine(mainType.Token.Text);
 				return "unk";
 			}
 		}
@@ -112,7 +113,7 @@ namespace cppsymview.script
 			}
 			else
 			{
-				Api.WriteLine(mainType.Token.Text);
+				//Api.WriteLine(mainType.Token.Text);
 				return "unk";
 			}
 		}
@@ -138,64 +139,11 @@ namespace cppsymview.script
 			CppType b = GetBaseType(mainType);
 			if (IsPrimitiveType(b))
 				return Category.Primitive;
-			if (b.Kind == CXTypeKind.Unexposed && b.Token.Text.Contains('<'))
-				return ParseTemplateType(b.Token.Text);
+			if (b.Kind == CXTypeKind.TemplateName)
+				return Category.Template;
 			return Category.Unsupported;
 		}
-		
-		static Category ParseTemplateType(string templateType)
-		{	
-			int curIdx = -1;
-			string tmp = "";
-			int curStack = 0;
-			
-			Api.WriteLine(templateType);
-			int startParams = templateType.IndexOf('<');
-			ParseTemplateTypeRec(templateType, startParams + 1, 2);
-			
-			int endParams = templateType.LastIndexOf('>');
-		
-			string template = templateType.Substring(0, startParams);
-			//Api.WriteLine(template);
-			//Api.WriteLine(templateType.Substring(startParams + 1, endParams - startParams - 1));
-			//Api.WriteLine("");
-			if (template == "basic_string")
-				return Category.String;
-			else
-				return Category.Unsupported;
-		}
-		
-		static char []srchChars = new char[3] { '<', '>', ',' };
-		static int ParseTemplateTypeRec(string templateType, int startOffset, int level)
-		{
-			int curPos = startOffset;
-			while (curPos < templateType.Length)
-			{
-				curPos = templateType.IndexOfAny(srchChars, curPos);
-				if (curPos < 0)
-					break;
-				else if (templateType[curPos] == '<')
-				{
-					curPos = ParseTemplateTypeRec(templateType, curPos + 1, level + 1);
-				}
-				else if (templateType[curPos] == '>')
-				{
-					Api.WriteLine(new String(' ', level * 4) + templateType.Substring(startOffset, curPos - startOffset));
-					return curPos + 1;
-				}
-				else if (templateType[curPos] == ',')
-				{
-					Api.WriteLine(new String(' ', level * 4) + templateType.Substring(startOffset, curPos - startOffset));
-					curPos++;
-					startOffset = curPos;
-				}
-				else 
-				{
-					curPos++;
-				}
-			}
-			return curPos;
-		}
+					
 		
 		static bool IsPrimitiveType(CppType b)
         {

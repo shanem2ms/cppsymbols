@@ -50,7 +50,7 @@ namespace cppsymview.script
     		classes.Write();
     		foreach (string utype in EType.utypes)
     		{
-    			//Api.WriteLine(utype);
+    			Api.WriteLine(utype);
     		}
         }
         

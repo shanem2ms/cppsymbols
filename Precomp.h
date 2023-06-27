@@ -47,3 +47,5 @@ typedef DbFile* DbFilePtr;
 #define dbgbreak()
 #endif
 
+#define CXType_TemplateType CXType_OCLQueue
+#define CXType_TemplateParam CXType_OCLReserveID

@@ -9,9 +9,11 @@
 #include <set>
 #include <sstream>
 #include <chrono>
+#include <functional>
 #include "clang-c/BuildSystem.h"
 #include "clang-c/Index.h"
 
+class TypeNode;
 class Compiler
 {
     class Timer
@@ -46,6 +48,13 @@ private:
         ProjectCache& pc, bool buildPch, const std::string& usePch, 
         const std::string& rootdir, int loggingFlags);
 
+    void RemapTemplateTypes(std::function<size_t(const std::string& tokenStr)> addToken,
+        std::vector<Node>& newNodes0,
+        std::vector<TypeNode>& typeNodes);
+
+    void AddTypeNodes(std::function<size_t (const std::string &tokenStr)> addToken,
+        std::vector<Node>& newNodes0,
+        std::vector<TypeNode> &typeNodes);
 public:
     static Compiler* Inst();
 

@@ -18,7 +18,7 @@ namespace cppsymview
         public Token Token { get; set;}
         public CppType []Children { get; set; }
 
-        public CppType Next => Children.Length > 0 ? Children[0] : null;
+        public CppType Next => Children?.Length > 0 ? Children[0] : null;
         public CXTypeKind Kind { get; set; }
         public bool Const { get; set; }
 
