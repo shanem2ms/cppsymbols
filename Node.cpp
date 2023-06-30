@@ -201,7 +201,9 @@ TypeNode* BaseNode::TypeFromCursor(CXCursor cursor, VisitContextPtr vc)
 {
     CXType cxtype = clang_getCursorType(cursor);
 
-    return TypeFromCxType(cursor, cxtype, vc);
+    TypeNode* tn = TypeFromCxType(cursor, cxtype, vc);
+    tn->CalcHash();
+    return tn;
 }
 
 TypeNode* BaseNode::TypeFromCxType(CXCursor cursor, CXType cxtype, VisitContextPtr vc)
@@ -250,6 +252,12 @@ TypeNode* BaseNode::TypeFromCxType(CXCursor cursor, CXType cxtype, VisitContextP
         TypeNode* tnret = ParseTemplateType(tn->tokenStr);
         if (tnret != nullptr)
             return tnret;
+    }
+
+    constexpr int csize = sizeof("const ") - 1;
+    if (tn->isConst && tn->tokenStr.starts_with("const "))
+    {
+        tn->tokenStr = tn->tokenStr.substr(csize);
     }
     return tn;
 }
@@ -450,4 +458,20 @@ CXChildVisitResult BaseNode::ClangVisitor(CXCursor cursor, CXCursor parent, CXCl
 
 std::ostream& operator<<(std::ostream& os, TypeNode const& m) {
     return os << "T: " << m.TypeKind;
+}
+
+
+void TypeNode::CalcHash()
+{
+    size_t hashCode = 1035752329;
+    hashCode = hashCode * -1521134295 + isConst;
+    hashCode = hashCode * -1521134295 + TypeKind;
+    hashCode = hashCode * -1521134295 + std::hash<std::string>{}(tokenStr);
+    for (auto& c : children)
+    {
+        c.ptr->CalcHash();
+        hashCode = hashCode * c.ptr->hash;
+    }
+
+    hash = hashCode;
 }

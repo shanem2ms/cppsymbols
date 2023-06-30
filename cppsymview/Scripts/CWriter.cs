@@ -45,7 +45,7 @@ namespace cppsymview.script
 			string ctornum = f.idx >= 0 ? f.idx.ToString() : "";
 			bool isConstructor = f.funcname == null;
 			f.cppname = isConstructor ? $"{cclass}_Ctor{ctornum}" : $"{cclass}{f.cexportname}";
-			string retarg = isConstructor ? $"{f.classname} *" : f.returnType.Name;
+			string retarg = isConstructor ? $"{f.classname} *" : f.returnType.ctype;
 			bool hasThisArg = !isConstructor && !f.isStatic;
 			string thisarg = hasThisArg ? $"{f.classname} *pthis" : "";
 			string line = $"CAPI {retarg} {f.cppname}({thisarg}";
@@ -58,8 +58,8 @@ namespace cppsymview.script
 				if (!first)
 					callline += ", ";
 				string parmname = tp.param.Token.Text;
-				line += tp.type.DeclarationStr(ref parmname);
-				callline += parmname;
+				line += tp.type.GetCppDeclarationStr(ref parmname);
+				callline += (tp.type.cderef ? "*" : "") + parmname;
 				first = false;
 			}
 			if (isConstructor) {

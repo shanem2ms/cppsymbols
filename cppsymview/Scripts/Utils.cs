@@ -59,9 +59,17 @@ namespace cppsymview.script
         	if (cppname.StartsWith("operator"))
         	{
         		if (cppname[8] == '[')
-        		{
         			cfunc = "oparray";
-        		}
+        		else if (cppname[8] == '<')
+					cfunc = "oplt";        		
+        		else if (cppname[8] == '>')
+					cfunc = "opgt";        		
+        		else if (cppname[8] == '=' &&
+        			cppname[9] == '=')
+					cfunc = "opeq";        		
+        		else if (cppname[8] == '!' &&
+        			cppname[9] == '=')
+					cfunc = "opneq";        		
         	}
         	string orig = cfunc;
         	int nextIdx = 0;

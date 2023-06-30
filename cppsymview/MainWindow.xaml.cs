@@ -74,7 +74,8 @@ namespace cppsymview
             script.Api.Flush = Flush;
             folderView.Root = root;
             folderView.OnFileSelected += FolderView_OnFileSelected;
-            
+
+
             DirectoryInfo di = new DirectoryInfo(Directory.GetCurrentDirectory());
             while (di.Name.ToLower() != "cppsymview")
                 di = di.Parent;
@@ -322,6 +323,19 @@ namespace cppsymview
             }
         }
 
+        private void GotoTreeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Node n = nodesListView.SelectedItem as Node;
+            if (n != null)
+            {
+                string filename = engine.GetFileNameFromIdx(n.SourceFile);
+                TextEditor te = GetOrMakeTextEditor(filename);
+                EditorsCtrl.SelectedItem = te;
+                te.ScrollTo((int)n.Line, (int)n.Column);
+            }
+        }
+
+
         private void CloseBtn_Click(object sender, RoutedEventArgs e)
         {
             TabItem ti = Util.FindParent<TabItem>(sender as DependencyObject);
@@ -331,7 +345,12 @@ namespace cppsymview
 
         private void GoTypeBtn_Click(object sender, RoutedEventArgs e)
         {
-
+            CppType cppType = engine.cppTypesArray.FirstOrDefault(c => TypeNameTb.Text == c.Token.Text);
+            if (cppType != null)
+            {
+                CurrentType = cppType;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentType)));
+            }
         }
 
         private void TypeTknBtn_Click(object sender, RoutedEventArgs e)

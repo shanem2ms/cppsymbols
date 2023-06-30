@@ -136,11 +136,11 @@
                     </TabControl.ContentTemplate>
                     <TabControl.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Rectangle Width="10" Height="10" Fill="{Binding Path=TabBrush}" Margin="5"/>
-                                <TextBlock Text="{Binding Path=CPPName}" Margin="5"/>
-                                <Button Name="CloseBtn" Content="X" Margin="5" Click="CloseBtn_Click"/>
-                            </StackPanel>
+                            <DockPanel HorizontalAlignment="Stretch">
+                                <Rectangle Width="10" Height="10" Fill="{Binding Path=TabBrush}" />
+                                <TextBlock Text="{Binding Path=CPPName}" />
+                                <Button DockPanel.Dock="Right" Height="10"  Name="CloseBtn" Content="X" Click="CloseBtn_Click"/>
+                            </DockPanel>
                         </DataTemplate>
                     </TabControl.ItemTemplate>
                 </TabControl>
@@ -158,9 +158,9 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="3*" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="3*" />
+                        <RowDefinition Height="2*" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="2*" />
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0">
                         <Grid.RowDefinitions>
@@ -173,6 +173,7 @@
                         <StackPanel Orientation="Horizontal">
                             <CheckBox Name="CurFileChk"  Foreground="Wheat" Margin="5" IsChecked="{Binding Path=LiveSwitching, Mode=TwoWay}">Live Switching</CheckBox>
                             <Button x:Name="GotoSrcBtn" Margin="5" Content="Go To Source" Click="GotoSrcBtn_Click" />
+                            <Button x:Name="GotoTreeBtn" Margin="5" Content="Go To Tree" Click="GotoTreeBtn_Click" />
                         </StackPanel>
                     </Grid>
                     <GridSplitter Grid.Row="1" ResizeDirection="Rows" Height="10" HorizontalAlignment="Stretch" />

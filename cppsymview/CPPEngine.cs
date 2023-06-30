@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Formats.Tar;
 using System.IO;
 using System.Linq;
 using System.Security;
@@ -57,21 +58,24 @@ namespace cppsymview
             if (File.Exists(osypath))
             {
                 curFile = new OSYFile(osypath);
-                List<CppType> cppTypes = new List<CppType>();
+                cppTypesArray = new CppType[curFile.DbTypes.Length];
                 List<Node> nodes = new List<Node>();
 
-                foreach (OSYFile.DbType dbtype in curFile.DbTypes)
+                for (int cidx = 0; cidx <  curFile.DbTypes.Length; cidx++)
                 {
-                    CppType cppType = new CppType();
+                    cppTypesArray[cidx] = new CppType();
+                }
+                for (int cidx = 0; cidx < curFile.DbTypes.Length; cidx++)
+                {
+                    var dbtype = curFile.DbTypes[cidx];
+                    CppType cppType = cppTypesArray[cidx];
                     if (dbtype.Token >= 0)
                         cppType.Token = curFile.Tokens[(int)dbtype.Token];
                     cppType.Kind = dbtype.Kind;
                     if (dbtype.Children.Length > 0)
-                        cppType.Children = dbtype.Children.Select(c => cppTypes[(int)c]).ToArray();
+                        cppType.Children = dbtype.Children.Select(c => cppTypesArray[(int)c]).ToArray();
                     cppType.Const = dbtype.IsConst != 0;
-                    cppTypes.Add(cppType);
                 }
-                cppTypesArray = cppTypes.ToArray();
 
                 long index = 0;
                 foreach (OSYFile.DbNode dbnode in curFile.Nodes)

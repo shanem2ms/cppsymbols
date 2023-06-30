@@ -7,25 +7,61 @@ using System.Threading.Tasks;
 
 namespace cppsymview.script
 {    
-	class Classes
+	static class Classes
     {
-    	CWriter cppwriter = new CWriter(@"c:\flash\src\exports.cpp");
-    	CSNativeWriter csnativewriter = new CSNativeWriter(@"C:\flash\cslib\flashnet\NativeLib.cs");
-    	CSApiWriter csapiwriter = new CSApiWriter(@"C:\flash\cslib\flashnet\Api.cs");
-    	
-    	NS classTree = new NS();
+        static CWriter cppwriter = new CWriter(@"c:\flash\src\exports.cpp");
+        static CSNativeWriter csnativewriter = new CSNativeWriter(@"C:\flash\cslib\flashnet\NativeLib.cs");
+        static CSApiWriter csapiwriter = new CSApiWriter(@"C:\flash\cslib\flashnet\Api.cs");
 
-        public void AddAllClasses(Node pn, string ns)
+        static NS classTree = new NS();
+
+        static List<WrappedObject> allClasses = new List<WrappedObject>();
+        static Dictionary<string, WrappedObject>? classMap = null;
+        static public Dictionary<string, WrappedObject> ClassMap {
+    		get { if (classMap != null) return classMap;
+				classMap = allClasses.GroupBy(t => t.name).ToDictionary(t => t.Key, t => t.First());
+				return classMap;  }
+			}
+
+        static public void CollectWrappedTypes(Node pn, string ns)
+        {
+			foreach (Node n in pn.allChildren)
+        	{
+        		if ((n.Kind == CXCursorKind.ClassDecl ||
+        			n.Kind == CXCursorKind.StructDecl) &&
+        			n.CppType.Kind == CXTypeKind.Record)
+        		{
+        			string nm = ns + n.Token.Text;
+        			allClasses.Add(new WrappedObject() { name = nm, isEnum = false });
+        			CollectWrappedTypes(n, nm + "::");
+        		}
+        		if (n.Kind == CXCursorKind.EnumDecl &&
+        			n.CppType.Kind == CXTypeKind.Enum)
+        		{
+        			string nm = ns + n.Token.Text;
+        			allClasses.Add(new WrappedObject() { name = nm, isEnum = true });
+        		}
+        		if (n.Kind == CXCursorKind.Namespace)
+        		{
+        			bool donamespace = n.Token.Text.Length > 0;
+        			string nm = ns + n.Token.Text;
+        			CollectWrappedTypes(n, nm + "::");
+        		}
+        	}        
+		}    	
+
+        public static void Wrap(Node pn, string ns)
         {
 			ProcessFunctions(pn);        
 			AddClasses(pn, ns);
 		}
-        
-        void AddClasses(Node pn, string ns)
+
+        static void AddClasses(Node pn, string ns)
         {
         	foreach (Node n in pn.allChildren)
         	{
-        		if (n.Kind == CXCursorKind.ClassDecl &&
+        		if ((n.Kind == CXCursorKind.ClassDecl ||
+        			n.Kind == CXCursorKind.StructDecl) &&
         			n.CppType.Kind == CXTypeKind.Record)
         		{
         			string nm = ns + n.Token.Text;
@@ -46,9 +82,9 @@ namespace cppsymview.script
 	        			csapiwriter.PopNamespace();
         		}
         	}
-        }        
-        
-		public bool ProcessClass(Node classNode)
+        }
+
+        static public bool ProcessClass(Node classNode)
         {                	
        		if (classNode.Access == CXXAccessSpecifier.Private ||
        			classNode.Access == CXXAccessSpecifier.Protected ||
@@ -70,9 +106,9 @@ namespace cppsymview.script
         	found |= ProcessMembers(classNode);        	
 
 			return true;
-		}	
-			
-		bool ProcessConstructors(Node classNode)
+		}
+
+        static bool ProcessConstructors(Node classNode)
 		{
         	long clsSrcFileIdx = classNode.SourceFile;
 			List<Node> funcs = classNode.FindChildren((n) => 
@@ -127,8 +163,8 @@ namespace cppsymview.script
 			
 			return true;
 		}
- 
- 		bool ProcessMembers(Node classNode)
+
+        static bool ProcessMembers(Node classNode)
 		{
         	long clsSrcFileIdx = classNode.SourceFile;
 			List<Node> funcs = classNode.FindChildren((n) => 
@@ -190,10 +226,10 @@ namespace cppsymview.script
 			}	        	
 			
 			return true;
-		}		
-						
-						
- 		bool ProcessFunctions(Node namespaceNode)
+		}
+
+
+        static bool ProcessFunctions(Node namespaceNode)
 		{
 			List<Node> funcs = namespaceNode.FindChildren((n) => 
 	        	{
@@ -262,7 +298,7 @@ namespace cppsymview.script
 			return true;
 		}		
 		
-		public void Write()
+		public static void Write()
 		{
 			cppwriter.Write();
 			csnativewriter.Write();
@@ -324,6 +360,12 @@ namespace cppsymview.script
     }
 
 
+	class WrappedObject
+	{
+		public string name;
+		public bool isEnum;
+	}
+	
     class Parameter
     {
     	public EType type;

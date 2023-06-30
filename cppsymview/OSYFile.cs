@@ -38,6 +38,8 @@ namespace cppsymview
         public class DbType
         {
             public long Key { get; set; }
+
+            public long Hash { get; set; }
             public long[] Children { get; set; } = new long[0];
             public long Token { get; set; }
             public CXTypeKind Kind { get; set; }
@@ -120,6 +122,7 @@ namespace cppsymview
         {
             DbType t = new DbType();
             t.Key = ReadInt64(stream);
+            t.Hash = ReadInt64(stream);
             t.Children = ReadListLong(stream);
             t.Token = ReadInt64(stream);
             t.Kind = (CXTypeKind)ReadInt32(stream);

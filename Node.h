@@ -45,10 +45,14 @@ public:
     int64_t tokenIdx;
     bool isConst;
     std::vector<Child> children;
+    size_t hash;
+
+    void CalcHash();
     TypeNode() :
         TypeKind(CXType_Invalid),
         Key(nullnode),
-        isConst(false)
+        isConst(false),
+        hash(0)
     {}
 };
 

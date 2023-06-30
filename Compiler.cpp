@@ -263,8 +263,16 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
 
     std::vector<TypeNode> typeNodes;
 
-    RemapTemplateTypes(addToken, newNodes0, typeNodes);
     AddTypeNodes(addToken, newNodes0, typeNodes);
+
+    for (auto& node : typeNodes)
+    {
+        for (auto& nc : node.children)
+        {
+            if (nc.idx == nullnode)
+                throw;
+        }
+    }
 
     for (auto& e : errors)
     {
@@ -317,68 +325,6 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     return data;
 }
 
-void Compiler::RemapTemplateTypes(std::function<size_t(const std::string& tokenStr)> addToken,
-    std::vector<Node>& newNodes0,
-    std::vector<TypeNode>& typeNodes)
-{
-    std::unordered_map<size_t, size_t> typesMap;
-    std::function<void(TypeNode* tn)> addOrigType;
-    addOrigType = [&typeNodes, &typesMap, &addOrigType, &addToken](TypeNode* tn) {
-        if (tn == nullptr || tn->TypeKind == CXType_Invalid)
-            return;
-
-        if (tn->TypeKind == CXType_TemplateParam ||
-            tn->TypeKind == CXType_TemplateType)
-            return;
-
-        tn->tokenIdx = addToken(tn->tokenStr);
-        auto itType = typesMap.find(tn->tokenIdx);
-        if (itType == typesMap.end())
-        {
-            TypeNode typn;
-            for (auto& child : tn->children)
-            {
-                addOrigType(child.ptr);
-            }
-        }
-    };
-
-    for (Node& node : newNodes0)
-    {
-        node.token = addToken(node.tmpTokenString);
-        addOrigType(node.pTypePtr);
-    }
-
-    std::function<void(TypeNode* tn)> mapTemplateTypes;
-    mapTemplateTypes = [&typeNodes, &typesMap, &mapTemplateTypes, &addToken](TypeNode* tn) {
-        if (tn == nullptr || tn->TypeKind == CXType_Invalid)
-            return;
-
-        TypeNode typn;
-        if (tn->TypeKind == CXType_TemplateParam ||
-            tn->TypeKind == CXType_TemplateType)
-        {
-            tn->tokenIdx = addToken(tn->tokenStr);
-            auto itType = typesMap.find(tn->tokenIdx);
-            if (itType != typesMap.end())
-            {
-                TypeNode &tn = typeNodes[itType->second];
-            }
-        }
-        for (auto& child : tn->children)
-        {
-            mapTemplateTypes(child.ptr);
-        }
-    };
-
-    for (Node& node : newNodes0)
-    {
-        node.token = addToken(node.tmpTokenString);
-        mapTemplateTypes(node.pTypePtr);
-    }
-
-}
-
 void Compiler::AddTypeNodes(std::function<size_t(const std::string& tokenStr)> addToken, 
     std::vector<Node>& newNodes0,
     std::vector<TypeNode>& typeNodes)
@@ -390,7 +336,7 @@ void Compiler::AddTypeNodes(std::function<size_t(const std::string& tokenStr)> a
             return nullnode;
 
         tn->tokenIdx = addToken(tn->tokenStr);
-        auto itType = typesMap.find(tn->tokenIdx);
+        auto itType = typesMap.find(tn->hash);
         if (itType == typesMap.end())
         {
             TypeNode typn;
@@ -404,11 +350,29 @@ void Compiler::AddTypeNodes(std::function<size_t(const std::string& tokenStr)> a
             typn.Key = typeNodes.size();
             typn.TypeKind = tn->TypeKind;
             typn.isConst = tn->isConst;
-            itType = typesMap.insert(std::make_pair(tn->tokenIdx, typn.Key)).first;
+            typn.hash = tn->hash;
+            itType = typesMap.insert(std::make_pair(tn->hash, typn.Key)).first;
             typeNodes.push_back(typn);
             tn->Key = typn.Key;
         }
-
+        else if (tn->TypeKind != CXType_TemplateParam &&
+            tn->TypeKind != CXType_TemplateType)
+        {
+            TypeNode& tnn = typeNodes[itType->second];
+            if (tnn.TypeKind == CXType_TemplateParam ||
+                tnn.TypeKind == CXType_TemplateType)
+            {
+                tnn.TypeKind = tn->TypeKind;
+                tnn.isConst = tn->TypeKind;
+                tnn.hash = tn->hash;
+                for (auto& child : tn->children)
+                {
+                    int64_t typeIdx = addType(child.ptr);
+                    if (typeIdx != nullnode)
+                        tnn.children.push_back(TypeNode::Child(typeIdx));
+                }
+            }
+        }
         return itType->second;
     };
 
@@ -417,6 +381,7 @@ void Compiler::AddTypeNodes(std::function<size_t(const std::string& tokenStr)> a
         node.token = addToken(node.tmpTokenString);
         node.TypeIdx = addType(node.pTypePtr);
     }
+    
 }
 
 std::vector<std::string> Compiler::GenerateCompileArgs(const std::string& fname,

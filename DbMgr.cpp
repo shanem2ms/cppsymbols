@@ -124,7 +124,7 @@ int64_t DbFile::AddRows(std::vector<TypeNode>& types)
         {
             children.push_back(child.idx);
         }
-        m_dbTypes.push_back(DbType(typ.Key, children, typ.tokenIdx, typ.TypeKind, typ.isConst));
+        m_dbTypes.push_back(DbType(typ.Key, typ.hash, children, typ.tokenIdx, typ.TypeKind, typ.isConst));
     }
     return 0;
 }
@@ -497,10 +497,10 @@ void DbFile::Merge(const DbFile& other)
         size_t typeIdx = 0;
         for (auto& ctype : m_dbTypes)
         {
-            auto ittok = uidTypeMap.find(ctype.Uid());
+            auto ittok = uidTypeMap.find(ctype.hash);
             if (ittok != uidTypeMap.end())
                 dbgbreak();
-            uidTypeMap.insert(std::make_pair(ctype.Uid(), typeIdx));
+            uidTypeMap.insert(std::make_pair(ctype.hash, typeIdx));
             typeIdx++;
         }
         typeIdx = 0;
@@ -508,8 +508,7 @@ void DbFile::Merge(const DbFile& other)
         for (auto& otype : other.m_dbTypes)
         {
             int64_t tokenIdx = tokenRemapping[otype.token];
-            int64_t uid = DbType::UidCalc(otype.kind, tokenIdx);
-            auto itFoundType = uidTypeMap.find(uid);
+            auto itFoundType = uidTypeMap.find(otype.hash);
             if (itFoundType == uidTypeMap.end())
             {
                 DbType tn = otype;
@@ -519,7 +518,7 @@ void DbFile::Merge(const DbFile& other)
                 {
                     child = typeRemapping[child];
                 }
-                uidTypeMap.insert(std::make_pair(uid, tn.key));
+                uidTypeMap.insert(std::make_pair(tn.hash, tn.key));
                 m_dbTypes.push_back(tn);
                 typeRemapping[typeIdx] = tn.key;
             }

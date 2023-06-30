@@ -9,7 +9,6 @@ namespace cppsymview.script
 {
     public class Script
     {
-    	Classes classes = new Classes();
         Dictionary<CXTypeKind, int> allParams = new Dictionary<CXTypeKind, int>();
 		Dictionary<long,string> myFiles = new Dictionary<long, string>();
 				
@@ -41,16 +40,26 @@ namespace cppsymview.script
     			node.enabled = true;
 			}
 
-			classes.AddAllClasses(bgfxnode, "");
-			classes.AddAllClasses(samnode, "");
-    		
-    		//Api.Engine.RefreshNodeTree();    		    	
-    		//LogTypes();
-    		
-    		classes.Write();
+            Classes.CollectWrappedTypes(bgfxnode, "bgfx::");
+            Classes.CollectWrappedTypes(samnode, "sam::");
+
+            Classes.Wrap(bgfxnode, "");
+            Classes.Wrap(samnode, "");
+
+
+            //Api.Engine.RefreshNodeTree();    		    	
+            //LogTypes();
+
+            Classes.Write();
+            foreach(var kv in Classes.ClassMap)
+            {
+            	Api.WriteLine(kv.Key);
+            }
+            
+            Api.WriteLine("Can't wrap the following:");
     		foreach (string utype in EType.utypes)
     		{
-    			Api.WriteLine(utype);
+    			Api.WriteLine("    " + utype);
     		}
         }
         

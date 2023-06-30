@@ -80,6 +80,7 @@ struct DbToken : public CppStreamable
 struct DbType : public CppStreamable
 {
     int64_t key;
+    int64_t hash;
     std::vector<int64_t> children;
     int64_t token;
     CXTypeKind kind;
@@ -92,21 +93,14 @@ struct DbType : public CppStreamable
         isconst(0)
     {}
 
-    inline static int64_t UidCalc(CXTypeKind k, int64_t t)
-    {
-        return (t << 8) + k;
-    }
-    inline int64_t Uid() const
-    {
-        return UidCalc(kind, token);
-    }
-
     DbType(int64_t _key,
+    int64_t _hash,
     const std::vector<int64_t> &_children,
     int64_t _token,
     CXTypeKind _kind,
     uint8_t _isconst) :
         key(_key),
+        hash(_hash),
         children(_children),
         token(_token),
         kind(_kind),
@@ -117,6 +111,7 @@ struct DbType : public CppStreamable
     void WriteBinaryData(ICppStreamWriter& data, void* pUserContext) const override
     {
         CppStream::Write(data, key);
+        CppStream::Write(data, hash);
         CppStream::Write(data, children);
         CppStream::Write(data, token);
         CppStream::Write(data, kind);
@@ -126,6 +121,7 @@ struct DbType : public CppStreamable
     size_t ReadBinaryData(const ICppStreamReader& data, size_t offset, void* pUserContext) override
     {
         offset = CppStream::Read(data, offset, key);
+        offset = CppStream::Read(data, offset, hash);
         offset = CppStream::Read(data, offset, children);
         offset = CppStream::Read(data, offset, token);
         offset = CppStream::Read(data, offset, kind);

@@ -48,10 +48,6 @@ private:
         ProjectCache& pc, bool buildPch, const std::string& usePch, 
         const std::string& rootdir, int loggingFlags);
 
-    void RemapTemplateTypes(std::function<size_t(const std::string& tokenStr)> addToken,
-        std::vector<Node>& newNodes0,
-        std::vector<TypeNode>& typeNodes);
-
     void AddTypeNodes(std::function<size_t (const std::string &tokenStr)> addToken,
         std::vector<Node>& newNodes0,
         std::vector<TypeNode> &typeNodes);
