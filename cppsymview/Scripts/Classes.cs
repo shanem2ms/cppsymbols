@@ -52,8 +52,11 @@ namespace cppsymview.script
 
         public static void Wrap(Node pn, string ns)
         {
+			csapiwriter.PushStaticClass(ns);
+			ns = "";
 			ProcessFunctions(pn);        
 			AddClasses(pn, ns);
+			csapiwriter.PopClass();
 		}
 
         static void AddClasses(Node pn, string ns)
@@ -94,13 +97,14 @@ namespace cppsymview.script
        			return false;
         	string filename = Api.Engine.SourceFiles[classNode.SourceFile - 1];     
         	if (filename.EndsWith(".cpp")) 
-       			return false;
-       			
+       			return false;      			
       			
 			List<NS> nodes = new List<NS>();
 			NS.GetCanonicalNodes(classNode, nodes);
 			NS nsclass = classTree.AddClass(nodes);
 			
+			if (classNode.Token.Text.Contains("Fatal"))
+				Api.WriteLine(classNode.Token.Text);
        		csapiwriter.PushClass(classNode);
        		bool found = ProcessConstructors(classNode);
         	found |= ProcessMembers(classNode);        	
@@ -155,6 +159,8 @@ namespace cppsymview.script
 					}				
 					f.returnType = null;
 					f.idx = ctorIdx++;
+					if (f.classname == "bgfx")
+						Api.WriteLine(classNode.Token.Text);
 					cppwriter.AddFunction(f);
 					csnativewriter.AddFunction(f);
 					csapiwriter.AddFunction(f);
@@ -250,7 +256,6 @@ namespace cppsymview.script
 			if (validFuncs.Count() == 0)
 				return false;
 
-			csapiwriter.PushStaticClass(nsname);
 			foreach (Node func in validFuncs)
 			{
 				string filename = Api.Engine.SourceFiles[func.SourceFile - 1];
@@ -294,7 +299,6 @@ namespace cppsymview.script
 					csapiwriter.AddFunction(f);					
 				}
 			}
-			csapiwriter.PopClass();
 			return true;
 		}		
 		

@@ -18,6 +18,7 @@ namespace cppsymview.script
         	}
         	
         	if (n.Kind == CXCursorKind.ClassDecl ||
+        		n.Kind == CXCursorKind.StructDecl ||
         		n.Kind == CXCursorKind.Namespace)
         	{
         		parent = parent.Length > 0 ? parent + "::" + n.Token.Text : n.Token.Text;

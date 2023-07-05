@@ -37,7 +37,7 @@ namespace flashnet
 		
 		string curclass = "";
 		public void PushClass(Node classNode)
-		{
+		{	
 			curclass = classNode.Token.Text;
 			fileLines.Add($"public class {classNode.Token.Text}");
 			fileLines.Add("{");
@@ -116,7 +116,7 @@ namespace flashnet
 				string varname = tp.param.Token.Text;
 				if (varname == "")
 					varname = $"tmp{tmpvaridx++}";
-				funcline += tp.type.GetCSNativeType() + " " + varname;
+				funcline += tp.type.GetCSApiType() + " " + varname;
 				callline += varname;				
 			}
 			if (issquarebracket)

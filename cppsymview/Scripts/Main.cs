@@ -39,12 +39,13 @@ namespace cppsymview.script
     		{
     			node.enabled = true;
 			}
+			
 
             Classes.CollectWrappedTypes(bgfxnode, "bgfx::");
             Classes.CollectWrappedTypes(samnode, "sam::");
 
-            Classes.Wrap(bgfxnode, "");
-            Classes.Wrap(samnode, "");
+            Classes.Wrap(bgfxnode, "bgfx");
+            Classes.Wrap(samnode, "sam");
 
 
             //Api.Engine.RefreshNodeTree();    		    	
@@ -53,7 +54,7 @@ namespace cppsymview.script
             Classes.Write();
             foreach(var kv in Classes.ClassMap)
             {
-            	Api.WriteLine(kv.Key);
+            	//Api.WriteLine(kv.Key);
             }
             
             Api.WriteLine("Can't wrap the following:");

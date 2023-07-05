@@ -125,7 +125,7 @@ namespace cppsymview.script
 				return "string";
 			else if (category == Category.WrappedObject)
 			{
-				return "IntPtr";
+				return cstype;
 			}				
 			else if (isPtr)
 				return "IntPtr";
@@ -182,6 +182,7 @@ namespace cppsymview.script
         void BuildType(CppType t)
         {
         	BuildTypeRec(t, 0);
+        	cstype = cstype.Replace("::", ".");
         }
         
         void BuildTypeRec(CppType t, int l)
@@ -218,6 +219,7 @@ namespace cppsymview.script
 	    			isPtr = true;
 	    			valueAsPtr = true;
 	    			basetype = t.Token.Text;
+	    			cstype = basetype;
 	    		}
         	}
         }             
@@ -272,7 +274,10 @@ namespace cppsymview.script
         	}
         	else if (valueAsPtr)
         	{
-        		outlines.Add($"    {ctype} strtmp = new {basetype}();");
+        		string assigntype = ctype;
+        		if (assigntype.StartsWith("const "))
+        			assigntype = assigntype.Substring("const ".Length);
+        		outlines.Add($"    {assigntype} strtmp = new {basetype}();");
         		outlines.Add($"    *strtmp = {callstring};");
         		outlines.Add($"    return strtmp;");
         	}
