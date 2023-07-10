@@ -50,7 +50,10 @@ namespace cppsymview.script
 		
 		
 		CppType mainType;
-		Category category;
+		public Category category;
+		
+		public bool IsWrappedObject => category == Category.WrappedObject;
+		
 		public static HashSet<string> utypes = new HashSet<string>();
 		bool isPtr = false;
 		bool valueAsPtr = false;

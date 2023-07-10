@@ -41,7 +41,7 @@ namespace flashnet
 			curclass = classNode.Token.Text;
 			fileLines.Add($"public class {classNode.Token.Text}");
 			fileLines.Add("{");
-			fileLines.Add("IntPtr pthis;");
+			fileLines.Add("public IntPtr pthis;");
 		}
 		
 		public void PushStaticClass(string classname)
@@ -114,10 +114,12 @@ namespace flashnet
 					callline += ", ";
 				first = false;
 				string varname = tp.param.Token.Text;
+				if (varname == "_attr")
+					Api.WriteLine(tp.type);
 				if (varname == "")
 					varname = $"tmp{tmpvaridx++}";
 				funcline += tp.type.GetCSApiType() + " " + varname;
-				callline += varname;				
+				callline += varname + (tp.type.IsWrappedObject ? ".pthis" : "");
 			}
 			if (issquarebracket)
 				funcline += "] { get {";

@@ -3,7 +3,6 @@
 #include "DbMgr.h"
 #include "Node.h"
 #include "Compiler.h"
-#include "TcpServer.h"
 
 #ifdef WIN32
 #define stat _stat
@@ -86,11 +85,6 @@ int main(int argc, char* argv[])
 
         std::cout << "Writing " << outFile << std::endl;
         dbFile.Save(outFile);
-    }
-    else if (!strcmp(argv[1], "-host"))
-    {
-        TcpServer svr;
-        svr.Start();
     }
     else
     {

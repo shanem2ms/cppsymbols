@@ -19,7 +19,6 @@ set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "73CP3TPHE9")
 find_package(ZLIB REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(Libevent CONFIG REQUIRED)
-find_package(unofficial-evpp CONFIG REQUIRED)
 
 find_file(CLANGLIB libclang.lib REQUIRED HINTS "${LLVM_DIR}/lib")
 find_file(CLANGHDR BuildSystem.h REQUIRED HINTS "${LLVM_DIR}/include/clang-c")
@@ -33,7 +32,6 @@ set(Main_Files
 	Precomp.cpp
 	symbols.cpp
 	ClangDefs.cpp
-	TcpServer.cpp
 )
 
 add_executable(${PROJECT_NAME} ${Main_Files})
@@ -58,7 +56,6 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC 
 	   libevent::core
        ${CLANGLIB}
-	   unofficial::evpp::evpp_static
 	   ZLIB::ZLIB
 	   )
 
