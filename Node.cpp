@@ -20,6 +20,7 @@ BaseNode::BaseNode(int64_t key) :
     SourceFile(nullptr),
     AcessSpecifier(CX_CXXInvalidAccessSpecifier),
     isAbstract(false),
+    isDeleted(false),
     nTemplateArgs(0),
     StorageClass(CX_SC_Invalid)
 {
@@ -155,6 +156,7 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     node.pTypePtr = TypeFromCursor(cursor, vc);
     //node.ty
     node.isAbstract = clang_CXXRecord_isAbstract(cursor) != 0;
+    node.isDeleted = clang_CXXMethod_isDeleted(cursor) != 0;
     node.tmpTokenString = tokenStr;
     node.ParentNodeIdx = parentNode;
     node.Line = line;
@@ -369,7 +371,8 @@ void BaseNode::LogNodeInfo(VisitContextPtr vc, int64_t nodeIdx, std::string tag)
     strm << std::endl << std::string(depth * 3, ' ') <<
         tag << " " << (node.SourceFile != nullptr ? node.SourceFile->Name() : "") << " [" <<
         node.Line << ", " << node.Column << "] " << cxc[node.Kind] << " " << node.TypeIdx <<
-        " " << node.tmpTokenString << " " <<  " " << vals[node.AcessSpecifier] << " " << stgvals[node.StorageClass];
+        " " << node.tmpTokenString << " " << " " << vals[node.AcessSpecifier] << " " << stgvals[node.StorageClass] <<
+        (node.isDeleted ? " D1" : " D0");
     if (node.nTemplateArgs > -1)
         strm << " " << "TA=" << node.nTemplateArgs;
     if (node.pTypePtr != nullptr)

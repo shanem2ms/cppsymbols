@@ -38,12 +38,10 @@ namespace cppsymview
         public class DbType
         {
             public long Key { get; set; }
-
             public long Hash { get; set; }
             public long[] Children { get; set; } = new long[0];
             public long Token { get; set; }
             public CXTypeKind Kind { get; set; }
-
             public byte IsConst { get; set; }
         }
 

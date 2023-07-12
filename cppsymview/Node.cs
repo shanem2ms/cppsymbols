@@ -43,6 +43,7 @@ namespace cppsymview
         public CXXAccessSpecifier Access { get; set; }
         public CX_StorageClass StorageClass { get; set; }
         public bool IsAbstract { get; set; }
+        public bool IsDeleted { get; set; }
         public uint Line { get; set; }
         public uint Column { get; set; }
         public uint StartOffset { get; set; }

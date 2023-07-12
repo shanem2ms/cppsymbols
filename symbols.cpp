@@ -69,6 +69,10 @@ int main(int argc, char* argv[])
                 mergeFiles.push_back(noquotes(argv[i]));
             }
         }
+
+        using namespace std::chrono;
+        milliseconds ms0 = duration_cast<milliseconds>(
+            system_clock::now().time_since_epoch());
         std::cout << "Reading " << mergeFiles[0] << std::endl;
         DbFile dbFile;
         dbFile.Load(mergeFiles[0]);
@@ -78,13 +82,21 @@ int main(int argc, char* argv[])
             DbFile dbMerge;
             dbMerge.Load(mergeFiles[idx]);
             dbFile.Merge(dbMerge);
-            //std::string fname("D:\\vq\\flash\\src\\engine\\clouds\\Particle.h");
-            //size_t count = dbFile.QueryNodes(fname);
-            //std::cout << "count " << count << std::endl;
+
+//            milliseconds ms1 = duration_cast<milliseconds>(
+//                system_clock::now().time_since_epoch());
+
+//            float seconds = (ms1 - ms0).count() / 1000.0f;
+//            std::cout << seconds << "seconds" << std::endl;
         }
 
         std::cout << "Writing " << outFile << std::endl;
         dbFile.Save(outFile);
+        milliseconds ms1 = duration_cast<milliseconds>(
+            system_clock::now().time_since_epoch());
+
+        float seconds = (ms1 - ms0).count() / 1000.0f;
+        std::cout << seconds << "seconds" << std::endl;
     }
     else
     {

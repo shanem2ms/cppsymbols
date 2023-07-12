@@ -80,6 +80,7 @@ public:
     CX_CXXAccessSpecifier AcessSpecifier;
     CX_StorageClass StorageClass;
     bool isAbstract;
+    bool isDeleted;
     int nTemplateArgs;
 public:
     BaseNode(int64_t key);

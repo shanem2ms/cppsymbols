@@ -74,8 +74,9 @@ DbNode::DbNode(const Node& n) :
     column(n.Column),
     startOffset(n.StartOffset),
     endOffset(n.EndOffset),
-    // Bits (0-3) - AccessSpecifier, 4 - IsAbstract, (5-8) - StorageClass
-    flags(((n.AcessSpecifier) & 0x03) | (n.isAbstract ? 4 : 0) | (n.StorageClass << 3)),
+    // Bits (0-3) - AccessSpecifier, 4 - IsAbstract, (5-8) - StorageClass, 9 - IsDeleted
+    flags(((n.AcessSpecifier) & 0x03) | (n.isAbstract ? 4 : 0) | (n.StorageClass << 3) |
+        (n.isDeleted ? (1 << 9) : 0)),
     sourceFile(n.SourceFile != nullptr ? n.SourceFile->Key : nullnode)
 {
 
@@ -190,7 +191,7 @@ void DbFile::Save(const std::string& dbfile)
     ofstream.close();
 }
 
-static std::map<CXCursorKind, std::string> sCursorKindMap
+static std::unordered_map<CXCursorKind, std::string> sCursorKindMap
 {
     { CXCursor_UnexposedDecl, "UnexposedDecl" },
     { CXCursor_StructDecl, "StructDecl" },
@@ -290,7 +291,7 @@ static std::map<CXCursorKind, std::string> sCursorKindMap
     { CXCursor_ConceptDecl, "ConceptDecl" }
 };
 
-static std::map<CXTypeKind, std::string> sTypeKindMap
+static std::unordered_map<CXTypeKind, std::string> sTypeKindMap
 {
 { CXType_Invalid, "Invalid" },
 { CXType_Unexposed, "Unexposed" },
@@ -381,7 +382,8 @@ inline void SetNodeHash(std::vector<size_t>& nodeHashes, const std::vector<DbNod
 
 void DbFile::RemoveDuplicates()
 {
-    std::map<size_t, int64_t> nodesMap;
+    std::unordered_map<size_t, int64_t> nodesMap;
+    nodesMap.reserve(m_dbNodes.size());
     std::vector<size_t> nodesTreeHash0(m_dbNodes.size());
     for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
     {
@@ -442,7 +444,7 @@ void DbFile::RemoveDuplicates()
 void DbFile::Merge(const DbFile& other)
 {
     std::vector<int64_t> srcFileRemapping;
-    std::map<std::string, int64_t> sourceMap;
+    std::unordered_map<std::string, int64_t> sourceMap;
     {
         int64_t srcIdx = 1;
         for (const auto& srcfile : m_dbSourceFiles)
@@ -467,7 +469,8 @@ void DbFile::Merge(const DbFile& other)
     std::vector<int64_t> tokenRemapping;
     std::vector<int64_t> typeRemapping;
 
-    std::map<std::string, int64_t> tokenMap;
+    std::unordered_map<std::string, int64_t> tokenMap;
+    tokenMap.reserve(m_dbTokens.size());
     {
         int64_t tokIdx = 0;
         for (const auto& token : m_dbTokens)
@@ -493,7 +496,8 @@ void DbFile::Merge(const DbFile& other)
 
     // DbType merging and remapping
     {
-        std::map<int64_t, int64_t> uidTypeMap;
+        std::unordered_map<int64_t, int64_t> uidTypeMap;
+        uidTypeMap.reserve(m_dbTypes.size());
         size_t typeIdx = 0;
         for (auto& ctype : m_dbTypes)
         {
@@ -562,7 +566,8 @@ void DbFile::Merge(const DbFile& other)
         }
     }
 
-    std::map<size_t, int64_t> nodesMap;
+    std::unordered_map<size_t, int64_t> nodesMap;
+    nodesMap.reserve(m_dbNodes.size());
     {
         std::vector<size_t> nodesTreeHash0(m_dbNodes.size());
         for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)

@@ -17,7 +17,8 @@ using System.Runtime.InteropServices;
 namespace flashnet
 {
     static class NativeLib
-    {";
+    { 
+    const string flashlibstr = @""flashlib.dll"";";
 
 			string footer = @"        
     }
@@ -34,7 +35,7 @@ namespace flashnet
 			bool isConstructor = f.funcname == null;
 			bool hasThisArg = !isConstructor && !f.isStatic;
 
-			fileLines.Add(@"[DllImport(@""flashlib.dll"")]");
+			fileLines.Add(@"[DllImport(flashlibstr)]");
 			string retarg = isConstructor ? $"IntPtr" : f.returnType.GetCSNativeType();
 
 	        string funcline = $"public static extern {retarg} {f.cppname}(";

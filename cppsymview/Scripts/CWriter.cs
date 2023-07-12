@@ -46,6 +46,8 @@ namespace cppsymview.script
 			bool isConstructor = f.funcname == null;
 			f.cppname = isConstructor ? $"{cclass}_Ctor{ctornum}" : $"{cclass}{f.cexportname}";
 			string retarg = isConstructor ? $"{f.classname} *" : f.returnType.ctype;
+ 			if (f.cexportname == "Documents")
+ 				Api.WriteLine(f.returnType.ToString());
 			bool hasThisArg = !isConstructor && !f.isStatic;
 			string thisarg = hasThisArg ? $"{f.classname} *pthis" : "";
 			string line = $"CAPI {retarg} {f.cppname}({thisarg}";
@@ -59,7 +61,7 @@ namespace cppsymview.script
 					callline += ", ";
 				string parmname = tp.param.Token.Text;
 				line += tp.type.GetCppDeclarationStr(ref parmname);
-				callline += (tp.type.cderef ? "*" : "") + parmname;
+				callline += tp.type.GetCppCall(parmname);
 				first = false;
 			}
 			if (isConstructor) {

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <atomic>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <sstream>
 #include <chrono>

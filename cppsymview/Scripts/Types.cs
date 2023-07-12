@@ -45,6 +45,7 @@ namespace cppsymview.script
 			String,
 			Template,
 			WrappedObject,
+			WrappedEnum,
 			Void
 		};
 		
@@ -55,34 +56,110 @@ namespace cppsymview.script
 		public bool IsWrappedObject => category == Category.WrappedObject;
 		
 		public static HashSet<string> utypes = new HashSet<string>();
-		bool isPtr = false;
+		int ptrcnt = 0;
+		public int cderef = 0;
 		bool valueAsPtr = false;
-		public bool cderef = false;
 		public string ctype = "";
         public string cstype = "";
         public string native = "";
         string basetype = "";
+        enum StringType
+        {
+        	RawPtr,
+        	StdString
+        }
 				
+		StringType stringType = StringType.RawPtr;
 		
+		public override string ToString()
+		{
+			return $"category={category} name={mainType.Token.Text} ctype={ctype} cstype={cstype}";
+		}
 		public string Name => GetName();
 		
 		public EType(CppType t)
 		{
-			mainType = t;
-			category = GetCategory();
-			if (category == Category.Unsupported)
-				utypes.Add(GetBaseType(t).ToString());
-			
+			mainType = t;			
 			BuildType(t);	
-			if (false)
-			{
-			Api.WriteLine($"{category} {t.Token.Text}");
-			Api.WriteLine(ctype);
-			Api.WriteLine("");
-			}
+			if (category == Category.Unsupported)
+				utypes.Add(t.ToString());
 		}
 		
-		public bool IsSupported => category != Category.Unsupported;
+		void BuildType(CppType t)
+        {
+        	category = Category.Unsupported;
+        	BuildTypeRec(t, 0);
+        	if (category == Category.String &&
+        		stringType == StringType.StdString)
+        	{
+        		ctype = "char *";
+        	}
+        	cstype = cstype.Replace("::", ".");
+        }
+        
+        void BuildTypeRec(CppType t, int l)
+        {
+        	if (t.Kind == CXTypeKind.FunctionProto)
+                ctype += t.Token.Text;
+           	else if (t.Kind == CXTypeKind.Typedef && 
+        			t.Token.Text == "std::string")
+    		{
+    			category = Category.String;
+    			stringType = StringType.StdString;
+    		}
+        	else if (t.Next != null)
+        	{
+        		if (t.Kind == CXTypeKind.Pointer ||
+        			t.Kind == CXTypeKind.LValueReference ||
+        			t.Kind == CXTypeKind.ConstantArray)
+        			ptrcnt++;
+        		        			
+	    		if (t.Const) ctype += "const ";
+        		BuildTypeRec(t.Next, l + 1);
+        		if (t.Kind == CXTypeKind.Pointer)
+                    ctype += " *";
+        		if (t.Kind == CXTypeKind.LValueReference)
+        		{
+        			cderef++;
+					ctype += " *";// : " &";
+        		}
+        		if (t.Kind == CXTypeKind.ConstantArray)
+                    ctype += "[]";
+        	}
+    	 	else
+        	{
+	    		if (t.Const) ctype += "const ";
+	    		ctype += t.Token.Text;
+	    		if (t.Kind == CXTypeKind.Void && ptrcnt == 0)
+					category = Category.Void;
+				else if (t.Kind == CXTypeKind.Char_S && ptrcnt == 1)
+					category = Category.String;
+				else if (IsPrimitiveType(t) && ptrcnt == 0)
+					category = Category.Primitive;
+	    		else if (t.Kind == CXTypeKind.Record)
+	    		{
+	    			basetype = t.Token.Text;
+	    			cstype = basetype;
+	    			if (ptrcnt == 0)
+	    			{
+		    			ctype += " *";
+		    			cderef++;
+		    			ptrcnt++;
+		    			valueAsPtr = true;
+	    			}
+	    		}
+				if (category == Category.Unsupported &&
+					Classes.ClassMap.ContainsKey(t.Token.Text))
+				{
+					category = (t.Kind == CXTypeKind.Enum) ?
+						Category.WrappedEnum : Category.WrappedObject;
+				}	    				    		
+        	}
+        }             
+        		
+		public bool IsSupported => category != Category.Unsupported &&
+			!(ptrcnt>0 && (category == Category.Primitive ||
+				category == Category.WrappedEnum));
 		
 		
 		string GetName()
@@ -102,7 +179,7 @@ namespace cppsymview.script
 		{
 			CppType baseType = GetBaseType(mainType);
 			if (category == Category.String ||
-				isPtr)
+				ptrcnt>0)
 				return "IntPtr";
 			else if (nativeTypes.ContainsKey(baseType.Kind))
 			{
@@ -121,6 +198,21 @@ namespace cppsymview.script
 			}
 		}
 		
+		public string GetCSApiCall(string varname, out string header, out string footer)
+		{
+			if (category == Category.String)
+			{
+				header = String.Empty;
+				footer = String.Empty;
+				return $"Marshal.StringToHGlobalAnsi({varname})";	
+			}
+			else
+			{	header = String.Empty;
+				footer = String.Empty;
+				return varname + (IsWrappedObject ? ".pthis" : "");
+			}
+		}
+		
 		public string GetCSApiType()
 		{
 			CppType baseType = GetBaseType(mainType);
@@ -130,7 +222,7 @@ namespace cppsymview.script
 			{
 				return cstype;
 			}				
-			else if (isPtr)
+			else if (ptrcnt>0)
 				return "IntPtr";
 			else if (nativeTypes.ContainsKey(baseType.Kind))
 			{
@@ -148,25 +240,7 @@ namespace cppsymview.script
 				return "unk";
 			}
 		}		
-		
-		Category GetCategory()
-		{
-			if (mainType == null)
-				return Category.Unsupported;
-			if (mainType.Kind == CXTypeKind.Void)
-				return Category.Void;
-			CppType b = GetBaseType(mainType);
-			if (IsPrimitiveType(b))
-				return Category.Primitive;
-			if (b.Kind == CXTypeKind.TemplateName)
-				return Category.Unsupported;
-			if (Classes.ClassMap.ContainsKey(b.Token.Text))
-				return Category.WrappedObject;
-
-			return Category.Unsupported;
-		}
-					
-		
+						
 		static bool IsPrimitiveType(CppType b)
         {
         	return primitives.Contains(b.Kind);
@@ -182,50 +256,7 @@ namespace cppsymview.script
         		return t;
         }
 
-        void BuildType(CppType t)
-        {
-        	BuildTypeRec(t, 0);
-        	cstype = cstype.Replace("::", ".");
-        }
         
-        void BuildTypeRec(CppType t, int l)
-        {
-        	if (t.Kind == CXTypeKind.FunctionProto)
-                ctype += t.Token.Text;
-        	else if (t.Next != null)
-        	{
-        		if (t.Kind == CXTypeKind.Pointer ||
-        			t.Kind == CXTypeKind.LValueReference ||
-        			t.Kind == CXTypeKind.ConstantArray)
-        			isPtr = true;
-        			
-	    		if (t.Const) ctype += "const ";
-        		BuildTypeRec(t.Next, l + 1);
-        		if (t.Kind == CXTypeKind.Pointer)
-                    ctype += " *";
-        		if (t.Kind == CXTypeKind.LValueReference)
-        		{
-        			cderef = true;
-					ctype += " *";// : " &";
-        		}
-        		if (t.Kind == CXTypeKind.ConstantArray)
-                    ctype += "[]";
-        	}
-        	else
-        	{
-	    		if (t.Const) ctype += "const ";
-	    		ctype += t.Token.Text;
-	    		if (!isPtr && t.Kind == CXTypeKind.Record)
-	    		{
-	    			ctype += " *";
-	    			cderef = true;
-	    			isPtr = true;
-	    			valueAsPtr = true;
-	    			basetype = t.Token.Text;
-	    			cstype = basetype;
-	    		}
-        	}
-        }             
         
 		static int tmpIdx = 0;
         public string GetCppDeclarationStr(ref string param)
@@ -247,7 +278,8 @@ namespace cppsymview.script
 	    		else
 	    			return ctype + " " + param;
 			}			
-			else if (category == Category.WrappedObject)
+			else if (category == Category.WrappedObject ||
+				category == Category.WrappedEnum)
 			{
 	        	if (mainType.Kind == CXTypeKind.ConstantArray ||
 	        		mainType.Kind == CXTypeKind.IncompleteArray ||
@@ -261,6 +293,14 @@ namespace cppsymview.script
 			return "";
         }	
         
+        public string GetCppCall(string parmname)
+        {
+        	if (category == Category.String && stringType == StringType.StdString)
+        		return $"std::string({parmname})";
+        	else
+ 				return (cderef>0 ? "*" : "") + parmname;
+ 		}
+ 		
         public List<string> GetCppReturnString(string callstring)
         {
         	List<string> outlines = new List<string>();
@@ -268,7 +308,7 @@ namespace cppsymview.script
         	{
         		outlines.Add($"    {callstring};");
         	}
-        	else if (category == Category.String)
+        	else if (category == Category.String && stringType == StringType.StdString)
         	{
         		outlines.Add($"    {mainType.Token.Text} strtmp = {callstring};");
         		outlines.Add($"    char *retstr = new char[strtmp.length()];");
@@ -303,6 +343,10 @@ namespace cppsymview.script
         	{
         		outlines.Add($"    IntPtr strtmp = {callstring};");
         		outlines.Add($"    return Marshal.PtrToStringAnsi(strtmp);");
+        	}
+        	else if (category == Category.WrappedObject)
+        	{
+        		outlines.Add($"    return new {cstype}({callstring});");
         	}
 			else
 			{

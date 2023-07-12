@@ -2,8 +2,7 @@
 #include<vector>
 #include<map>
 
-void func(const int& shane)
+class Test
 {
-
-}
-
+    Test() = delete;
+};

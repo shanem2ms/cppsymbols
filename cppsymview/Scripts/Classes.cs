@@ -32,14 +32,15 @@ namespace cppsymview.script
         			n.CppType.Kind == CXTypeKind.Record)
         		{
         			string nm = ns + n.Token.Text;
-        			allClasses.Add(new WrappedObject() { name = nm, isEnum = false });
+        			allClasses.Add(new WrappedObject() { name = nm, enumobj = null });
         			CollectWrappedTypes(n, nm + "::");
         		}
         		if (n.Kind == CXCursorKind.EnumDecl &&
         			n.CppType.Kind == CXTypeKind.Enum)
         		{
+        			Enum e = GetEnum(n);
         			string nm = ns + n.Token.Text;
-        			allClasses.Add(new WrappedObject() { name = nm, isEnum = true });
+        			allClasses.Add(new WrappedObject() { name = nm, enumobj = e });
         		}
         		if (n.Kind == CXCursorKind.Namespace)
         		{
@@ -49,6 +50,26 @@ namespace cppsymview.script
         		}
         	}        
 		}    	
+		
+		static Enum GetEnum(Node enumNode)
+		{
+			if (enumNode.Token.Text[0] == '(')
+				return null;
+
+			Enum e = new Enum() { name = enumNode.Token.Text };
+			List<Node> enumValues = enumNode.FindChildren((n) => 
+	        	{
+	        		return n.Kind == CXCursorKind.EnumConstantDecl ?
+	        			Node.FindChildResult.eTrue : Node.FindChildResult.eFalseNoTraverse;
+	        	});
+	        	
+	        int value = 0;
+			foreach (Node n in enumValues)
+			{
+				e.values.Add(new Tuple<string, int>(n.Token.Text, value++));
+			}
+			return e;							        	
+		}
 
         public static void Wrap(Node pn, string ns)
         {
@@ -74,7 +95,13 @@ namespace cppsymview.script
 	        			csapiwriter.PopClass();
         			}
         		}
-        		if (n.Kind == CXCursorKind.Namespace)
+        		else if (n.Kind == CXCursorKind.EnumDecl &&
+        			n.CppType.Kind == CXTypeKind.Enum)
+        		{
+        			string nm = ns + n.Token.Text;
+        			ProcessEnum(n);
+        		}        		
+        		else if (n.Kind == CXCursorKind.Namespace)
         		{
         			bool donamespace = n.Token.Text.Length > 0;
         			if (donamespace)
@@ -87,26 +114,33 @@ namespace cppsymview.script
         	}
         }
 
-        static public bool ProcessClass(Node classNode)
+		static void ProcessEnum(Node classNode)
+        {        	
+        	Enum e = GetEnum(classNode);
+        	if (e == null)
+        		return;
+            csapiwriter.AddEnum(e);
+        }
+       
+        static bool ProcessClass(Node classNode)
         {                	
        		if (classNode.Access == CXXAccessSpecifier.Private ||
-       			classNode.Access == CXXAccessSpecifier.Protected ||
-       			classNode.IsAbstract)
+       			classNode.Access == CXXAccessSpecifier.Protected)
        			return false;
        		if (classNode.Children.Count() == 0)
        			return false;
         	string filename = Api.Engine.SourceFiles[classNode.SourceFile - 1];     
         	if (filename.EndsWith(".cpp")) 
        			return false;      			
-      			
 			List<NS> nodes = new List<NS>();
 			NS.GetCanonicalNodes(classNode, nodes);
 			NS nsclass = classTree.AddClass(nodes);
 			
-			if (classNode.Token.Text.Contains("Fatal"))
-				Api.WriteLine(classNode.Token.Text);
        		csapiwriter.PushClass(classNode);
-       		bool found = ProcessConstructors(classNode);
+       		
+       		bool found = false; 
+       		if (!classNode.IsAbstract)
+       			found |= ProcessConstructors(classNode);
         	found |= ProcessMembers(classNode);        	
 
 			return true;
@@ -120,6 +154,7 @@ namespace cppsymview.script
 	        		return ((
 	        				n.Kind == CXCursorKind.Constructor) &&
 	        				n.Access == CXXAccessSpecifier.Public &&
+	        				!n.IsDeleted &&
 	        				n.SourceFile == clsSrcFileIdx) ?
 	        			Node.FindChildResult.eTrue : Node.FindChildResult.eFalseNoTraverse;
 	        	});
@@ -228,6 +263,17 @@ namespace cppsymview.script
 					cppwriter.AddFunction(f);
 					csnativewriter.AddFunction(f);
 					csapiwriter.AddFunction(f);					
+				}
+				else
+				{
+					string unsupportedtypes = "";
+					foreach (EType t in etypes)				
+					{
+						if (!t.IsSupported)
+							unsupportedtypes += " " + t.ToString();
+					}
+				
+					//Api.WriteLine($"not supported: {classname}::{func.Token.Text}" + unsupportedtypes);
 				}
 			}	        	
 			
@@ -367,7 +413,7 @@ namespace cppsymview.script
 	class WrappedObject
 	{
 		public string name;
-		public bool isEnum;
+		public Enum enumobj;
 	}
 	
     class Parameter
@@ -386,4 +432,10 @@ namespace cppsymview.script
     	public int idx;
     	public bool isStatic;
     }
+
+	class Enum
+	{
+		public string name;
+		public List<Tuple<string, int>> values = new List<Tuple<string, int>>();
+	}
 }

@@ -26,7 +26,7 @@ namespace flashnet
 
 		public void PushNamespace(string ns)
 		{
-			fileLines.Add($"namespace {ns}");
+			fileLines.Add($"public static class {ns}"); 
 			fileLines.Add("{");
 		}
 		
@@ -42,6 +42,7 @@ namespace flashnet
 			fileLines.Add($"public class {classNode.Token.Text}");
 			fileLines.Add("{");
 			fileLines.Add("public IntPtr pthis;");
+			AddWrapperConstructor();
 		}
 		
 		public void PushStaticClass(string classname)
@@ -53,6 +54,12 @@ namespace flashnet
 		public void PopClass()
 		{
 			fileLines.Add("}");
+		}
+		
+		void AddWrapperConstructor()
+		{
+			fileLines.Add($"public {curclass}(IntPtr _pthis) {{");
+			fileLines.Add("pthis = _pthis; }");
 		}
 		
 		void AddConstructor(Function f)
@@ -70,10 +77,11 @@ namespace flashnet
 				}
 				first = false;
 				string varname = tp.param.Token.Text;
+				
 				if (varname == "")
 					varname = $"tmp{tmpvaridx++}";
-				funcline += tp.type.GetCSNativeType() + " " + varname;
-				callline += varname;				
+				funcline += tp.type.GetCSApiType() + " " + varname;
+				callline += tp.type.GetCSApiCall(varname, out _, out _);				
 			}			
 			funcline += ") {";			
 			fileLines.Add(funcline);
@@ -94,6 +102,16 @@ namespace flashnet
 			bool hasThisArg = !isConstructor && !f.isStatic;
 	
 			bool issquarebracket = f.funcname == "operator[]";
+			bool comparison = 
+				f.funcname == "operator<" ||
+				f.funcname == "operator>" ||
+				f.funcname == "operator==" ||
+				f.funcname == "operator!=" ||
+				f.funcname == "operator>=" ||
+				f.funcname == "operator<=";
+				
+			if (comparison)
+				return;
 			string staticstr = f.isStatic ? "static" : "";
 					
 			string funcline = "";
@@ -114,12 +132,11 @@ namespace flashnet
 					callline += ", ";
 				first = false;
 				string varname = tp.param.Token.Text;
-				if (varname == "_attr")
-					Api.WriteLine(tp.type);
+				
 				if (varname == "")
 					varname = $"tmp{tmpvaridx++}";
 				funcline += tp.type.GetCSApiType() + " " + varname;
-				callline += varname + (tp.type.IsWrappedObject ? ".pthis" : "");
+				callline += tp.type.GetCSApiCall(varname, out _, out _);
 			}
 			if (issquarebracket)
 				funcline += "] { get {";
@@ -132,6 +149,18 @@ namespace flashnet
 	        	fileLines.Add("}}");
 	        else
 	        	fileLines.Add("}");
+		}
+		
+		public void AddEnum(Enum e)
+		{
+			fileLines.Add($"public enum {e.name} {{");
+			bool first = true;
+			foreach (var v in e.values)
+			{
+				fileLines.Add((first ? "" : ",") + $"{v.Item1} = {v.Item2}" );
+				first = false;
+			}
+			fileLines.Add("}");
 		}
 		
 		public void Write()

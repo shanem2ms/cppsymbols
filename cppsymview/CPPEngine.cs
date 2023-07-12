@@ -96,6 +96,7 @@ namespace cppsymview
                     node.Kind = dbnode.kind;
                     node.Access = (CXXAccessSpecifier)(dbnode.flags & 0x3);
                     node.IsAbstract = (dbnode.flags & 0x4) != 0;
+                    node.IsDeleted = (dbnode.flags & (1 << 9)) != 0;
                     node.StorageClass = (CX_StorageClass)((dbnode.flags >> 3) & 0x7);
                     node.Line = dbnode.line;
                     node.Column = dbnode.column;
