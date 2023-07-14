@@ -178,24 +178,19 @@ namespace cppsymview.script
 			
 			    bool supported = true;
 				
-				List<EType> etypes = pars.Select(p => new EType(p.CppType)).ToList();
-				foreach (EType t in etypes)				
+				List<Parameter> parms = pars.Select(p => new Parameter(p)).ToList();
+				foreach (Parameter p in parms)
 				{
-					supported &= t.IsSupported;
+					supported &= p.type.IsSupported;
 				}
 				
 				if (supported)
 				{
 					Function f = new Function();
 					f.classname = classname;
-					foreach (var tp in pars.Zip(etypes, Tuple.Create))				
-					{
-						f.parameters.Add(new Parameter() { param = tp.Item1, type = tp.Item2 });
-					}				
+					f.parameters.AddRange(parms);
 					f.returnType = null;
 					f.idx = ctorIdx++;
-					if (f.classname == "bgfx")
-						Api.WriteLine(classNode.Token.Text);
 					cppwriter.AddFunction(f);
 					csnativewriter.AddFunction(f);
 					csapiwriter.AddFunction(f);
@@ -237,13 +232,13 @@ namespace cppsymview.script
 			
 			    bool supported = true;
 
-				EType returnType = new EType(func.CppType.Next);
-				supported &= returnType.IsSupported;
-				
-				List<EType> etypes = pars.Select(p => new EType(p.CppType)).ToList();
-				foreach (EType t in etypes)				
+				Parameter returnparm = new Parameter(func);
+				supported &= returnparm.type.IsSupported;
+
+                List<Parameter> parms = pars.Select(p => new Parameter(p)).ToList();
+                foreach (Parameter p in parms)
 				{
-					supported &= t.IsSupported;
+					supported &= p.type.IsSupported;
 				}
 				
 				if (supported)
@@ -253,12 +248,8 @@ namespace cppsymview.script
 					f.funcname = func.Token.Text;
 					f.cexportname = Utils.GetCFuncName(classname, func.Token.Text);
 					f.isStatic = func.StorageClass == CX_StorageClass.Static;
-					
-					foreach (var tp in pars.Zip(etypes, Tuple.Create))				
-					{
-						f.parameters.Add(new Parameter() { param = tp.Item1, type = tp.Item2 });
-					}				
-					f.returnType = returnType;
+                    f.parameters.AddRange(parms);
+					f.returnType = returnparm.type;
 					f.idx = -1;
 					cppwriter.AddFunction(f);
 					csnativewriter.AddFunction(f);
@@ -267,10 +258,10 @@ namespace cppsymview.script
 				else
 				{
 					string unsupportedtypes = "";
-					foreach (EType t in etypes)				
-					{
-						if (!t.IsSupported)
-							unsupportedtypes += " " + t.ToString();
+                    foreach (Parameter p in parms)
+                    {
+                        if (!p.type.IsSupported)
+							unsupportedtypes += " " + p.type.ToString();
 					}
 				
 					//Api.WriteLine($"not supported: {classname}::{func.Token.Text}" + unsupportedtypes);
@@ -317,28 +308,24 @@ namespace cppsymview.script
 			
 			    bool supported = true;
 
-				EType returnType = new EType(func.CppType.Next);
-				supported &= returnType.IsSupported;
-				
-				List<EType> etypes = pars.Select(p => new EType(p.CppType)).ToList();
-				foreach (EType t in etypes)				
-				{
-					supported &= t.IsSupported;
-				}
-				
-				if (supported)
+				Parameter returnparm = new Parameter(func);
+				supported &= returnparm.type.IsSupported;
+
+                List<Parameter> parms = pars.Select(p => new Parameter(p)).ToList();
+                foreach (Parameter p in parms)
+                {
+                    supported &= p.type.IsSupported;
+                }
+
+                if (supported)
 				{
 					Function f = new Function();
 					f.classname = nsname;
 					f.funcname = func.Token.Text;
 					f.cexportname = Utils.GetCFuncName(nsname, func.Token.Text);
 					f.isStatic = true;
-					
-					foreach (var tp in pars.Zip(etypes, Tuple.Create))				
-					{
-						f.parameters.Add(new Parameter() { param = tp.Item1, type = tp.Item2 });
-					}				
-					f.returnType = returnType;
+                    f.parameters.AddRange(parms);
+					f.returnType = returnparm.type;
 					f.idx = -1;
 					cppwriter.AddFunction(f);
 					csnativewriter.AddFunction(f);
@@ -416,11 +403,6 @@ namespace cppsymview.script
 		public Enum enumobj;
 	}
 	
-    class Parameter
-    {
-    	public EType type;
-    	public Node param;
-    }
     class Function
     {
     	public List<Parameter> parameters = new List<Parameter>();

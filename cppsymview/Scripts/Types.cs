@@ -57,18 +57,24 @@ namespace cppsymview.script
 		
 		public static HashSet<string> utypes = new HashSet<string>();
 		int ptrcnt = 0;
+		bool isconst = false;
 		public int cderef = 0;
 		bool valueAsPtr = false;
-		public string ctype = "";
+		bool shared_ptr = false;
+		string ctype = "";
         public string cstype = "";
         public string native = "";
         string basetype = "";
+        Node instanceNode;
         enum StringType
         {
         	RawPtr,
         	StdString
         }
 				
+		public string CPtrType => category == Category.WrappedObject ? 
+			ctype + "*" : ctype;
+			
 		StringType stringType = StringType.RawPtr;
 		
 		public override string ToString()
@@ -77,9 +83,10 @@ namespace cppsymview.script
 		}
 		public string Name => GetName();
 		
-		public EType(CppType t)
+		public EType(CppType t, Node n)
 		{
 			mainType = t;			
+			instanceNode = n;
 			BuildType(t);	
 			if (category == Category.Unsupported)
 				utypes.Add(t.ToString());
@@ -95,10 +102,20 @@ namespace cppsymview.script
         		ctype = "char *";
         	}
         	cstype = cstype.Replace("::", ".");
+        	if (overflowed)
+        		Api.WriteLine($"OVERFLOW {t.Token.Text}");
+        	//if (category == Category.WrappedObject && t.Token.Text.Contains("CloudEvolvePolicy"))
+        	//	Api.WriteLine($"{t.Token.Text} --> c={ctype} b={basetype}");
         }
         
+        bool overflowed = false;
         void BuildTypeRec(CppType t, int l)
         {
+        	if (l > 20)
+        	{
+        		overflowed = true;
+        		return;
+        	}
         	if (t.Kind == CXTypeKind.FunctionProto)
                 ctype += t.Token.Text;
            	else if (t.Kind == CXTypeKind.Typedef && 
@@ -107,6 +124,29 @@ namespace cppsymview.script
     			category = Category.String;
     			stringType = StringType.StdString;
     		}
+    		else if (!shared_ptr && t.Kind == CXTypeKind.Unexposed)
+    		{
+    			if (instanceNode.allChildren.Count() > 2 &&
+    				instanceNode.allChildren[1].Kind == CXCursorKind.TemplateRef &&
+    				instanceNode.allChildren[1].Token.Text == "shared_ptr")
+    				{
+    					shared_ptr = true;
+    					for (int idx = 2; idx < instanceNode.allChildren.Count(); ++idx)
+    					{
+    						if (instanceNode.allChildren[idx].Kind == CXCursorKind.TypeRef)
+    						{
+    							int tridx = idx;
+    							for (int idx2 = idx; idx2 < instanceNode.allChildren.Count(); ++idx2)
+    							{
+    								if (instanceNode.allChildren[idx2].Kind == CXCursorKind.TypeRef)
+    									tridx = idx2;
+    							}
+    							BuildTypeRec(instanceNode.allChildren[tridx].CppType, l + 1);
+    							break;
+    						}
+    					}
+    				}
+    		}
         	else if (t.Next != null)
         	{
         		if (t.Kind == CXTypeKind.Pointer ||
@@ -114,21 +154,42 @@ namespace cppsymview.script
         			t.Kind == CXTypeKind.ConstantArray)
         			ptrcnt++;
         		        			
-	    		if (t.Const) ctype += "const ";
+	    		if (t.Const) 
+	    		{ isconst = true;
+	    		  ctype += "const ";
+	    		}
         		BuildTypeRec(t.Next, l + 1);
-        		if (t.Kind == CXTypeKind.Pointer)
-                    ctype += " *";
-        		if (t.Kind == CXTypeKind.LValueReference)
+        		if (category == Category.WrappedObject)
         		{
-        			cderef++;
-					ctype += " *";// : " &";
-        		}
-        		if (t.Kind == CXTypeKind.ConstantArray)
-                    ctype += "[]";
+	        		if (t.Kind == CXTypeKind.Pointer)
+	                    ctype = $"CPtr<{RemoveConst(ctype)}>";
+	        		if (t.Kind == CXTypeKind.LValueReference)
+	        		{
+	        			cderef++;
+						ctype = $"CPtr<{RemoveConst(ctype)}>";
+	        		}
+	        		if (t.Kind == CXTypeKind.ConstantArray)
+	                    ctype += "[]";
+                }
+                else
+                {
+	        		if (t.Kind == CXTypeKind.Pointer)
+	                    ctype += " *";
+	        		if (t.Kind == CXTypeKind.LValueReference)
+	        		{
+	        			cderef++;
+						ctype += " *";
+	        		}
+	        		if (t.Kind == CXTypeKind.ConstantArray)
+	                    ctype += "[]";
+                }
         	}
     	 	else
         	{
-	    		if (t.Const) ctype += "const ";
+	    		if (t.Const) 
+	    		{ isconst = true; 
+	    		ctype += "const ";
+	    		}
 	    		ctype += t.Token.Text;
 	    		if (t.Kind == CXTypeKind.Void && ptrcnt == 0)
 					category = Category.Void;
@@ -142,7 +203,7 @@ namespace cppsymview.script
 	    			cstype = basetype;
 	    			if (ptrcnt == 0)
 	    			{
-		    			ctype += " *";
+		    			ctype = $"CPtr<{RemoveConst(ctype)}>";
 		    			cderef++;
 		    			ptrcnt++;
 		    			valueAsPtr = true;
@@ -193,7 +254,6 @@ namespace cppsymview.script
 				return "int";
 			else
 			{
-				//Api.WriteLine(mainType.Token.Text);
 				return "unk";
 			}
 		}
@@ -236,7 +296,6 @@ namespace cppsymview.script
 				return "int";
 			else
 			{
-				//Api.WriteLine(mainType.Token.Text);
 				return "unk";
 			}
 		}		
@@ -266,7 +325,7 @@ namespace cppsymview.script
         	if (category == Category.String)
         	{
         		return "const char *" + param;
-        	}
+        	}        	
         	else if (category == Category.Primitive)
         	{
 	        	if (mainType.Kind == CXTypeKind.ConstantArray ||
@@ -281,14 +340,8 @@ namespace cppsymview.script
 			else if (category == Category.WrappedObject ||
 				category == Category.WrappedEnum)
 			{
-	        	if (mainType.Kind == CXTypeKind.ConstantArray ||
-	        		mainType.Kind == CXTypeKind.IncompleteArray ||
-	        		mainType.Kind == CXTypeKind.VariableArray)
-	    		{
-	    			return mainType.Next.Token.Text + " " + param + "[]";
-	    		}
-	    		else
-	    			return ctype + " " + param;
+					
+				return CPtrType + " " + param;
 			}
 			return "";
         }	
@@ -297,10 +350,20 @@ namespace cppsymview.script
         {
         	if (category == Category.String && stringType == StringType.StdString)
         		return $"std::string({parmname})";
-        	else
+        	else if (category == Category.WrappedObject)
+        		return "*" + parmname;
+        	else if (shared_ptr)
+				return $"std::shared_ptr<{basetype}>({parmname})";
+			else				
  				return (cderef>0 ? "*" : "") + parmname;
  		}
  		
+ 		static string RemoveConst(string t)
+ 		{
+    		if (t.StartsWith("const "))
+    			return t.Substring("const ".Length);
+    		else return t;
+ 		}
         public List<string> GetCppReturnString(string callstring)
         {
         	List<string> outlines = new List<string>();
@@ -315,14 +378,11 @@ namespace cppsymview.script
         		outlines.Add($"    memcpy(retstr, strtmp.c_str(), strtmp.length());");
         		outlines.Add($"    return retstr;");
         	}
-        	else if (valueAsPtr)
+        	else if (
+        		category == Category.WrappedObject)
         	{
-        		string assigntype = ctype;
-        		if (assigntype.StartsWith("const "))
-        			assigntype = assigntype.Substring("const ".Length);
-        		outlines.Add($"    {assigntype} strtmp = new {basetype}();");
-        		outlines.Add($"    *strtmp = {callstring};");
-        		outlines.Add($"    return strtmp;");
+        		outlines.Add($"    {CPtrType} cptrret = {ctype}::Make({callstring});");
+        		outlines.Add($"    return cptrret;");
         	}
 			else
 			{
@@ -354,5 +414,24 @@ namespace cppsymview.script
 			}			
 			return outlines;
 		}
+    }
+
+    class Parameter
+    {
+		public Parameter(Node n)
+		{
+			param = n;
+			if (n.Kind == CXCursorKind.CXXMethod || 
+				n.Kind == CXCursorKind.FunctionDecl)
+			{
+				type = new EType(n.CppType.Next, n);
+			}
+			else
+				type = new EType(n.CppType, n);
+		}
+
+        public EType type;
+        public Node param;
+
     }
 }

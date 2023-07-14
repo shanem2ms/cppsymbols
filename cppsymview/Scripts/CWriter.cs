@@ -32,7 +32,7 @@ namespace cppsymview.script
 					lf = ifile;
 				lines.Add($"#include \"{lf}\"");
 			}
-			
+			lines.Add(cptrcls);
 			lines.Add("#define CAPI extern \"C\" __declspec(dllexport)");
 			lines.AddRange(ctorLines);
 			File.WriteAllLines(outfile, lines);
@@ -45,9 +45,7 @@ namespace cppsymview.script
 			string ctornum = f.idx >= 0 ? f.idx.ToString() : "";
 			bool isConstructor = f.funcname == null;
 			f.cppname = isConstructor ? $"{cclass}_Ctor{ctornum}" : $"{cclass}{f.cexportname}";
-			string retarg = isConstructor ? $"{f.classname} *" : f.returnType.ctype;
- 			if (f.cexportname == "Documents")
- 				Api.WriteLine(f.returnType.ToString());
+			string retarg = isConstructor ? $"CPtr<{f.classname}> *" : f.returnType.CPtrType;
 			bool hasThisArg = !isConstructor && !f.isStatic;
 			string thisarg = hasThisArg ? $"{f.classname} *pthis" : "";
 			string line = $"CAPI {retarg} {f.cppname}({thisarg}";
@@ -65,9 +63,9 @@ namespace cppsymview.script
 				first = false;
 			}
 			if (isConstructor) {
-				line += ") { return new ";
-				line += f.classname + "(" + callline;
-				line += "); }";
+				line += ") {";				
+				line += $"return CPtr<{f.classname}>::Make(new {f.classname}({callline}));";
+				line += "}";
 				ctorLines.Add(line); 		
 			}
 			else if (f.isStatic)
@@ -92,5 +90,7 @@ namespace cppsymview.script
 			return $"[{n.Line}, {n.Column}]";	
         
         }		
+
+		const string cptrcls = @"template<typename T> class CPtr { public: static CPtr<T>* Make(T* _ptr) { return new CPtr(_ptr); } static CPtr<T>* Make(const std::shared_ptr<T>& _ssptr) { return new CPtr(_ssptr); } static CPtr<T>* Make(const T* _ptr) { return new CPtr(const_cast<T *>(_ptr)); } static CPtr<T>* Make(const T &_ptr) { return new CPtr(_ptr); }  operator T* () { return ptr != nullptr ? ptr : sptr.get(); }  operator T& () { return ptr != nullptr ? *ptr : *sptr.get(); }  operator const std::shared_ptr<T> &() const { if (sptr != nullptr) return sptr; else throw; }  operator std::shared_ptr<T>() { if (sptr != nullptr) return sptr; else throw; } operator const T* () const { return ptr != nullptr ? ptr : sptr.get(); }  operator T& () const { return ptr != nullptr ? *ptr : *sptr.get(); } private:  CPtr(const T& _ptr) : sptr(nullptr) { ptr = const_cast<T *>(& _ptr); }  CPtr(T* _ptr) : ptr(_ptr), sptr(nullptr) {}  CPtr(const std::shared_ptr<T>& _ssptr) : ptr(nullptr), sptr(_ssptr) {}  T* ptr; std::shared_ptr<T> sptr; };";
 	}
 }

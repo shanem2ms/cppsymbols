@@ -1,8 +1,13 @@
 #include<string>
-#include<vector>
+#include<memory>
 #include<map>
 
-class Test
+namespace myns
 {
-    Test() = delete;
-};
+    class Test
+    {
+        Test() = delete;
+    };
+
+    std::shared_ptr<Test> hello;
+}
