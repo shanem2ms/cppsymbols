@@ -50,6 +50,7 @@ namespace cppsymview.script
 		};
 		
 		
+		EType next = null;
 		CppType mainType;
 		public Category category;
 		
@@ -104,8 +105,8 @@ namespace cppsymview.script
         	cstype = cstype.Replace("::", ".");
         	if (overflowed)
         		Api.WriteLine($"OVERFLOW {t.Token.Text}");
-        	//if (category == Category.WrappedObject && t.Token.Text.Contains("CloudEvolvePolicy"))
-        	//	Api.WriteLine($"{t.Token.Text} --> c={ctype} b={basetype}");
+        	if (t.Token.Text.Contains("vector"))
+        		Api.WriteLine($"{t.Token.Text} --> c={ctype} b={basetype}");
         }
         
         bool overflowed = false;
@@ -128,7 +129,7 @@ namespace cppsymview.script
     		{
     			if (instanceNode.allChildren.Count() > 2 &&
     				instanceNode.allChildren[1].Kind == CXCursorKind.TemplateRef &&
-    				instanceNode.allChildren[1].Token.Text == "shared_ptr")
+    				(instanceNode.allChildren[1].Token.Text == "shared_ptr"))
     				{
     					shared_ptr = true;
     					for (int idx = 2; idx < instanceNode.allChildren.Count(); ++idx)
@@ -146,6 +147,27 @@ namespace cppsymview.script
     						}
     					}
     				}
+    			else if (instanceNode.allChildren.Count() > 2 &&
+    				instanceNode.allChildren[1].Kind == CXCursorKind.TemplateRef &&
+    				(instanceNode.allChildren[1].Token.Text == "vector"))
+    				{
+    					shared_ptr = true;
+    					for (int idx = 2; idx < instanceNode.allChildren.Count(); ++idx)
+    					{
+    						if (instanceNode.allChildren[idx].Kind == CXCursorKind.TypeRef)
+    						{
+    							int tridx = idx;
+    							for (int idx2 = idx; idx2 < instanceNode.allChildren.Count(); ++idx2)
+    							{
+    								if (instanceNode.allChildren[idx2].Kind == CXCursorKind.TypeRef)
+    									tridx = idx2;
+    							}
+    							//BuildTypeRec(instanceNode.allChildren[tridx].CppType, l + 1);
+    							break;
+    						}
+    					}
+    				}
+
     		}
         	else if (t.Next != null)
         	{
