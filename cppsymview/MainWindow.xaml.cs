@@ -22,6 +22,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Xml.Linq;
 using ICSharpCode.AvalonEdit;
+using symlib;
 
 namespace cppsymview
 {
@@ -70,14 +71,14 @@ namespace cppsymview
             this.DataContext = this;
             InitializeComponent();
 
-            script.Api.WriteLine = WriteOutput;
-            script.Api.Flush = Flush;
+            symlib.script.Api.WriteLine = WriteOutput;
+            symlib.script.Api.Flush = Flush;
             folderView.Root = root;
             folderView.OnFileSelected += FolderView_OnFileSelected;
 
 
             DirectoryInfo di = new DirectoryInfo(Directory.GetCurrentDirectory());
-            while (di.Name.ToLower() != "cppsymview")
+            while (di.Name.ToLower() != "cppsymbols")
                 di = di.Parent;
             
             //ConnectTcp();
@@ -372,6 +373,25 @@ namespace cppsymview
             CurrentType = type;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentType)));
         }
+
+        private void NodeRef_Click(object sender, RoutedEventArgs e)
+        {
+            Button btn = (Button)(sender);
+            if (btn.Content == null)
+                return;
+            Node n = (Node)btn.Content;
+            if (n != null)
+            {
+                n.SetEnabled(true, true);
+                n.Expand();
+                n.Select();
+                string filename = engine.GetFileNameFromIdx(n.SourceFile);
+                TextEditor te = GetOrMakeTextEditor(filename);
+                EditorsCtrl.SelectedItem = te;
+                te.ScrollTo((int)n.Line, (int)n.Column);
+            }
+
+        }
     }
 
     public class BooleanToVisibilityConverter : IValueConverter
@@ -413,5 +433,7 @@ namespace cppsymview
             else
                 return FindParent<T>(parentObject);
         }
+
+
     }
 }

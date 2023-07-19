@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using static symlib.script.EType;
+using System.Runtime.Intrinsics.X86;
 
-namespace cppsymview.script
+namespace symlib.script
 {
 	class CSApiWriter
 	{
@@ -80,8 +82,8 @@ namespace flashnet
 				
 				if (varname == "")
 					varname = $"tmp{tmpvaridx++}";
-				funcline += tp.type.GetCSApiType() + " " + varname;
-				callline += tp.type.GetCSApiCall(varname, out _, out _);				
+				funcline += GetCSApiType(tp.type) + " " + varname;
+				callline += GetCSApiCall(tp.type, varname, out _, out _);				
 			}			
 			funcline += ") {";			
 			fileLines.Add(funcline);
@@ -116,9 +118,9 @@ namespace flashnet
 					
 			string funcline = "";
 			if (issquarebracket)
-				funcline = $"public {staticstr} {f.returnType.GetCSApiType()} this[";
+				funcline = $"public {staticstr} {GetCSApiType(f.returnType)} this[";
 			else
-	        	funcline = $"public {staticstr} {f.returnType.GetCSApiType()} {f.funcname}(";
+	        	funcline = $"public {staticstr} {GetCSApiType(f.returnType)} {f.funcname}(";
 
 			bool first = true;
 			int tmpvaridx = 0;
@@ -133,10 +135,10 @@ namespace flashnet
 				first = false;
 				string varname = tp.param.Token.Text;
 				
-				if (varname == "")
+				if (varname == "" || varname == "params")
 					varname = $"tmp{tmpvaridx++}";
-				funcline += tp.type.GetCSApiType() + " " + varname;
-				callline += tp.type.GetCSApiCall(varname, out _, out _);
+				funcline += GetCSApiType(tp.type) + " " + varname;
+				callline += GetCSApiCall(tp.type, varname, out _, out _);
 			}
 			if (issquarebracket)
 				funcline += "] { get {";
@@ -144,7 +146,7 @@ namespace flashnet
 	        	funcline += ") {";	        
 	        fileLines.Add(funcline);
 	        
-	        fileLines.AddRange(f.returnType.GetCsReturnString($"NativeLib.{f.cppname}({callline})"));
+	        fileLines.AddRange(GetCsReturnString(f.returnType, $"NativeLib.{f.cppname}({callline})"));
 	        if (issquarebracket)
 	        	fileLines.Add("}}");
 	        else
@@ -162,8 +164,74 @@ namespace flashnet
 			}
 			fileLines.Add("}");
 		}
-		
-		public void Write()
+
+        public string GetCSApiType(EType t)
+        {
+            CppType baseType = GetBaseType(t.mainType);
+            if (t.category == Category.String)
+                return "string";
+            else if (t.category == Category.WrappedObject)
+            {
+                return t.cstype;
+            }
+            else if (t.IsPtr)
+                return "IntPtr";
+            else if (nativeTypes.ContainsKey(baseType.Kind))
+            {
+                return nativeTypes[baseType.Kind];
+            }
+            else if (baseType.Kind == CXTypeKind.Void)
+            {
+                return "void";
+            }
+            else if (baseType.Kind == CXTypeKind.Enum)
+                return "int";
+            else
+            {
+                return "unk";
+            }
+        }
+
+        public List<string> GetCsReturnString(EType t, string callstring)
+        {
+            List<string> outlines = new List<string>();
+            if (t.category == Category.Void)
+            {
+                outlines.Add($"    {callstring};");
+            }
+            else if (t.category == Category.String)
+            {
+                outlines.Add($"    IntPtr strtmp = {callstring};");
+                outlines.Add($"    return Marshal.PtrToStringAnsi(strtmp);");
+            }
+            else if (t.category == Category.WrappedObject)
+            {
+                outlines.Add($"    return new {t.cstype}({callstring});");
+            }
+            else
+            {
+                outlines.Add($"    return {callstring};");
+            }
+            return outlines;
+        }
+        public string GetCSApiCall(EType t, string varname, out string header, out string footer)
+        {
+            if (t.category == Category.String)
+            {
+                header = String.Empty;
+                footer = String.Empty;
+                return $"Marshal.StringToHGlobalAnsi({varname})";
+            }
+            else
+            {
+                header = String.Empty;
+                footer = String.Empty;
+                return varname + (t.IsWrappedObject ? ".pthis" : "");
+            }
+        }
+
+
+        public void Write()
 		{
 			fileLines.Add(footer);
 			File.WriteAllLines(outfile, fileLines);

@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:s="clr-namespace:System;assembly=mscorlib" 
+        xmlns:symlib="clr-namespace:symlib;assembly=symlib"
         xmlns:local="clr-namespace:cppsymview"
         mc:Ignorable="d"
         Background="#335588"
@@ -16,25 +17,26 @@
             <Setter Property="Background" Value="#556688" />
             <Setter Property="BorderBrush" Value="#335588" />
         </Style>
-        <HierarchicalDataTemplate x:Key="treeNodeTemplate" DataType="{x:Type local:Node}"
+        <local:CursorKindToBrushConverter x:Key="CursorKindToBrushConverter" />
+        <HierarchicalDataTemplate x:Key="treeNodeTemplate" DataType="{x:Type symlib:Node}"
                                 ItemsSource="{Binding Path=Children}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="35"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Path=CursorAbbrev}" Background="{Binding CursorBrush}"/>
+                <TextBlock Text="{Binding Path=CursorAbbrev}" Background="{Binding Kind, Converter={StaticResource CursorKindToBrushConverter}}"/>
                 <TextBlock Grid.Column="1" Text="{Binding Token.Text}" />
             </Grid>
         </HierarchicalDataTemplate>
 
-        <DataTemplate x:Key="nodeTemplate" DataType="{x:Type local:Node}" >
+        <DataTemplate x:Key="nodeTemplate" DataType="{x:Type symlib:Node}" >
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="35"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Path=CursorAbbrev}" Background="{Binding CursorBrush}"/>
+                <TextBlock Text="{Binding Path=CursorAbbrev}" Background="{Binding Kind, Converter={StaticResource CursorKindToBrushConverter}}"/>
                 <TextBlock Grid.Column="1" Text="{Binding Token.Text}" />
             </Grid>
         </DataTemplate>
@@ -196,7 +198,7 @@
                         <Button Name="queryBtn" Content="Query" Click="queryBtn_Click" />
                     </StackPanel>
                     <TreeView Grid.Row="3" x:Name="nodesTreeView" TreeViewItem.Selected="nodesTreeView_Selected" ItemTemplate="{StaticResource treeNodeTemplate}" 
-                          ItemContainerStyle="{StaticResource LibraryTreeViewItemStyle}" ItemsSource="{Binding Path=Engine.TopNodes}" 
+                          ItemContainerStyle="{StaticResource LibraryTreeViewItemStyle}" ItemsSource="{Binding Path=Engine.EnabledTopNodes}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverterInv}}" />
                     <ListView Grid.Row="3" x:Name="nodesListView" ItemsSource="{Binding Path=Engine.QueryNodes}" ItemTemplate="{StaticResource nodeTemplate}" 
                           Visibility="{Binding IsChecked, ElementName=TreeOrListBtn, Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -216,7 +218,7 @@
                             </StackPanel>
                             <ContentControl Grid.Row="1" Foreground="AliceBlue" Content="{Binding CurrentNode}" >
                                 <ContentControl.ContentTemplate>
-                                    <DataTemplate DataType="{x:Type local:Node}">
+                                    <DataTemplate DataType="{x:Type symlib:Node}">
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
@@ -236,7 +238,7 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding CursorBrush}" Foreground="Black" />
+                                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Kind}" Background="{Binding Kind, Converter={StaticResource CursorKindToBrushConverter}}" Foreground="Black" />
 
                                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Index" />
                                             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Index}" />
@@ -294,9 +296,10 @@
                             </StackPanel>
                             <ContentControl Grid.Row="1" Foreground="AliceBlue" Content="{Binding CurrentType}" >
                                 <ContentControl.ContentTemplate>
-                                    <DataTemplate DataType="{x:Type local:CppType}">
+                                    <DataTemplate DataType="{x:Type symlib:CppType}">
                                         <Grid>
                                             <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
@@ -315,11 +318,21 @@
                                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Const}" />
 
                                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Next" />
-                                            <ListBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Children}">
+                                            <ListBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Children}" Background="DarkBlue">
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate>
                                                         <Button Name="NextBtn" Style="{StaticResource LinkButton}" Content="{Binding }"
                                                             Click="NextBtn_Click" />
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+
+                                            <TextBlock Grid.Row="4" Grid.Column="0" Text="NodeRefs" />
+                                            <ListBox Grid.Row="4" Grid.Column="1"  ItemsSource="{Binding RefNodes}" Background="DarkBlue">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Name="NextBtn" Style="{StaticResource LinkButton}" Content="{Binding }"
+                                                            Click="NodeRef_Click" />
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
                                             </ListBox>

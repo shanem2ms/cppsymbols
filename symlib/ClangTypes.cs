@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Windows.Media;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Immutable;
 
-namespace cppsymview
+namespace symlib
 {
     public enum CXCursorKind
     {
@@ -1355,44 +1354,5 @@ namespace cppsymview
             }
         }
         
-        static Dictionary<CXCursorKind, Color> cursorColors = null;
-        public static Dictionary<CXCursorKind, Color> CursorColor
-        {
-            get 
-            { 
-                if (cursorColors == null)
-                {
-
-                    List<Color> colors = new List<Color>();
-                    int numsegs = 12;
-
-                    for (int j = 0; j < 3; ++j)
-                    {
-                        float l = (1 - j) * 0.25f + 0.5f;
-                        for (int k = 0; k < 3; ++k)
-                        {
-                            float s = 0.33f + k * 0.33f;
-                            for (int i = 0; i < numsegs; ++i)
-                            {
-                                Cnv.HSL hsl = new Cnv.HSL((float)i / (float)numsegs, s, l);
-                                Cnv.RGB rgb = Cnv.HSLToRGB(hsl);
-                                colors.Add(Color.FromArgb(255, rgb.R, rgb.G, rgb.B));
-                            }
-                        }
-                    }
-
-                    cursorColors = new Dictionary<CXCursorKind, Color>();
-                    int idx = 0;
-                    foreach (var cursorKind in CursorKindsMRU)
-                    {
-                        cursorColors.Add(cursorKind, colors[idx]);
-                        idx++;
-                    }
-                }
-
-                return cursorColors;
-            }
-        }
-
     }
 }

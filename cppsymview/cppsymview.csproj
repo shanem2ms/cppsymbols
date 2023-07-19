@@ -10,14 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Scripts\**" />
+    <EmbeddedResource Remove="Scripts\**" />
+    <None Remove="Scripts\**" />
+    <Page Remove="Scripts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="Script.cs" />
-    <Compile Remove="Scripts\Classes.cs" />
-    <Compile Remove="Scripts\CSApiWriter.cs" />
-    <Compile Remove="Scripts\CSNativeWriter.cs" />
-    <Compile Remove="Scripts\CWriter.cs" />
-    <Compile Remove="Scripts\Main.cs" />
-    <Compile Remove="Scripts\Types.cs" />
-    <Compile Remove="Scripts\Utils.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,18 +35,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Scripts\Classes.cs" />
-    <None Include="Scripts\CSApiWriter.cs" />
-    <None Include="Scripts\CSNativeWriter.cs" />
-    <None Include="Scripts\CWriter.cs" />
-    <None Include="Scripts\Main.cs" />
-    <None Include="Scripts\Types.cs" />
-    <None Include="Scripts\Utils.cs" />
+    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
+    <ProjectReference Include="..\symlib\symlib.csproj" />
   </ItemGroup>
 
   <ItemGroup>

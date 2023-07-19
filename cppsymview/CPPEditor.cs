@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
 using System.Xml;
+using symlib;
 using static ICSharpCode.AvalonEdit.Document.TextDocumentWeakEventManager;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using static symlib.script.EType;
+using System.Runtime.Intrinsics.X86;
 
-namespace cppsymview.script
+namespace symlib.script
 {
 	class CSNativeWriter
 	{	
@@ -36,7 +38,7 @@ namespace flashnet
 			bool hasThisArg = !isConstructor && !f.isStatic;
 
 			fileLines.Add(@"[DllImport(flashlibstr)]");
-			string retarg = isConstructor ? $"IntPtr" : f.returnType.GetCSNativeType();
+			string retarg = isConstructor ? $"IntPtr" : GetCSNativeType(f.returnType);
 
 	        string funcline = $"public static extern {retarg} {f.cppname}(";
 	        funcline += hasThisArg ? "IntPtr pthis" : "";
@@ -50,15 +52,35 @@ namespace flashnet
 					funcline += ", ";
 				first = false;
 				string varname = tp.param.Token.Text;
-				if (varname == "")
+				if (varname == "" || varname == "params")
 					varname = $"tmp{tmpvaridx++}";
-				funcline += tp.type.GetCSNativeType() + " " + varname;
+				funcline += GetCSNativeType(tp.type) + " " + varname;
 			}
 	        funcline += ");";
 	        fileLines.Add(funcline);
 		}
-		
-		public void Write()
+        public string GetCSNativeType(EType t)
+        {
+            CppType baseType = EType.GetBaseType(t.mainType);
+            if (t.category == Category.String ||
+                t.IsPtr)
+                return "IntPtr";
+            else if (nativeTypes.ContainsKey(baseType.Kind))
+            {
+                return nativeTypes[baseType.Kind];
+            }
+            else if (baseType.Kind == CXTypeKind.Void)
+            {
+                return "void";
+            }
+            else if (baseType.Kind == CXTypeKind.Enum)
+                return "int";
+            else
+            {
+                return "unk";
+            }
+        }
+        public void Write()
 		{
 			fileLines.Add(footer);
 			File.WriteAllLines(outfile, fileLines);

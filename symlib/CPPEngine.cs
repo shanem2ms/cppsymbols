@@ -2,15 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Formats.Tar;
 using System.IO;
 using System.Linq;
 using System.Security;
 
-namespace cppsymview
+namespace symlib
 {
     public class CPPEngineFile : INotifyPropertyChanged
     {
+        public static CPPEngineFile Inst;
         string srcDir = string.Empty;
         string osyFile = string.Empty;
 
@@ -19,7 +19,7 @@ namespace cppsymview
         public Node[] nodesArray;
         public CppType[] cppTypesArray; 
         public List<Node> topNodes = new List<Node>();
-        public IEnumerable<Node> TopNodes => topNodes.Where(n => n.enabled);
+        public IEnumerable<Node> EnabledTopNodes => topNodes.Where(n => n.enabled);
         public Node[] Nodes => nodesArray;
         public event EventHandler<Node> SelectedNodeChanged;
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -38,6 +38,11 @@ namespace cppsymview
 
         bool currentFileOnly = true;
         public bool CurrentFileOnly { get => currentFileOnly; set { currentFileOnly = value; SetTopNodes(); } }
+
+        public CPPEngineFile()
+        {
+            Inst = this;
+        }
         public void Init(string sourcedir, string osyfile)
         {
             srcDir = sourcedir;
@@ -140,6 +145,10 @@ namespace cppsymview
             MergeNamespaces(topNodes);
         }
 
+        public IEnumerable<Node> GetTypeReferences(CppType type)
+        {
+            return this.nodesArray.Where(n => n.CppType == type);
+        }
         void MergeNamespaces(List<Node> nodes)
         {
             Dictionary<string, List<Node>> namespaces =
@@ -192,7 +201,7 @@ namespace cppsymview
 
         public void RefreshNodeTree()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopNodes)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EnabledTopNodes)));
         }
 
         void SetTopNodes()
@@ -222,7 +231,6 @@ namespace cppsymview
                 }
             }
 
-            int ct = TopNodes.Count();
             RefreshNodeTree();
         }
 

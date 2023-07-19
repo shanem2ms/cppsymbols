@@ -4,12 +4,10 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static cppsymview.ClangTypes;
-using System.Windows.Media;
+using static symlib.ClangTypes;
 using System.Runtime.InteropServices;
-using Accessibility;
 
-namespace cppsymview
+namespace symlib
 {
 
     public class CppType
@@ -26,6 +24,8 @@ namespace cppsymview
         {
             return Token.Text;
         }
+
+        public IEnumerable<Node> RefNodes { get => CPPEngineFile.Inst.GetTypeReferences(this); }
     }
     public class Node : IComparable<Node>, INotifyPropertyChanged
     {
@@ -55,13 +55,18 @@ namespace cppsymview
         public bool IsNodeExpanded { get; set; } = false;
         public bool IsSelected { get; set; } = false;
 
-        public Brush CursorBrush => new SolidColorBrush(ClangTypes.CursorColor[Kind]);
         public string CursorAbbrev => ClangTypes.CursorAbbrev[Kind];
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public List<Node> allChildren = new List<Node>();
 
         public string FileName => this.SourceFile >= 0 ? engine.GetFileNameFromIdx(this.SourceFile) : "";
+
+        public override string ToString()
+        {
+            return Token.Text;
+        }
+
 
         public enum FindChildResult
         {

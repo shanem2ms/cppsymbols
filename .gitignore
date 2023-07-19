@@ -37,3 +37,7 @@ build/
 out/
 cppsymview/obj/
 cppsymview/bin/
+symlib/obj/
+symlib/bin/
+apigen/obj/
+apigen/bin/

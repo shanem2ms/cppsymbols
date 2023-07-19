@@ -10,27 +10,28 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Diagnostics;
-using cppsymview.script;
+using symlib;
+
+namespace symlib.script
+{
+    public class Api
+    {
+        public delegate void WriteDel(string text);
+        public static WriteDel WriteLine;
+        public delegate void FlushDel();
+        public static FlushDel Flush;
+
+        public static string ScriptFolder = null;
+        public static CPPEngineFile Engine = null;
+        public static void Reset(CPPEngineFile engine)
+        {
+            script.Api.Engine = engine;
+        }
+    }
+}
 
 namespace cppsymview
 {
-    namespace script
-    {
-        public class Api
-        {
-            public delegate void WriteDel(string text);
-            public static WriteDel WriteLine;
-            public delegate void FlushDel();
-            public static FlushDel Flush;
-
-            public static string ScriptFolder = null;
-            public static CPPEngineFile Engine = null;
-            public static void Reset(CPPEngineFile engine)
-            {
-                script.Api.Engine = engine;
-            }
-        }
-    }
     public class Source
     {
         public string filepath;
@@ -87,14 +88,14 @@ namespace cppsymview
 
                 if (!result.Success)
                 {
-                    script.Api.WriteLine("Compilation failed!");
+                    symlib.script.Api.WriteLine("Compilation failed!");
                     IEnumerable<Diagnostic> failures = result.Diagnostics.Where(diagnostic =>
                         diagnostic.IsWarningAsError ||
                         diagnostic.Severity == DiagnosticSeverity.Error);
 
                     foreach (Diagnostic diagnostic in failures)
                     {
-                        script.Api.WriteLine($"\t{diagnostic.Id}: [{diagnostic.Location.GetMappedLineSpan()}] {diagnostic.GetMessage()}");
+                        symlib.script.Api.WriteLine($"\t{diagnostic.Id}: [{diagnostic.Location.GetMappedLineSpan()}] {diagnostic.GetMessage()}");
                     }
 
                     OnCompileErrors?.Invoke(this, true);
@@ -104,14 +105,14 @@ namespace cppsymview
                     ms.Seek(0, SeekOrigin.Begin);
 
                     Assembly assembly = AssemblyLoadContext.Default.LoadFromStream(ms);
-                    var type = assembly.GetType("cppsymview.script.Script");
-                    var instance = assembly.CreateInstance("cppsymview.script.Script");
+                    var type = assembly.GetType("symlib.script.Script");
+                    var instance = assembly.CreateInstance("symlib.script.Script");
                     if (instance != null && type != null)
                     {
                         var meth = type.GetMember("Run").First() as MethodInfo;
                         if (meth != null)
                         {
-                            script.Api.Reset(scene);
+                            symlib.script.Api.Reset(scene);
                             try
                             {
                                 meth.Invoke(instance, new object[] { });
@@ -119,18 +120,18 @@ namespace cppsymview
                             catch
                             (Exception ex)
                             {
-                                script.Api.WriteLine(ex.ToString());
+                                symlib.script.Api.WriteLine(ex.ToString());
                             }
                         }
                         else
                         {
-                            script.Api.WriteLine("Script.Run not found");
+                            symlib.script.Api.WriteLine("Script.Run not found");
                             OnCompileErrors?.Invoke(this, true);
                         }
                     }
                     else
                     {
-                        script.Api.WriteLine("cppsymview.script.Script not found");
+                        symlib.script.Api.WriteLine("symlib.script.Script not found");
                         OnCompileErrors?.Invoke(this, true);
                     }
                 }
@@ -140,8 +141,8 @@ namespace cppsymview
                     ts.TotalSeconds,
                     ts.Milliseconds / 10);
 
-                script.Api.WriteLine("TotalTime " + elapsedTime);
-                script.Api.Flush();
+                symlib.script.Api.WriteLine("TotalTime " + elapsedTime);
+                symlib.script.Api.Flush();
             }
 
 

@@ -5,13 +5,13 @@ using System.IO;
 using System.Text;
 using System.Linq;
 
-namespace cppsymview.script
+namespace symlib.script
 {
     public class Script
     {
         Dictionary<CXTypeKind, int> allParams = new Dictionary<CXTypeKind, int>();
 		Dictionary<long,string> myFiles = new Dictionary<long, string>();
-				
+        bool verbose = false;
         public void Run()
         {                    	
     		var engine = Api.Engine;
@@ -29,10 +29,10 @@ namespace cppsymview.script
 	    		}
 	    		idx++;
     		}    		
-    		Node samnode = engine.TopNodes.FirstOrDefault(tn => 
+    		Node samnode = engine.topNodes.FirstOrDefault(tn => 
     			tn.Kind == CXCursorKind.Namespace && tn.Token?.Text == "sam");
 
-    		Node bgfxnode = engine.TopNodes.FirstOrDefault(tn => 
+    		Node bgfxnode = engine.topNodes.FirstOrDefault(tn => 
     			tn.Kind == CXCursorKind.Namespace && tn.Token?.Text == "bgfx");
     			
 			foreach (var node in engine.Nodes)
@@ -56,12 +56,15 @@ namespace cppsymview.script
             {
             	//Api.WriteLine(kv.Key);
             }
-            
-            Api.WriteLine("Can't wrap the following:");
-    		foreach (string utype in EType.utypes)
-    		{
-    			Api.WriteLine("    " + utype);
-    		}
+
+            if (verbose)
+            {
+                Api.WriteLine("Can't wrap the following:");
+                foreach (string utype in EType.utypes)
+                {
+                    Api.WriteLine("    " + utype);
+                }
+            }
         }
         
     

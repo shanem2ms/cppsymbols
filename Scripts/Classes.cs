@@ -4,8 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using symlib;
 
-namespace cppsymview.script
+namespace symlib.script
 {    
 	static class Classes
     {

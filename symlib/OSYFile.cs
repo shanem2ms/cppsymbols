@@ -5,10 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static cppsymview.ClangTypes;
+using static symlib.ClangTypes;
 using System.Diagnostics;
 
-namespace cppsymview
+namespace symlib
 {
     public class Token
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace cppsymview.script
+namespace symlib.script
 {
     public static class Utils
     {		
