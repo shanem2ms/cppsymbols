@@ -35,8 +35,8 @@ build/
 .vs/
 .vscode/
 out/
-cppsymview/obj/
-cppsymview/bin/
+apiview/obj/
+apiview/bin/
 symlib/obj/
 symlib/bin/
 apigen/obj/

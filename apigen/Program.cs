@@ -3,7 +3,7 @@ using symlib;
 using symlib.script;
 
 string root = @"c:\flash";
-string osyfile = Path.Combine(root, @"build\debugclg\flash.osy");
+string osyfile = Path.Combine(root, @"build\script\flash.osy");
 CPPEngineFile cppengine = new CPPEngineFile();
 cppengine.Init(root, osyfile);
 

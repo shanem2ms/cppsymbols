@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -207,8 +208,7 @@ namespace symlib.script
 			List<Node> funcs = classNode.FindChildren((n) => 
 	        	{
 	        		return ((n.Access == CXXAccessSpecifier.Public &&
-	        				n.Kind == CXCursorKind.CXXMethod) &&
-	        				n.SourceFile == clsSrcFileIdx) ?
+	        				n.Kind == CXCursorKind.CXXMethod)) ?
 	        			Node.FindChildResult.eTrue : Node.FindChildResult.eFalseNoTraverse;
 	        	});
 	        	
@@ -222,7 +222,6 @@ namespace symlib.script
 			foreach (Node func in funcs)
 			{
 				func.SetEnabled(true, true);
-								
 				
 	        	List<Node> pars = func.FindChildren((n) => 
 	        	{

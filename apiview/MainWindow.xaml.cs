@@ -83,7 +83,7 @@ namespace cppsymview
             
             //ConnectTcp();
             //engine.Init(root, root + @"\build\debugclg\clouds\Particle.cpp.osy");        
-            engine.Init(root, root + @"\build\debugclg\flash.osy");
+            engine.Init(root, root + @"\build\script\flash.osy");
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
 

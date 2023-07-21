@@ -24,11 +24,14 @@ namespace symlib.script
 
         public void AddWrappedTypes(Dictionary<string, EType> types)
         {
-            wrappObjLines.Add("template <typename T> constexpr bool IsWrappedObject() { return false; }");
+            wrappObjLines.Add(@"template <typename T> class converter
+{};
+template <> class converter<std::string>
+{public:    typedef char* OutType; };
+");
             foreach (var kv in types)
             {
-                wrappObjLines.Add(
-                    $"template <> constexpr bool IsWrappedObject<{kv.Value.basetype}>(){{ return true; }}");
+                wrappObjLines.Add($"template <> class converter<{kv.Value.basetype}>{{public: typedef CPtr<{kv.Value.basetype}> *OutType; }};");
             }
         }
         
@@ -46,11 +49,12 @@ namespace symlib.script
 					lf = ifile;
 				lines.Add($"#include \"{lf}\"");
 			}
-            lines.AddRange(wrappObjLines);
-            lines.Add("");
             lines.Add(cptrcls);
             lines.Add("");
             lines.Add(cveccls);
+            lines.Add("");
+            lines.AddRange(wrappObjLines);
+            lines.Add(retcnvstr);
             lines.Add("");
             lines.Add(cfuncheaders);
 			lines.AddRange(ctorLines);
@@ -65,8 +69,6 @@ namespace symlib.script
 			string ctornum = f.idx >= 0 ? f.idx.ToString() : "";
 			bool isConstructor = f.funcname == null;
 			f.cppname = isConstructor ? $"{cclass}_Ctor{ctornum}" : $"{cclass}{f.cexportname}";
-            if (f.cppname == "sam_LocGetChildren")
-                Debugger.Break();
 			string retarg = isConstructor ? $"CPtr<{f.classname}> *" : f.returnType.CPtrType;
 			bool hasThisArg = !isConstructor && !f.isStatic;
 			string thisarg = hasThisArg ? $"CPtr<{f.classname}> *pthis" : "";
@@ -162,16 +164,11 @@ namespace symlib.script
             }
             else if (t.category == Category.String && t.stringType == EType.StringType.StdString)
             {
-                outlines.Add($"    {t.mainType.Token.Text} strtmp = {callstring};");
-                outlines.Add($"    char* retstr = new char[strtmp.size() + 1];");
-                outlines.Add($"    memcpy(retstr, strtmp.c_str(), strtmp.size());");
-                outlines.Add($"    retstr[strtmp.size()] = 0;");
-                outlines.Add($"    return retstr;");
+                outlines.Add($"    return retcnv({callstring});");
             }
             else if (t.category == Category.WrappedObject)
             {
-                outlines.Add($"    {t.CPtrType} cptrret = {t.ctype}::Make({callstring});");
-                outlines.Add($"    return cptrret;");
+                outlines.Add($"    return retcnv({callstring});");
             }
             else if (t.category == Category.Vector)
             {
@@ -192,7 +189,7 @@ namespace symlib.script
         
         }
 
-        const string cptrcls = @"
+        const string cptrbase = @"
 template <typename T, typename _ = void> class cptr {
 public:
 };
@@ -202,7 +199,9 @@ template <typename T, std::enable_if_t<!std::is_abstract_v<T>>> class cptr {
 public:
     cptr(const T& _val) : val(_val) {}
     operator const T& () const { return val; }
-};
+};";
+        const string cptrcls = @"
+
 
 class ICPtr {
 public:
@@ -226,6 +225,25 @@ private:
     CPtr(T* _ptr) : ptr(_ptr), sptr(nullptr) {}
     CPtr(const std::shared_ptr<T>& _ssptr) : ptr(nullptr), sptr(_ssptr) {}  T* ptr; std::shared_ptr<T> sptr; };
 ";
+        string retcnvstr= @"
+template <typename T> converter<T>::OutType retcnv(T t)
+{ return t; }
+template <typename T> converter<const T &>::OutType retcnv(const T &t)
+{ return retcnv<T>(t); }
+template <typename T> converter<T>::OutType retcnv(const T *t)
+{ return nullptr; }
+template <typename T> converter<T>::OutType retcnv(T* t)
+{ return nullptr; }
+template <typename T> converter<T>::OutType retcnv(std::shared_ptr<typename T> t)
+{ return nullptr; }
+
+template<> char* retcnv(std::string strtmp)
+{
+    char* retstr = new char[strtmp.size() + 1];
+    memcpy(retstr, strtmp.c_str(), strtmp.size());
+    retstr[strtmp.size()] = 0;
+    return retstr;
+}";
 
     const string cveccls = @"
 class IEnumerator
