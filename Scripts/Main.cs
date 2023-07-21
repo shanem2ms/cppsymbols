@@ -4,6 +4,7 @@ using System.Numerics;
 using System.IO;
 using System.Text;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 
 namespace symlib.script
 {

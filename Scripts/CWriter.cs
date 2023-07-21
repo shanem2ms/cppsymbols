@@ -14,13 +14,24 @@ namespace symlib.script
 	{		
 		string outfile;
 		List<string> ctorLines = new List<string>();
-		public HashSet<string> IncludeFiles = new HashSet<string>();
+        List<string> wrappObjLines = new List<string>();
+        public HashSet<string> IncludeFiles = new HashSet<string>();
 		public CWriter(string _outfile)
 		{
 			outfile = _outfile;
 			IncludeFiles.Add("StdIncludes.h");
-		}
-		
+        }
+
+        public void AddWrappedTypes(Dictionary<string, EType> types)
+        {
+            wrappObjLines.Add("template <typename T> constexpr bool IsWrappedObject() { return false; }");
+            foreach (var kv in types)
+            {
+                wrappObjLines.Add(
+                    $"template <> constexpr bool IsWrappedObject<{kv.Value.basetype}>(){{ return true; }}");
+            }
+        }
+        
 		public void Write()
 		{
 			List<string> lines = new List<string>();
@@ -35,12 +46,13 @@ namespace symlib.script
 					lf = ifile;
 				lines.Add($"#include \"{lf}\"");
 			}
-			lines.Add(cptrcls);
+            lines.AddRange(wrappObjLines);
+            lines.Add("");
+            lines.Add(cptrcls);
             lines.Add("");
             lines.Add(cveccls);
             lines.Add("");
-
-            lines.Add("#define CAPI extern \"C\" __declspec(dllexport)");
+            lines.Add(cfuncheaders);
 			lines.AddRange(ctorLines);
 			File.WriteAllLines(outfile, lines);
 		}
@@ -181,9 +193,22 @@ namespace symlib.script
         }
 
         const string cptrcls = @"
-template<typename T> class CPtr
-{
+template <typename T, typename _ = void> class cptr {
 public:
+};
+
+template <typename T, std::enable_if_t<!std::is_abstract_v<T>>> class cptr {
+    T val;
+public:
+    cptr(const T& _val) : val(_val) {}
+    operator const T& () const { return val; }
+};
+
+class ICPtr {
+public:
+virtual ~ICPtr() = 0 {} };
+template<typename T> class CPtr : public ICPtr
+{ public:
     static CPtr<T>* Make(T* _ptr) { return new CPtr(_ptr); }
     static CPtr<T>* Make(const std::shared_ptr<T>& _ssptr) { return new CPtr(_ssptr); }
     static CPtr<T>* Make(const T* _ptr) { return new CPtr(const_cast<T*>(_ptr)); }
@@ -195,15 +220,26 @@ public:
     operator const T* () const { return ptr != nullptr ? ptr : sptr.get(); }
     operator T& () const { return ptr != nullptr ? *ptr : *sptr.get(); }
     T *operator -> () { return ptr != nullptr ? ptr : sptr.get(); }
+    ~CPtr() override { sptr = nullptr; }
 private:
     CPtr(const T& _ptr) : sptr(nullptr) { ptr = const_cast<T*>(&_ptr); }
     CPtr(T* _ptr) : ptr(_ptr), sptr(nullptr) {}
-    CPtr(const std::shared_ptr<T>& _ssptr) : ptr(nullptr), sptr(_ssptr) {}  T* ptr; std::shared_ptr<T> sptr;
-};";
+    CPtr(const std::shared_ptr<T>& _ssptr) : ptr(nullptr), sptr(_ssptr) {}  T* ptr; std::shared_ptr<T> sptr; };
+";
 
-    const string cveccls = @"template<typename T> class CVec 
-{
-    std::vector<T>* pvec;
+    const string cveccls = @"
+class IEnumerator
+{ public:
+    virtual void* Current() = 0;
+    virtual bool MoveNext() = 0;
+    virtual void Reset() = 0; };
+class IVec
+{ public:
+    virtual size_t Size() = 0;
+    virtual void* GetItem(size_t idx) = 0;
+    virtual IEnumerator* GetEnumerator() = 0; };
+template<typename T> class CVec : public IVec
+{     std::vector<T>* pvec;
 public:
     operator std::vector<T>* () { return pvec; }
     operator std::vector<T>& () { return *pvec; }
@@ -211,12 +247,38 @@ public:
     operator const std::vector<T>& () const { return *pvec; }
     static CVec<T>* Make(const std::vector<T>& _pvec) { return new CVec(_pvec); }
     static CVec<T>* Make(const std::vector<T>* _pvec) { return new CVec(_pvec); }
+    // IEnumerator overload
+    class Enumerator : public IEnumerator
+    {
+        std::vector<T>* pvec;
+        std::vector<T>::iterator it;
+    public:
+        Enumerator(std::vector<T>* _pvec) {
+            pvec = _pvec;
+            Reset(); }
+        void* Current() override { T* ptr = &(*it); if constexpr (IsWrappedObject<T>()) return CPtr<T>::Make(ptr);  else return ptr; }
+        bool MoveNext() override { if (it == pvec->end()) return false; it++; return true; }
+        void Reset() override { it = pvec->begin(); }
+    };
+    // IVec overloads
+    size_t Size() override { return pvec->size(); }
+    void* GetItem(size_t idx) override { return &pvec->at(idx); }
+    IEnumerator* GetEnumerator() override
+    { return new Enumerator(pvec); }
 private:
     CVec(const std::vector<T>& _pvec) { pvec = const_cast<std::vector<T> *>(&_pvec); }
-    CVec(const std::vector<T>* _pvec) { pvec = const_cast<std::vector<T> *>(_pvec); }
-};
+    CVec(const std::vector<T>* _pvec) { pvec = const_cast<std::vector<T> *>(_pvec); } };
 template<typename J> static CVec<J>* CVecMake(const std::vector<J>& _pvec) { return new CVec(_pvec); }
 template<typename J> static CVec<J>* CVecMake(const std::vector<J>* _pvec) { return new CVec(_pvec); }
+";
+    const string cfuncheaders = @"#define CAPI extern ""C"" __declspec(dllexport)
+CAPI void* IEnumerator_Current(IEnumerator* _ptr) { return _ptr->Current(); }
+CAPI bool IEnumerator_MoveNext(IEnumerator* _ptr) { return _ptr->MoveNext(); }
+CAPI void IEnumerator_Reset(IEnumerator* _ptr) { _ptr->Reset(); }
+CAPI size_t IVec_Size(IVec* _ptr) { return _ptr->Size(); }
+CAPI void* IVec_GetItem(IVec* _ptr, size_t idx) { return _ptr->GetItem(idx); }
+CAPI IEnumerator* IVec_GetEnumerator(IVec* _ptr) { return _ptr->GetEnumerator(); }
+CAPI void ICPtrFree(ICPtr* _ptr) { delete _ptr; }
 ";
     }
 }

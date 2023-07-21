@@ -330,7 +330,7 @@ namespace symlib.script
 					f.idx = -1;
 					cppwriter.AddFunction(f);
 					csnativewriter.AddFunction(f);
-					csapiwriter.AddFunction(f);					
+					csapiwriter.AddFunction(f);
 				}
 			}
 			return true;
@@ -338,7 +338,8 @@ namespace symlib.script
 		
 		public static void Write()
 		{
-			cppwriter.Write();
+            cppwriter.AddWrappedTypes(Parameter.wrappedTypes);
+            cppwriter.Write();
 			csnativewriter.Write();
 			csapiwriter.Write();
 		}

@@ -296,6 +296,7 @@ namespace symlib.script
 
     class Parameter
     {
+        public static Dictionary<string, EType> wrappedTypes = new Dictionary<string, EType>();
         public Parameter(Node n)
         {
             param = n;
@@ -306,6 +307,9 @@ namespace symlib.script
             }
             else
                 type = new EType(n.CppType, n.allChildren);
+
+            if (type.category == EType.Category.WrappedObject)
+                wrappedTypes.TryAdd(type.basetype, type);
         }
 
         public EType type;
