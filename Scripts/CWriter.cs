@@ -226,18 +226,18 @@ private:
     CPtr(const std::shared_ptr<T>& _ssptr) : ptr(nullptr), sptr(_ssptr) {}  T* ptr; std::shared_ptr<T> sptr; };
 ";
         string retcnvstr= @"
-template <typename T> converter<T>::OutType retcnv(T t)
-{ return t; }
-template <typename T> converter<const T &>::OutType retcnv(const T &t)
-{ return retcnv<T>(t); }
+//template <typename T> converter<T>::OutType retcnv(T t)
+//{ return t; }
 template <typename T> converter<T>::OutType retcnv(const T *t)
-{ return nullptr; }
+{ return CPtr<T>::Make(t); }
 template <typename T> converter<T>::OutType retcnv(T* t)
-{ return nullptr; }
+{ return CPtr<T>::Make(t); }
+template <typename T> converter<T>::OutType retcnv(const T& t)
+{ return CPtr<T>::Make(t); }
 template <typename T> converter<T>::OutType retcnv(std::shared_ptr<typename T> t)
-{ return nullptr; }
+{ return CPtr<T>::Make(t); }
 
-template<> char* retcnv(std::string strtmp)
+template<> char* retcnv<std::string>(const std::string &strtmp)
 {
     char* retstr = new char[strtmp.size() + 1];
     memcpy(retstr, strtmp.c_str(), strtmp.size());
@@ -274,7 +274,7 @@ public:
         Enumerator(std::vector<T>* _pvec) {
             pvec = _pvec;
             Reset(); }
-        void* Current() override { T* ptr = &(*it); if constexpr (IsWrappedObject<T>()) return CPtr<T>::Make(ptr);  else return ptr; }
+        void* Current() override { T* ptr = &(*it); return ptr; }
         bool MoveNext() override { if (it == pvec->end()) return false; it++; return true; }
         void Reset() override { it = pvec->begin(); }
     };

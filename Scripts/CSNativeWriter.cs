@@ -5,6 +5,7 @@ using System.Text;
 using System.IO;
 using static symlib.script.EType;
 using System.Runtime.Intrinsics.X86;
+using System.Runtime.InteropServices;
 
 namespace symlib.script
 {
@@ -25,19 +26,26 @@ namespace flashnet
 			string footer = @"        
     }
 }";
-		
-		public CSNativeWriter(string _outfile)
+		string importdllHeader = @"[DllImport(flashlibstr)]";
+
+
+        public CSNativeWriter(string _outfile)
 		{
 			outfile = _outfile;
 			fileLines.Add(header);
-		}
+			foreach (string std in standardFuncs)
+			{
+                fileLines.Add(importdllHeader);
+                fileLines.Add(std);
+            }
+        }
 		
 		public void AddFunction(Function f)
 		{
 			bool isConstructor = f.funcname == null;
 			bool hasThisArg = !isConstructor && !f.isStatic;
 
-			fileLines.Add(@"[DllImport(flashlibstr)]");
+			fileLines.Add(importdllHeader);
 			string retarg = isConstructor ? $"IntPtr" : GetCSNativeType(f.returnType);
 
 	        string funcline = $"public static extern {retarg} {f.cppname}(";
@@ -85,5 +93,16 @@ namespace flashnet
 			fileLines.Add(footer);
 			File.WriteAllLines(outfile, fileLines);
 		}
+
+		string []standardFuncs = 
+		{
+        "public static extern IntPtr IEnumerator_Current(IntPtr _ptr);",
+        "public static extern void IEnumerator_MoveNext(IntPtr _ptr);",
+        "public static extern void IEnumerator_Reset(IntPtr _ptr);",
+        "public static extern ulong IVec_Size(IntPtr _ptr);",
+        "public static extern IntPtr IVec_GetItem(IntPtr _ptr, ulong idx);",
+        "public static extern IntPtr IVec_GetEnumerator(IntPtr _ptr);",
+        "public static extern void ICPtrFree(IntPtr _ptr);"
+		};
 	}
 }
