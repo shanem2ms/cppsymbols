@@ -250,12 +250,14 @@ class IEnumerator
 { public:
     virtual void* Current() = 0;
     virtual bool MoveNext() = 0;
-    virtual void Reset() = 0; };
+    virtual void Reset() = 0; 
+    virtual ~IEnumerator() = 0 {} ;};
 class IVec
 { public:
     virtual size_t Size() = 0;
     virtual void* GetItem(size_t idx) = 0;
-    virtual IEnumerator* GetEnumerator() = 0; };
+    virtual IEnumerator* GetEnumerator() = 0;
+    virtual ~IVec() = 0 {} };
 template<typename T> class CVec : public IVec
 {     std::vector<T>* pvec;
 public:
@@ -293,8 +295,10 @@ template<typename J> static CVec<J>* CVecMake(const std::vector<J>* _pvec) { ret
 CAPI void* IEnumerator_Current(IEnumerator* _ptr) { return _ptr->Current(); }
 CAPI bool IEnumerator_MoveNext(IEnumerator* _ptr) { return _ptr->MoveNext(); }
 CAPI void IEnumerator_Reset(IEnumerator* _ptr) { _ptr->Reset(); }
+CAPI void IEnumerator_Free(IEnumerator* _ptr) { delete _ptr; }
 CAPI size_t IVec_Size(IVec* _ptr) { return _ptr->Size(); }
 CAPI void* IVec_GetItem(IVec* _ptr, size_t idx) { return _ptr->GetItem(idx); }
+CAPI void IVec_Free(IVec* _ptr) { delete _ptr; }
 CAPI IEnumerator* IVec_GetEnumerator(IVec* _ptr) { return _ptr->GetEnumerator(); }
 CAPI void ICPtrFree(ICPtr* _ptr) { delete _ptr; }
 ";

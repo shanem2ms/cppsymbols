@@ -97,11 +97,13 @@ namespace flashnet
 		string []standardFuncs = 
 		{
         "public static extern IntPtr IEnumerator_Current(IntPtr _ptr);",
-        "public static extern void IEnumerator_MoveNext(IntPtr _ptr);",
+        "public static extern bool IEnumerator_MoveNext(IntPtr _ptr);",
         "public static extern void IEnumerator_Reset(IntPtr _ptr);",
+        "public static extern void IEnumerator_Free(IntPtr _ptr);",
         "public static extern ulong IVec_Size(IntPtr _ptr);",
         "public static extern IntPtr IVec_GetItem(IntPtr _ptr, ulong idx);",
         "public static extern IntPtr IVec_GetEnumerator(IntPtr _ptr);",
+        "public static extern void IVec_Free(IntPtr _ptr);",
         "public static extern void ICPtrFree(IntPtr _ptr);"
 		};
 	}

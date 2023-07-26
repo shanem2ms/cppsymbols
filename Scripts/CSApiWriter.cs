@@ -14,6 +14,7 @@ namespace symlib.script
 		List<string> fileLines = new List<string>();
 					string header = @"using System;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace flashnet
 {
@@ -24,6 +25,7 @@ namespace flashnet
 		{
 			outfile = _outfile;
 			fileLines.Add(header);
+			fileLines.Add(iliststr);
 		}
 
 		public void PushNamespace(string ns)
@@ -170,6 +172,10 @@ namespace flashnet
             CppType baseType = GetBaseType(t.mainType);
             if (t.category == Category.String)
                 return "string";
+			else if (t.category == Category.Vector)
+			{
+				return $"IList<{GetCSApiType(t.subtype)}>";
+			}
             else if (t.category == Category.WrappedObject)
             {
                 return t.cstype;
@@ -192,7 +198,11 @@ namespace flashnet
             }
         }
 
-        public List<string> GetCsReturnString(EType t, string callstring)
+		// public IList<string> GetShaderNames() {
+		// return new List<string>(NativeLib.sam_EngineGetShaderNames(pthis), (IntPtr ptr) =>
+		// { return ""; });
+		// }
+		public List<string> GetCsReturnString(EType t, string callstring)
         {
             List<string> outlines = new List<string>();
             if (t.category == Category.Void)
@@ -208,6 +218,10 @@ namespace flashnet
             {
                 outlines.Add($"    return new {t.cstype}({callstring});");
             }
+			else if (t.category == Category.Vector)
+			{
+
+			}
             else
             {
                 outlines.Add($"    return {callstring};");
@@ -235,6 +249,84 @@ namespace flashnet
 		{
 			fileLines.Add(footer);
 			File.WriteAllLines(outfile, fileLines);
-		}		
-	}
+		}
+
+
+        const string iliststr = @"    class List<T> : IList<T>, IDisposable
+    {
+        public delegate T CreateDelegate(IntPtr ptr);
+        IntPtr ptr;
+        CreateDelegate createDel;
+        public List(IntPtr _ptr, CreateDelegate del)
+        { ptr = _ptr; }
+        public T this[int index] { get => createDel(NativeLib.IVec_GetItem(ptr, (ulong)index)); set => throw new NotImplementedException(); }
+        public int Count => (int)NativeLib.IVec_Size(ptr);
+        public bool IsReadOnly => true;
+        public void Add(T item)
+        {
+            throw new NotImplementedException();
+        }
+        public void Clear()
+        {
+            throw new NotImplementedException();
+        }
+        public bool Contains(T item)
+        {
+            throw new NotImplementedException();
+        }
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            throw new NotImplementedException();
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+        public int IndexOf(T item)
+        {
+            throw new NotImplementedException();
+        }
+        public void Insert(int index, T item)
+        {
+            throw new NotImplementedException();
+        }
+        public bool Remove(T item)
+        {
+            throw new NotImplementedException();
+        }
+        public void RemoveAt(int index)
+        {
+            throw new NotImplementedException();
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+        public void Dispose()
+        {
+            NativeLib.IVec_Free(ptr);
+        }
+        public class Enumerator : IEnumerator<T>
+        {
+            IntPtr ptr;
+            CreateDelegate createDel;
+            public Enumerator(IntPtr _ptr, CreateDelegate del)
+            { ptr = _ptr; }
+            public T Current => createDel(NativeLib.IEnumerator_Current(ptr));
+            object System.Collections.IEnumerator.Current => createDel(NativeLib.IEnumerator_Current(ptr));
+            public void Dispose()
+            {
+				NativeLib.IEnumerator_Free(ptr);
+            }
+            public bool MoveNext()
+            {
+                return NativeLib.IEnumerator_MoveNext(ptr);
+            }
+            public void Reset()
+            {
+                NativeLib.IEnumerator_Reset(ptr);
+            }
+        }
+    }";
+    }
 }
