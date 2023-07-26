@@ -251,10 +251,17 @@ namespace symlib.script
                 }
             }
         }
-
-        public bool IsSupported => category != Category.Unsupported &&
-            !(ptrcnt > 0 && (category == Category.Primitive ||
-                category == Category.WrappedEnum));
+        public bool IsSupported { get {
+                if (category == Category.Unsupported)
+                    return false;
+                if (ptrcnt > 0 && (category == Category.Primitive ||
+                    category == Category.WrappedEnum))
+                    return false;
+                if (category == Category.Vector)
+                    return subtype.IsSupported;
+                return true;
+            }
+        }
 
 
         string GetName()

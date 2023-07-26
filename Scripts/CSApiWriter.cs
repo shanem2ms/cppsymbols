@@ -72,7 +72,8 @@ namespace flashnet
 			bool first = true;
 			int tmpvaridx = 0;
 			string callline ="";
-	        foreach (var tp in f.parameters)
+            List<string> headerLines = new List<string>();
+            foreach (var tp in f.parameters)
 			{
 				if (!first)
 				{
@@ -85,11 +86,14 @@ namespace flashnet
 				if (varname == "")
 					varname = $"tmp{tmpvaridx++}";
 				funcline += GetCSApiType(tp.type) + " " + varname;
-				callline += GetCSApiCall(tp.type, varname, out _, out _);				
-			}			
-			funcline += ") {";			
+				callline += GetCSApiCall(tp.type, varname, out header, out _);
+                if (header != String.Empty)
+                    headerLines.Add(header);
+            }
+            funcline += ") {";			
 			fileLines.Add(funcline);
-			fileLines.Add($"pthis = NativeLib.{f.cppname}({callline});");
+            fileLines.AddRange(headerLines);
+            fileLines.Add($"pthis = NativeLib.{f.cppname}({callline});");
 			fileLines.Add("}");
 		}
 		
@@ -127,7 +131,7 @@ namespace flashnet
 			bool first = true;
 			int tmpvaridx = 0;
 			string callline = hasThisArg ? "pthis" : "";
-
+			List<string> headerLines = new List<string>();
 	        foreach (var tp in f.parameters)
 			{
 				if (!first)
@@ -140,14 +144,16 @@ namespace flashnet
 				if (varname == "" || varname == "params")
 					varname = $"tmp{tmpvaridx++}";
 				funcline += GetCSApiType(tp.type) + " " + varname;
-				callline += GetCSApiCall(tp.type, varname, out _, out _);
-			}
+				callline += GetCSApiCall(tp.type, varname, out header, out _);
+				if (header != String.Empty)
+					headerLines.Add(header);
+            }
 			if (issquarebracket)
 				funcline += "] { get {";
 			else
 	        	funcline += ") {";	        
 	        fileLines.Add(funcline);
-	        
+			fileLines.AddRange(headerLines);
 	        fileLines.AddRange(GetCsReturnString(f.returnType, $"NativeLib.{f.cppname}({callline})"));
 	        if (issquarebracket)
 	        	fileLines.Add("}}");
@@ -174,7 +180,8 @@ namespace flashnet
                 return "string";
 			else if (t.category == Category.Vector)
 			{
-				return $"IList<{GetCSApiType(t.subtype)}>";
+				string ret = $"IList<{GetCSApiType(t.subtype)}>";
+				return ret;
 			}
             else if (t.category == Category.WrappedObject)
             {
@@ -202,6 +209,7 @@ namespace flashnet
 		// return new List<string>(NativeLib.sam_EngineGetShaderNames(pthis), (IntPtr ptr) =>
 		// { return ""; });
 		// }
+
 		public List<string> GetCsReturnString(EType t, string callstring)
         {
             List<string> outlines = new List<string>();
@@ -220,7 +228,9 @@ namespace flashnet
             }
 			else if (t.category == Category.Vector)
 			{
-
+				string instType = $"List<{GetCSApiType(t.subtype)}>";
+				List<string> retstrs = GetCsReturnString(t.subtype, "ptr");
+                outlines.Add($"    return new {instType}({callstring}, (IntPtr ptr) => {{{string.Join(' ', retstrs)}}});");
 			}
             else
             {
@@ -235,6 +245,12 @@ namespace flashnet
                 header = String.Empty;
                 footer = String.Empty;
                 return $"Marshal.StringToHGlobalAnsi({varname})";
+            }
+			else if (t.category == Category.Vector)
+			{
+				header = $"var l{varname} = {varname} as List<byte>; if (l{varname}== null) throw new Exception();";
+                footer = String.Empty;
+                return $"l{varname}.ptr";
             }
             else
             {
@@ -255,7 +271,7 @@ namespace flashnet
         const string iliststr = @"    class List<T> : IList<T>, IDisposable
     {
         public delegate T CreateDelegate(IntPtr ptr);
-        IntPtr ptr;
+        public IntPtr ptr;
         CreateDelegate createDel;
         public List(IntPtr _ptr, CreateDelegate del)
         { ptr = _ptr; }

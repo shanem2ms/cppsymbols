@@ -276,13 +276,15 @@ public:
         Enumerator(std::vector<T>* _pvec) {
             pvec = _pvec;
             Reset(); }
-        void* Current() override { T* ptr = &(*it); return ptr; }
+        void* Current() override { T &val = (*it); if constexpr (sizeof(T) < sizeof(void*)) return (void *)(val); else return &val; }
         bool MoveNext() override { if (it == pvec->end()) return false; it++; return true; }
         void Reset() override { it = pvec->begin(); }
     };
     // IVec overloads
     size_t Size() override { return pvec->size(); }
-    void* GetItem(size_t idx) override { return &pvec->at(idx); }
+    void* GetItem(size_t idx) override { 
+        if constexpr (sizeof(T) < sizeof(void*)) return (void*)(pvec->at(idx));
+        else return &pvec->at(idx); }
     IEnumerator* GetEnumerator() override
     { return new Enumerator(pvec); }
 private:
