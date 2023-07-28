@@ -276,7 +276,9 @@ public:
         Enumerator(std::vector<T>* _pvec) {
             pvec = _pvec;
             Reset(); }
-        void* Current() override { T &val = (*it); if constexpr (sizeof(T) < sizeof(void*)) return (void *)(val); else return &val; }
+        void* Current() override { T &val = (*it); if constexpr (sizeof(T) < sizeof(void*)) return (void*)(val);
+            else if constexpr (std::is_same<T, std::string>::value) return (void *)val.c_str();
+            else return &val; }        
         bool MoveNext() override { if (it == pvec->end()) return false; it++; return true; }
         void Reset() override { it = pvec->begin(); }
     };

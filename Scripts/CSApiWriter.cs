@@ -229,8 +229,20 @@ namespace flashnet
 			else if (t.category == Category.Vector)
 			{
 				string instType = $"List<{GetCSApiType(t.subtype)}>";
-				List<string> retstrs = GetCsReturnString(t.subtype, "ptr");
-                outlines.Add($"    return new {instType}({callstring}, (IntPtr ptr) => {{{string.Join(' ', retstrs)}}});");
+				string retstr;
+
+                if (t.subtype.category == Category.Primitive)
+				{
+					retstr = $"({GetCSApiType(t.subtype)})ptr";
+				}
+				else
+				{
+                    List<string> retstrs;
+                    retstrs = GetCsReturnString(t.subtype, "ptr");
+                    retstr = "{" + string.Join(' ', retstrs) + "}";
+
+            }
+                outlines.Add($"    return new {instType}({callstring}, (IntPtr ptr) => {retstr});");
 			}
             else
             {
@@ -274,7 +286,7 @@ namespace flashnet
         public IntPtr ptr;
         CreateDelegate createDel;
         public List(IntPtr _ptr, CreateDelegate del)
-        { ptr = _ptr; }
+        { ptr = _ptr; createDel = del; }
         public T this[int index] { get => createDel(NativeLib.IVec_GetItem(ptr, (ulong)index)); set => throw new NotImplementedException(); }
         public int Count => (int)NativeLib.IVec_Size(ptr);
         public bool IsReadOnly => true;
@@ -296,7 +308,7 @@ namespace flashnet
         }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            throw new NotImplementedException();
+            return new Enumerator(NativeLib.IVec_GetEnumerator(ptr), createDel);
         }
         public int IndexOf(T item)
         {
@@ -316,7 +328,7 @@ namespace flashnet
         }
         public IEnumerator<T> GetEnumerator()
         {
-            throw new NotImplementedException();
+            return new Enumerator(NativeLib.IVec_GetEnumerator(ptr), createDel);
         }
         public void Dispose()
         {
@@ -327,7 +339,7 @@ namespace flashnet
             IntPtr ptr;
             CreateDelegate createDel;
             public Enumerator(IntPtr _ptr, CreateDelegate del)
-            { ptr = _ptr; }
+            { ptr = _ptr;  createDel = del; }
             public T Current => createDel(NativeLib.IEnumerator_Current(ptr));
             object System.Collections.IEnumerator.Current => createDel(NativeLib.IEnumerator_Current(ptr));
             public void Dispose()
