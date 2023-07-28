@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.33529.622
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cppsymview", "cppsymview.csproj", "{2B6E27F5-9AD3-45A8-8810-FF1507ABF38F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "apigen", "..\apigen\apigen.csproj", "{F89476C6-BD32-499E-8785-802344F116AA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "apigen", "apigen\apigen.csproj", "{F89476C6-BD32-499E-8785-802344F116AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "symlib", "..\symlib\symlib.csproj", "{77E8A607-76B4-453A-9DC1-F91BE2305215}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "symlib", "symlib\symlib.csproj", "{77E8A607-76B4-453A-9DC1-F91BE2305215}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

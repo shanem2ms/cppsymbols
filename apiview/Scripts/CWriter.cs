@@ -279,7 +279,7 @@ public:
         void* Current() override { T &val = (*it); if constexpr (sizeof(T) < sizeof(void*)) return (void*)(val);
             else if constexpr (std::is_same<T, std::string>::value) return (void *)val.c_str();
             else return &val; }        
-        bool MoveNext() override { if (it == pvec->end()) return false; it++; return true; }
+        bool MoveNext() override { it++; return it != pvec->end(); }
         void Reset() override { it = pvec->begin(); }
     };
     // IVec overloads

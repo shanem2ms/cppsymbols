@@ -37,7 +37,7 @@ build/
 out/
 apiview/obj/
 apiview/bin/
-symlib/obj/
-symlib/bin/
-apigen/obj/
-apigen/bin/
+apiview/symlib/obj/
+apiview/symlib/bin/
+apiview/apigen/obj/
+apiview/apigen/bin/
