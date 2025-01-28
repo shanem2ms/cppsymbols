@@ -1,0 +1,8 @@
+{
+  "name": "cppsymbols",
+  "dependencies": [
+    "fmt",
+    "zlib",
+    "libevent"
+  ]
+}

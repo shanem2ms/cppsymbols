@@ -112,7 +112,7 @@ void InitCx()
     cxc[CXCursor_LambdaExpr] = "LambdaExpr";
     cxc[CXCursor_ObjCBoolLiteralExpr] = "ObjCBoolLiteralExpr";
     cxc[CXCursor_ObjCSelfExpr] = "ObjCSelfExpr";
-    cxc[CXCursor_OMPArraySectionExpr] = "OMPArraySectionExpr";
+    cxc[CXCursor_ArraySectionExpr] = "CXCursor_ArraySectionExpr";
     cxc[CXCursor_ObjCAvailabilityCheckExpr] = "ObjCAvailabilityCheckExpr";
     cxc[CXCursor_FixedPointLiteral] = "FixedPointLiteral";
     cxc[CXCursor_OMPArrayShapingExpr] = "OMPArrayShapingExpr";

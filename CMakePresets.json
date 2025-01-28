@@ -7,77 +7,105 @@
   },
   "configurePresets": [
     {
-      "name": "debug",
-      "displayName": "Debug Windows",
-      "binaryDir": "${sourceDir}/build/debug",
+      "name": "arm64-debug",
+      "displayName": "Debug aWindows",
+      "binaryDir": "${sourceDir}/build/arm64-debug",
       "generator": "Ninja",
+      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "LLVM_DIR": "c:/Program Files/LLVM",
-        "VCPKG_DIR": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/../vcpkg"
-        },
-        "VCPKG_TARGET_TRIPLET": {
-          "type": "string",
-          "value": "x64-windows"
-        },
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows",
+        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "release",
+      "name": "arm64-release",
       "displayName": "Release Windows",
-      "binaryDir": "${sourceDir}/build/release",
+      "binaryDir": "${sourceDir}/build/arm64-release",
       "generator": "Ninja",
+      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "VCPKG_DIR": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/../vcpkg"
-        },
-        "LLVM_DIR": "c:/Program Files/LLVM",
-        "VCPKG_TARGET_TRIPLET": {
-          "type": "string",
-          "value": "x64-windows"
-        },
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "VCPKG_TARGET_TRIPLET": "arm64-windows",
+        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
-      "name": "debug-macos",
-      "displayName": "Debug Macos",
-      "binaryDir": "${sourceDir}/build/debug-macos",
-      "generator": "Unix Makefiles",
+      "name": "x64-debug",
+      "displayName": "Debug aWindows",
+      "binaryDir": "${sourceDir}/build/x64-debug",
+      "generator": "Ninja",
+      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "VCPKG_DIR": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/../vcpkg"
-        },
-        "VCPKG_TARGET_TRIPLET": {
-          "type": "string",
-          "value": "arm64-osx"
-        },
-        "PROJ_INSTALL_PATH": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/install/debug-macos"
-        },
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LLVM_DIR": "C:/Program Files/LLVM"
       }
     },
     {
-      "name": "release-macos",
-      "displayName": "Release Macos",
-      "binaryDir": "${sourceDir}/build/release",
-      "generator": "Unix Makefiles",
+      "name": "x64-release",
+      "displayName": "Release Windows",
+      "binaryDir": "${sourceDir}/build/x64-release",
+      "generator": "Ninja",
+      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "VCPKG_DIR": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/../vcpkg"
-        },
-        "VCPKG_TARGET_TRIPLET": {
-          "type": "string",
-          "value": "arm64-osx"
-        },
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
+        "CMAKE_BUILD_TYPE": "Release",
+        "LLVM_DIR": "C:/Program Files/LLVM"
+      }
+    },
+    {
+      "name": "release-win-clg",
+      "displayName": "Release Windows Clang",
+      "binaryDir": "${sourceDir}/build/x64-release-clg",
+      "generator": "Ninja",
+      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_COMPILER": "clang",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
+      }
+    },
+    {
+      "name": "x64-releasenoopt",
+      "displayName": "Release NoOpt Windows",
+      "binaryDir": "${sourceDir}/build/x64-releasenoopt",
+      "generator": "Ninja",
+      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
+        // Now override flags to turn off optimization
+        // This is one common approach for MSVC:
+        "CMAKE_CXX_FLAGS_RELEASE": "/Od /MD /Zi",
+        "CMAKE_C_FLAGS_RELEASE": "/Od /MD /Zi"
+      }
+    },
+
+    {
+      "name": "x64-linuxrel",
+      "displayName": "Release Linux",
+      "binaryDir": "${sourceDir}/build/x64-linuxrel",
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ]
