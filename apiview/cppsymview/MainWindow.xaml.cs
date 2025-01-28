@@ -36,7 +36,7 @@ namespace cppsymview
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public CPPEngineFile Engine => engine;
-        string root = @"C:\flash";
+        string root = @"D:\vq\CMake\Azure";
         //string root = @"D:\vq\flash";
         public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
@@ -78,12 +78,12 @@ namespace cppsymview
 
 
             DirectoryInfo di = new DirectoryInfo(Directory.GetCurrentDirectory());
-            while (di.Name.ToLower() != "cppsymbols")
+            while (di.Name.ToLower() != "apiview")
                 di = di.Parent;
             
             //ConnectTcp();
             //engine.Init(root, root + @"\build\debugclg\clouds\Particle.cpp.osy");        
-            engine.Init(root, root + @"\build\script\flash.osy");
+            engine.Init(root, root + @"\CMakeVQMaster\build\x64-releasenoopt\WxString.cpp.osy");
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
 

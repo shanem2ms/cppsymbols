@@ -35,8 +35,8 @@ build/
 .vs/
 .vscode/
 out/
-apiview/obj/
-apiview/bin/
+apiview/cppsymview/obj/
+apiview/cppsymview/bin/
 apiview/symlib/obj/
 apiview/symlib/bin/
 apiview/apigen/obj/
