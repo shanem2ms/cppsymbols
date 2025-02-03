@@ -35,9 +35,6 @@ set(Main_Files
 
 add_executable(${PROJECT_NAME} ${Main_Files})
 
-#string(REPLACE "/O2" "/O10" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-#string(REPLACE "/O2" "/O10" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-
 if (DEFINED ${CPPCLR})
 	add_compile_options(/clr)
 	string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")

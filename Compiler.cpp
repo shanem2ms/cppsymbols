@@ -110,30 +110,35 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     for (unsigned int i = 0; i < numDiagnostics; ++i)
     {
         CXDiagnostic diagnostic = clang_getDiagnostic(translationUnit, i);
-        ErrorPtr te = new Error();
-        CXSourceLocation srcLoc = clang_getDiagnosticLocation(diagnostic);
-        CXFile file;
-        unsigned int line;
-        unsigned int column;
-        unsigned int offset;
-        clang_getExpansionLocation(srcLoc, &file, &line, &column, &offset);
-        te->Line = line;
-        te->Column = column;
-        CXString cxfilename = clang_getFileName(file);
-        te->filePath = Str(cxfilename);
-        te->compiledFilePath = fname;
         unsigned int category = clang_getDiagnosticCategory(diagnostic);
-        te->Category = category;
-
-        CXString cxspell = clang_getDiagnosticSpelling(diagnostic);
-        te->Description = Str(cxspell);
-        if (dolog)
+        
+        // Ignore warnings
+        if (category >= CXDiagnostic_Error)
         {
-            std::cout << te->filePath << "[" << te->Line << "]: " << te->Description << std::endl;
+            ErrorPtr te = new Error();
+            CXSourceLocation srcLoc = clang_getDiagnosticLocation(diagnostic);
+            CXFile file;
+            unsigned int line;
+            unsigned int column;
+            unsigned int offset;
+            clang_getExpansionLocation(srcLoc, &file, &line, &column, &offset);
+            te->Line = line;
+            te->Column = column;
+            CXString cxfilename = clang_getFileName(file);
+            te->filePath = Str(cxfilename);
+            te->compiledFilePath = fname;
+            te->Category = category;
+
+            CXString cxspell = clang_getDiagnosticSpelling(diagnostic);
+            te->Description = Str(cxspell);
+            if (dolog)
+            {
+                std::cout << te->filePath << "[" << te->Line << "]: " << te->Description << std::endl;
+            }
+            errors.push_back(te);
+            clang_disposeString(cxfilename);
+            clang_disposeString(cxspell);
         }
-        errors.push_back(te);
-        clang_disposeString(cxfilename);
-        clang_disposeString(cxspell);
         clang_disposeDiagnostic(diagnostic);
     }
     std::filesystem::path destpath(outpath);
@@ -221,6 +226,22 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
         }
     }
 
+    /// Match function definition nodes to function signatures
+    for (auto& kv : vc->definitionHashes)
+    {
+        auto itsignatureNode = nodeHashes.find(kv.first);
+        auto itdefinitionNode = nodeHashes.find(kv.second);
+        if (itsignatureNode != nodeHashes.end() &&
+            itdefinitionNode != nodeHashes.end())
+        {
+            Node& signode = vc->allocNodes[itsignatureNode->second.front()];
+            Node &defnode = vc->allocNodes[itdefinitionNode->second.front()];
+            defnode.pRefPtr = &signode;
+            defnode.ReferencedIdx = signode.Key;
+        }
+    }
+
+
     std::vector<Node> newNodes0;
     for (auto& node : vc->allocNodes)
     {
@@ -297,7 +318,7 @@ std::vector<uint8_t> Compiler::Compile(const std::string& fname,
     }
     SanityCheckNodes(newNodes0);
 
-    if (errors.size() == 0)
+    //if (errors.size() == 0)
     {
         vc->dbFile->AddNodes(newNodes0);
 

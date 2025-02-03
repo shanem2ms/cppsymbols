@@ -12,9 +12,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Runtime;
+using symlib;
 
 namespace cppsymview
 {
@@ -32,11 +32,10 @@ namespace cppsymview
 
         private void FoldersTV_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (e.NewValue is FVFile)
+            if (e.NewValue is FVItem fvItem &&
+                fvItem.Type == FVItemType.File)
             {
-                FVFile fvFile = e.NewValue as FVFile;
-                
-                OnFileSelected?.Invoke(this, fvFile.FullPath);
+                OnFileSelected?.Invoke(this, fvItem.FullPath);
             }
         }
 
@@ -44,7 +43,7 @@ namespace cppsymview
 
         string root = string.Empty;
 
-        FVFolder? topFolder = null;
+        FVItem? topFolder = null;
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public IEnumerable<FVItem> TopItems => topFolder?.Items ?? new List<FVItem>();
@@ -64,6 +63,18 @@ namespace cppsymview
             {
 
             }
+        }
+
+        public void BuildSourceFileTree(CPPEngineFile engine)
+        {
+            FVTFolder ftopFolder = new FVTFolder("", null);
+            topFolder = ftopFolder;
+            foreach (var sf in engine.SourceFiles)
+            {
+                string []dirs = sf.Split("\\");
+                ftopFolder.AddPath(dirs, 0);
+            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TopItems)));
         }
     }
 
@@ -101,7 +112,6 @@ namespace cppsymview
             dirInfo = di;
         }
 
-
         public override List<FVItem> Items { get; }
         public override FVItemType Type => FVItemType.Folder;
 
@@ -131,4 +141,47 @@ namespace cppsymview
         public override string FullPath => fileInfo.FullName;
 
     }
+
+    public class FVTFolder : FVItem
+    {
+        string name;
+        FVTFolder parent;
+        FVItemType itemType;
+        public FVTFolder(string _name, FVTFolder _parent)
+        {
+            name = _name;
+            parent = _parent;
+            Items = new List<FVItem>();
+            itemType = FVItemType.Folder;
+        }
+        public void AddPath(string[] paths, int idx)
+        {
+            if (paths.Length == idx)
+            {
+                itemType = FVItemType.File;
+                return;
+            }
+            FVTFolder fvt;
+            FVItem? item = Items.FirstOrDefault(i => i.Name == paths[idx]);
+            if (item != null)
+                fvt = (FVTFolder)item;
+            else
+            {
+                fvt = new FVTFolder(paths[idx], this);
+                Items.Add(fvt);
+            }
+            fvt.AddPath(paths, idx + 1);
+        }
+
+
+        public override List<FVItem> Items { get; }
+        public override FVItemType Type => itemType;
+
+        public override string Name => name;
+
+        public override string FullPath => parent == null ? name : Path.Combine(parent.FullPath, name);
+
+        public override string ToString() => name;
+    }
+
 }

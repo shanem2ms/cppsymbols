@@ -15,7 +15,9 @@
         //-merge -o C:/flash/build/debugclg/tmp.osy C:/flash/build/debugclg/ssds/SSDSParticlesVis.cpp.osy C:/flash/build/debugclg/clouds/Particle.cpp.osy"
         //"-merge -o C:/flash/build/debugclg/flash.osy C:/flash/build/debugclg/engine.osy C:/flash/build/debugclg/core.osy"
         //"-dump C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
-        "-c ../../Test/test1.cpp -o test.osy -L 3"
+        //"-c ../../Test/test3.cpp -o test.osy -L 3",
+        //"-merge -o D:/vq/CMake/Azure/CMakeVQMaster/build/x64-releasenoopt/WxKernelShared.osy D:/vq/CMake/Azure/CMakeVQMaster/build/x64-releasenoopt/WxdSceneSchema.cpp.osy D:/vq/CMake/Azure/CMakeVQMaster/build/x64-releasenoopt/WxdMultiLocationList.cpp.osy"
+        "-ID:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/vcpkg_installed/x64-windows/include -std=c++17 -ID:/vq/CMake/Azure/src/WxKernel -ID:/vq/CMake/Azure/include/WxKernel -ID:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/vcpkg_installed/x64-windows/include -ID:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/inc -ID:/vq/CMake/Azure/src/WxKernel/CurlWebSockets/include -ID:/vq/CMake/Azure/src/WxKernel/PolyClipping -DWX_KERNEL_DLL_EXPORT_GRAPHICSAPPLICATION -DWX_KERNEL_DLL_EXPORT_SHARED -DNOMINMAX -DNO_ATICOMPRESS_LIB -D_SECURE_SCL=0 -DWX_KERNEL_DLL_EXPORT_SHARED  -c D:\\vq\\CMake\\Azure\\src\\WxKernel\\Shared\\Utility\\WxString.cpp -o out.osy"
       ]
     }
   ]

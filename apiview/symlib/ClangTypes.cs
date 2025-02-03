@@ -1328,7 +1328,8 @@ namespace symlib
             CXCursorKind.UsingDirective,
             CXCursorKind.CXXForRangeStmt,
             CXCursorKind.BuiltinBitCastExpr,
-            CXCursorKind.NamespaceAlias
+            CXCursorKind.NamespaceAlias,
+            CXCursorKind.DLLExport
         };
 
         public static IEnumerable<CXCursorKind> CursorKinds = Enum.GetValues(typeof(CXCursorKind)).Cast<CXCursorKind>();

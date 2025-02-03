@@ -7,34 +7,6 @@
   },
   "configurePresets": [
     {
-      "name": "arm64-debug",
-      "displayName": "Debug aWindows",
-      "binaryDir": "${sourceDir}/build/arm64-debug",
-      "generator": "Ninja",
-      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
-        "VCPKG_TARGET_TRIPLET": "arm64-windows",
-        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
-        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "arm64-release",
-      "displayName": "Release Windows",
-      "binaryDir": "${sourceDir}/build/arm64-release",
-      "generator": "Ninja",
-      "toolchainFile": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
-        "VCPKG_TARGET_TRIPLET": "arm64-windows",
-        "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
-        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
       "name": "x64-debug",
       "displayName": "Debug aWindows",
       "binaryDir": "${sourceDir}/build/x64-debug",
@@ -75,7 +47,8 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "VCPKG_INSTALL_PATH": "c:/vcpkg/installed",
         "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
+        "LLVM_DIR": "C:/Program Files/LLVM"
       }
     },
     {
@@ -92,7 +65,8 @@
         // Now override flags to turn off optimization
         // This is one common approach for MSVC:
         "CMAKE_CXX_FLAGS_RELEASE": "/Od /MD /Zi",
-        "CMAKE_C_FLAGS_RELEASE": "/Od /MD /Zi"
+        "CMAKE_C_FLAGS_RELEASE": "/Od /MD /Zi",
+        "LLVM_DIR": "C:/Program Files/LLVM"
       }
     },
 

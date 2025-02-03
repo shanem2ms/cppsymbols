@@ -44,7 +44,7 @@ namespace symlib
         }
         public void Init(string sourcedir, string osyfile)
         {
-            srcDir = sourcedir;
+            //srcDir = sourcedir;
             osyFile = osyfile;
             LoadOSYFile(osyFile);
         }
@@ -89,7 +89,6 @@ namespace symlib
                     {
                         node.parent = nodes[(int)dbnode.parentNodeIdx];
                         node.parent.allChildren.Add(node);
-
                     }
                     node.dbNode = dbnode;
                     if (dbnode.token >= 0)

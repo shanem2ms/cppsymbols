@@ -501,6 +501,8 @@ void DbFile::Merge(const DbFile& other)
         size_t typeIdx = 0;
         for (auto& ctype : m_dbTypes)
         {
+            if (ctype.hash == 0)
+                continue;
             auto ittok = uidTypeMap.find(ctype.hash);
             if (ittok != uidTypeMap.end())
                 dbgbreak();

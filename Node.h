@@ -210,6 +210,7 @@ public:
     CPPSourceFilePtr compilingFilePtr;
     std::map<CXCursor, int64_t> nodesMap;
     std::vector<Node> allocNodes;
+    std::map<int32_t, int32_t> definitionHashes;
     std::string isolateFile;
     std::string logFilterFile;
 

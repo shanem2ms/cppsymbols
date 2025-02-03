@@ -6,6 +6,7 @@ using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using ICSharpCode.AvalonEdit.Rendering;
 using ICSharpCode.AvalonEdit.Search;
+using ICSharpCode.AvalonEdit.Utils;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -137,8 +138,20 @@ namespace cppsymview
             CPPName = Path.GetFileName(FilePath);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CPPName"));
             Document.FileName = this.FilePath;
-            Load(this.FilePath);
+            this.Encoding = System.Text.Encoding.ASCII;
+            LoadAscii(this.FilePath);
             //this.Engine.SendSourceCode(Document.Text);
+        }
+
+        /// Loads the text from the stream, auto-detecting the encoding.
+        /// </summary>
+        public void LoadAscii(string fileName)
+        {
+            // Read the file using ASCII encoding
+            string content = File.ReadAllText(fileName, System.Text.Encoding.ASCII);
+
+            // Set the text in AvalonEdit
+            this.Text = content;
         }
         public void SaveAs(string path)
         {

@@ -36,8 +36,6 @@ namespace cppsymview
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public CPPEngineFile Engine => engine;
-        string root = @"D:\vq\CMake\Azure";
-        //string root = @"D:\vq\flash";
         public ObservableCollection<TextEditor> Editors { get; } = new ObservableCollection<TextEditor>();
         Settings settings = Settings.Load();
         ScriptEngine scriptEngine = new ScriptEngine();
@@ -73,7 +71,6 @@ namespace cppsymview
 
             symlib.script.Api.WriteLine = WriteOutput;
             symlib.script.Api.Flush = Flush;
-            folderView.Root = root;
             folderView.OnFileSelected += FolderView_OnFileSelected;
 
 
@@ -83,7 +80,8 @@ namespace cppsymview
             
             //ConnectTcp();
             //engine.Init(root, root + @"\build\debugclg\clouds\Particle.cpp.osy");        
-            engine.Init(root, root + @"\CMakeVQMaster\build\x64-releasenoopt\WxString.cpp.osy");
+            engine.Init("",@"D:\cppsymbols\build\x64-release\out.osy");
+            folderView.BuildSourceFileTree(engine);
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
 

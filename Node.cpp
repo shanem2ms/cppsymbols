@@ -118,11 +118,16 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     unsigned int defoffset = 0;
     CXFile ifile;
 
-    if (node.Kind == CXCursorKind::CXCursor_ClassDecl)
+    if (node.Kind == CXCursorKind::CXCursor_CXXMethod &&
+        clang_isCursorDefinition(cursor) == 0)
     {
         CXCursor defcursor = clang_getCursorDefinition(cursor);
-        CXSourceLocation defLoc = clang_getCursorLocation(defcursor);
-        clang_getExpansionLocation(defLoc, &ifile, &defline, &defcolumn, &defoffset);
+        CXCursorKind defCursorKind = clang_getCursorKind(defcursor);
+        if (defCursorKind != CXCursor_FirstInvalid)
+        {
+            int32_t defhash = clang_hashCursor(defcursor);
+            vc->definitionHashes.insert(std::make_pair(node.clangHash, defhash));
+        }
     }
 
     node.Linkage = clang_getCursorLinkage(cursor);
@@ -139,16 +144,6 @@ int64_t BaseNode::NodeFromCursor(CXCursor cursor,
     unsigned int endOffset;
     clang_getExpansionLocation(srcEndLoc, nullptr,
         nullptr, nullptr, &endOffset);
-
-    if (defcolumn > 0)
-    {
-        //System.Diagnostics.Debug.WriteLine("{0} {1} -> {2} {3}", line, column,
-        //     defcolumn, defcolumn);
-        line = defcolumn;
-        column = defcolumn;
-        offset = defoffset;
-    }
-
 
     std::string tokenStr = Str(clang_getCursorSpelling(cursor));
     trim(tokenStr);
