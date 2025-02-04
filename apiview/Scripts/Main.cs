@@ -30,42 +30,15 @@ namespace symlib.script
 	    		}
 	    		idx++;
     		}    		
-    		Node samnode = engine.topNodes.FirstOrDefault(tn => 
-    			tn.Kind == CXCursorKind.Namespace && tn.Token?.Text == "sam");
-
-    		Node bgfxnode = engine.topNodes.FirstOrDefault(tn => 
-    			tn.Kind == CXCursorKind.Namespace && tn.Token?.Text == "bgfx");
     			
 			foreach (var node in engine.Nodes)
     		{
+    			if (node.Kind == CXCursorKind.CXXMethod)
+    				Api.WriteLine(node.Token.Text);
     			node.enabled = true;
 			}
 			
 
-            Classes.CollectWrappedTypes(bgfxnode, "bgfx::");
-            Classes.CollectWrappedTypes(samnode, "sam::");
-
-            Classes.Wrap(bgfxnode, "bgfx");
-            Classes.Wrap(samnode, "sam");
-
-
-            //Api.Engine.RefreshNodeTree();    		    	
-            //LogTypes();
-
-            Classes.Write();
-            foreach(var kv in Classes.ClassMap)
-            {
-            	//Api.WriteLine(kv.Key);
-            }
-
-            if (verbose)
-            {
-                Api.WriteLine("Can't wrap the following:");
-                foreach (string utype in EType.utypes)
-                {
-                    Api.WriteLine("    " + utype);
-                }
-            }
         }
         
     
