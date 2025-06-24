@@ -8,19 +8,12 @@
       "projectTarget": "cppsymbols.exe",
       "name": "cppsymbols.exe",
       "args": [
-        //"-host"
-        //"-merge -o C:/flash/build/debugclg/engine.osy C:/flash/build/debugclg/Application.cpp.osy C:/flash/build/debugclg/Engine.cpp.osy C:/flash/build/debugclg/World.cpp.osy C:/flash/build/debugclg/earth/EarthCache.cpp.osy C:/flash/build/debugclg/earth/EarthLoader.cpp.osy C:/flash/build/debugclg/earth/EarthTile.cpp.osy C:/flash/build/debugclg/earth/EarthTileTerrain.cpp.osy C:/flash/build/debugclg/earth/EarthTileGis.cpp.osy C:/flash/build/debugclg/earth/MvtTile.cpp.osy C:/flash/build/debugclg/earth/Globe.cpp.osy C:/flash/build/debugclg/earth/SurfaceClassic.cpp.osy C:/flash/build/debugclg/earth/SurfaceRT.cpp.osy C:/flash/build/debugclg/earth/SolidTile.cpp.osy C:/flash/build/debugclg/SceneItem.cpp.osy C:/flash/build/debugclg/Camera.cpp.osy C:/flash/build/debugclg/Frustum.cpp.osy C:/flash/build/debugclg/Mesh.cpp.osy C:/flash/build/debugclg/OctTile.cpp.osy C:/flash/build/debugclg/OctTileSelection.cpp.osy C:/flash/build/debugclg/PlayerView.cpp.osy C:/flash/build/debugclg/ssds/SSDSLoader.cpp.osy C:/flash/build/debugclg/ssds/SSDSContour.cpp.osy C:/flash/build/debugclg/ssds/SSDSTile.cpp.osy C:/flash/build/debugclg/ssds/SSDSCache.cpp.osy C:/flash/build/debugclg/ssds/SSDSVoxelVis.cpp.osy C:/flash/build/debugclg/ssds/SSDSVoxelTile.cpp.osy C:/flash/build/debugclg/ssds/SSDSParticlesVis.cpp.osy C:/flash/build/debugclg/clouds/CloudsVis.cpp.osy C:/flash/build/debugclg/clouds/GsParticlePolicy.cpp.osy C:/flash/build/debugclg/clouds/ParticleSystem.cpp.osy C:/flash/build/debugclg/clouds/Particle.cpp.osy C:/flash/build/debugclg/clouds/WxCloudParticle.cpp.osy C:/flash/build/debugclg/clouds/WxCloudGsParticlePolicy.cpp.osy C:/flash/build/debugclg/clouds/WxGsParticlePolicyRQT.cpp.osy C:/flash/build/debugclg/clouds/WxCloudConfiguration.cpp.osy C:/flash/build/debugclg/Hud.cpp.osy C:/flash/build/debugclg/EarthCamera.cpp.osy C:/flash/build/debugclg/Texture.cpp.osy C:/flash/build/debugclg/ui/UIControl.cpp.osy C:/flash/build/debugclg/thirdparty/imgui/imgui.cpp.osy C:/flash/build/debugclg/thirdparty/imgui/TextEditor.cpp.osy C:/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui.cpp.osy C:/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui_draw.cpp.osy C:/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui_widgets.cpp.osy C:/flash/build/debugclg/thirdparty/imgui/dear-imgui/imgui_tables.cpp.osy C:/flash/build/debugclg/thirdparty/nanovg/nanovg.cpp.osy C:/flash/build/debugclg/thirdparty/nanovg/nanovg_bgfx.cpp.osy C:/flash/build/debugclg/FlashUI.cpp.osy C:/flash/build/debugclg/Exports.cpp.osy"
-        //"-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -emit-pch -x c++-header -P C:/flash/build/debugclg/StdIncludes.h_core.pch -c C:/flash/src/core/StdIncludes.h -o C:/flash/build/debugclg/StdIncludes.h_core.osy"
-        //"-DDLLX= -DPRId64=\"I64d\" -IC:/flash/src/core/. -IC:/flash/../vcpkg/installed/x64-windows/include -O0 -g -gcodeview -std=c++20 -x c++-header -P C:/flash/build/debugclg/StdIncludes.h_core.pch -c C:/flash/src/engine/clouds/Particle.cpp -o C:/flash/build/debugclg/tmp.osy"
-        //-merge -o C:/flash/build/debugclg/tmp.osy C:/flash/build/debugclg/ssds/SSDSParticlesVis.cpp.osy C:/flash/build/debugclg/clouds/Particle.cpp.osy"
-        //"-merge -o C:/flash/build/debugclg/flash.osy C:/flash/build/debugclg/engine.osy C:/flash/build/debugclg/core.osy"
-        //"-dump C:/flash/build/debugclg/geo/SphericalProjection.cpp.osy"
-        //"-c ../../Test/test3.cpp -o test.osy -L 3",
-        //"-merge -o D:/vq/CMake/Azure/CMakeVQMaster/build/x64-releasenoopt/WxKernelShared.osy D:/vq/CMake/Azure/CMakeVQMaster/build/x64-releasenoopt/WxdSceneSchema.cpp.osy D:/vq/CMake/Azure/CMakeVQMaster/build/x64-releasenoopt/WxdMultiLocationList.cpp.osy"
-        "-ID:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/vcpkg_installed/x64-windows/include -std=c++17 -ID:/vq/CMake/Azure/src/WxKernel -ID:/vq/CMake/Azure/include/WxKernel -ID:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/vcpkg_installed/x64-windows/include -ID:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/inc -ID:/vq/CMake/Azure/src/WxKernel/CurlWebSockets/include -ID:/vq/CMake/Azure/src/WxKernel/PolyClipping -DWX_KERNEL_DLL_EXPORT_GRAPHICSAPPLICATION -DWX_KERNEL_DLL_EXPORT_SHARED -DNOMINMAX -DNO_ATICOMPRESS_LIB -D_SECURE_SCL=0 -DWX_KERNEL_DLL_EXPORT_SHARED  -c D:\\vq\\CMake\\Azure\\src\\WxKernel\\Shared\\Utility\\WxString.cpp -o out.osy"
+        "-merge",
+        "-o",
+        "D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/VQShaderCmp/merged_round_0_pair_2.osy",
+        "D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/VQShaderCmp/VQShaderCmp.cpp.osy",
+        "D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/VQShaderCmp/WxrRenderPassDef.cpp.osy"
       ]
     }
   ]
 }
-
-

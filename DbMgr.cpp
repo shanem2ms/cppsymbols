@@ -540,7 +540,10 @@ void DbFile::Merge(const DbFile& other)
         for (const DbNode& node : otherNodes)
         {
             if (node.referencedIdx == idx)
-                __debugbreak();
+            {
+                std::cout << "Warning: self reference." << std::endl;
+                // TODO: figure out why this happens
+            }
             idx++;
         }
     }
