@@ -191,7 +191,7 @@ void DbFile::Save(const std::string& dbfile)
     ofstream.close();
 }
 
-static std::unordered_map<CXCursorKind, std::string> sCursorKindMap
+std::unordered_map<CXCursorKind, std::string> sCursorKindMap
 {
     { CXCursor_UnexposedDecl, "UnexposedDecl" },
     { CXCursor_StructDecl, "StructDecl" },
@@ -291,7 +291,7 @@ static std::unordered_map<CXCursorKind, std::string> sCursorKindMap
     { CXCursor_ConceptDecl, "ConceptDecl" }
 };
 
-static std::unordered_map<CXTypeKind, std::string> sTypeKindMap
+std::unordered_map<CXTypeKind, std::string> sTypeKindMap
 {
 { CXType_Invalid, "Invalid" },
 { CXType_Unexposed, "Unexposed" },

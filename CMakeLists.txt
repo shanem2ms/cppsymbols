@@ -18,6 +18,7 @@ set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "73CP3TPHE9")
 find_package(ZLIB REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(Libevent CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
 
 find_file(CLANGLIB libclang.lib REQUIRED HINTS "${LLVM_DIR}/lib")
 find_file(CLANGHDR BuildSystem.h REQUIRED HINTS "${LLVM_DIR}/include/clang-c")
@@ -31,6 +32,7 @@ set(Main_Files
 	Precomp.cpp
 	symbols.cpp
 	ClangDefs.cpp
+	OsyToSqlite.cpp
 )
 
 add_executable(${PROJECT_NAME} ${Main_Files})
@@ -54,6 +56,7 @@ target_link_libraries(${PROJECT_NAME} LINK_PUBLIC
 	   libevent::core
      ${CLANGLIB}
 	   ZLIB::ZLIB
+     unofficial::sqlite3::sqlite3
 	   )
 
 message(STATUS "ZLIB runtime DLL: ${ZLIB_DLL_PATH}")
@@ -97,6 +100,7 @@ install(FILES
 install(FILES
   ${CLANGDLL}
   ${CMAKE_BINARY_DIR}/zlib1.dll
+  ${CMAKE_BINARY_DIR}/sqlite3.dll
   DESTINATION bin)
 
   # Generate Config files

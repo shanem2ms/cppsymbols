@@ -3,6 +3,7 @@
   "dependencies": [
     "fmt",
     "zlib",
-    "libevent"
+    "libevent",
+    "sqlite3"
   ]
 }

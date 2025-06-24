@@ -8,11 +8,7 @@
       "projectTarget": "cppsymbols.exe",
       "name": "cppsymbols.exe",
       "args": [
-        "-merge",
-        "-o",
-        "D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/VQShaderCmp/merged_round_0_pair_2.osy",
-        "D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/VQShaderCmp/VQShaderCmp.cpp.osy",
-        "D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/VQShaderCmp/WxrRenderPassDef.cpp.osy"
+        "-to-sqlite D:\\vq\\CMake\\Azure\\CMakeVQMaster\\build\\x64-release-clg\\Max.osy Max.sqlite"
       ]
     }
   ]

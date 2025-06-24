@@ -14,6 +14,10 @@
 #include <ranges>
 #include "cppstream.h"
 
+// External declarations for cursor and type kind maps
+extern std::unordered_map<CXCursorKind, std::string> sCursorKindMap;
+extern std::unordered_map<CXTypeKind, std::string> sTypeKindMap;
+
 class VSProject;
 typedef VSProject* VSProjectPtr;
 class CPPSourceFile;
@@ -166,4 +170,10 @@ public:
     void Merge(const DbFile& other);
     size_t QueryNodes(const std::string& filename);
     void ConsoleDump();
+    
+    // Getter methods for OSY to SQLite conversion
+    const std::vector<std::string>& GetSourceFiles() const { return m_dbSourceFiles; }
+    const std::vector<DbToken>& GetTokens() const { return m_dbTokens; }
+    const std::vector<DbType>& GetTypes() const { return m_dbTypes; }
+    const std::vector<DbNode>& GetNodes() const { return m_dbNodes; }
 };

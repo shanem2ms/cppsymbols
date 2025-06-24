@@ -3,6 +3,7 @@
 #include "DbMgr.h"
 #include "Node.h"
 #include "Compiler.h"
+#include "OsyToSqlite.h"
 
 #ifdef WIN32
 #define stat _stat
@@ -97,6 +98,24 @@ int main(int argc, char* argv[])
 
         float seconds = (ms1 - ms0).count() / 1000.0f;
         std::cout << seconds << "seconds" << std::endl;
+    }
+    else if (!strcmp(argv[1], "-to-sqlite"))
+    {
+        if (argc < 4)
+        {
+            std::cerr << "Usage: symbols -to-sqlite <input.osy> <output.sqlite>" << std::endl;
+            return -1;
+        }
+        
+        std::string osyFile = noquotes(argv[2]);
+        std::string sqliteFile = noquotes(argv[3]);
+        
+        OsyToSqlite converter;
+        if (!converter.Convert(osyFile, sqliteFile))
+        {
+            std::cerr << "Failed to convert OSY to SQLite." << std::endl;
+            return -1;
+        }
     }
     else
     {
