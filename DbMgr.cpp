@@ -4,6 +4,8 @@
 #include "Node.h"
 #include "cppstream.h"
 #include "zlib.h"
+#include <algorithm>
+#include <unordered_map>
 
 bool g_fullDbRebuild = false;
 bool g_doOptimizeOnStart = false;
@@ -168,6 +170,32 @@ void DbFile::CommitSourceFiles()
 
 void DbFile::Save(const std::string& dbfile)
 {
+    // Sort nodes by key to ensure consistent order
+    std::sort(m_dbNodes.begin(), m_dbNodes.end(), [](const DbNode& a, const DbNode& b) {
+        return a.key < b.key;
+    });
+
+    // Create a map from old key to new index
+    std::unordered_map<int64_t, int64_t> key_to_new_index;
+    for (size_t i = 0; i < m_dbNodes.size(); ++i)
+    {
+        key_to_new_index[m_dbNodes[i].key] = i;
+    }
+
+    // Remap parent and reference indices and update keys
+    for (size_t i = 0; i < m_dbNodes.size(); ++i)
+    {
+        if (m_dbNodes[i].parentNodeIdx != nullnode)
+        {
+            m_dbNodes[i].parentNodeIdx = key_to_new_index[m_dbNodes[i].parentNodeIdx];
+        }
+        if (m_dbNodes[i].referencedIdx != nullnode)
+        {
+            m_dbNodes[i].referencedIdx = key_to_new_index[m_dbNodes[i].referencedIdx];
+        }
+        m_dbNodes[i].key = i;
+    }
+
     std::vector<uint8_t> data;
     WriteStream(data);
     // Decoded data size (in bytes).
@@ -533,7 +561,8 @@ void DbFile::Merge(const DbFile& other)
             typeIdx++;
         }
     }
-    
+
+    #ifdef WARN_SELFREFERENCED
     std::vector<DbNode> otherNodes = other.m_dbNodes;
     {
         size_t idx = 0;
@@ -547,6 +576,8 @@ void DbFile::Merge(const DbFile& other)
             idx++;
         }
     }
+    #endif
+
     for (auto& dbNode : otherNodes)
     {
         dbNode.compilingFile = srcFileRemapping[dbNode.compilingFile];
@@ -682,18 +713,29 @@ void DbFile::Validate()
             hasErrors = true;
         }
     }
-
- 
-     
-    // Additional validation checks can be added here
     
-    // Summary
-    if (hasErrors)
+    if (outOfOrderCount > 0)
     {
-        std::cout << "ERROR: Found " << outOfOrderCount << " out of order node IDs : " << std::endl;
+        std::cout << "Error: " << outOfOrderCount << " nodes are out of order." << std::endl;
     }
-    else
+    
+    size_t parentIdxErrorCount = 0;
+    for (const auto& node : m_dbNodes)
     {
-        std::cout << "Validation PASSED." << std::endl;
+        if (node.parentNodeIdx != nullnode && node.parentNodeIdx >= (int64_t)m_dbNodes.size())
+        {
+            parentIdxErrorCount++;
+            hasErrors = true;
+        }
+    }
+    
+    if (parentIdxErrorCount > 0)
+    {
+        std::cout << "Error: " << parentIdxErrorCount << " nodes have invalid parent indices." << std::endl;
+    }
+    
+    if (!hasErrors)
+    {
+        std::cout << "OSY file is valid." << std::endl;
     }
 }
