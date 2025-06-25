@@ -46,7 +46,14 @@ int main(int argc, char* argv[])
         dbFile.Load(argv[2]);
         dbFile.ConsoleDump();
     }
-    if (!strcmp(argv[1], "-merge"))
+    else if (!strcmp(argv[1], "-validate"))
+    {
+        std::cout << "Reading " << argv[2] << std::endl;
+        DbFile dbFile;
+        dbFile.Load(argv[2]);
+        dbFile.Validate();
+    }
+    else if (!strcmp(argv[1], "-merge"))
     {
         std::vector<std::string> mergeFiles;
         for (int i = 1; i < argc; ++i)

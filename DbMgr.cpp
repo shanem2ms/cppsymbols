@@ -666,3 +666,34 @@ size_t DbFile::QueryNodes(const std::string& filename)
     }
     return 0;
 }
+
+void DbFile::Validate()
+{
+    std::cout << "Validating OSY file..." << std::endl;
+    
+    bool hasErrors = false;
+    
+    size_t outOfOrderCount = 0;
+    for (size_t i = 1; i < m_dbNodes.size(); ++i)
+    {
+        if (m_dbNodes[i].key < m_dbNodes[i - 1].key)
+        {
+            outOfOrderCount++;
+            hasErrors = true;
+        }
+    }
+
+ 
+     
+    // Additional validation checks can be added here
+    
+    // Summary
+    if (hasErrors)
+    {
+        std::cout << "ERROR: Found " << outOfOrderCount << " out of order node IDs : " << std::endl;
+    }
+    else
+    {
+        std::cout << "Validation PASSED." << std::endl;
+    }
+}

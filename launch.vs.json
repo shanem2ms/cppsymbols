@@ -8,7 +8,7 @@
       "projectTarget": "cppsymbols.exe",
       "name": "cppsymbols.exe",
       "args": [
-        "-to-sqlite D:\\vq\\CMake\\Azure\\CMakeVQMaster\\build\\x64-release-clg\\Max.osy Max.sqlite"
+        "-validate D:\\vq\\CMake\\Azure\\CMakeVQMaster\\build\\x64-release-clg\\Max.osy"
       ]
     }
   ]

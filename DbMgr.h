@@ -170,6 +170,7 @@ public:
     void Merge(const DbFile& other);
     size_t QueryNodes(const std::string& filename);
     void ConsoleDump();
+    void Validate();
     
     // Getter methods for OSY to SQLite conversion
     const std::vector<std::string>& GetSourceFiles() const { return m_dbSourceFiles; }
