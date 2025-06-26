@@ -196,6 +196,15 @@ void DbFile::Save(const std::string& dbfile)
         m_dbNodes[i].key = i;
     }
 
+    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+    {
+        if (m_dbNodes[idx].parentNodeIdx != nullnode &&
+            m_dbNodes[idx].parentNodeIdx >= idx)
+        {
+            throw;
+        }
+    }
+
     std::vector<uint8_t> data;
     WriteStream(data);
     // Decoded data size (in bytes).
@@ -401,7 +410,10 @@ inline void SetNodeHash(std::vector<size_t>& nodeHashes, const std::vector<DbNod
     {
         parenthash = nodeHashes[nodeCur.parentNodeIdx];
         if (parenthash == 0)
-            SetNodeHash(nodeHashes, dbNodes, nodeCur.parentNodeIdx);
+        {
+            //SetNodeHash(nodeHashes, dbNodes, nodeCur.parentNodeIdx);
+            throw; // This should never happen as along as parentNodeIdx < nodeIdx
+        }
         parenthash = nodeHashes[nodeCur.parentNodeIdx];
     }
 
@@ -467,6 +479,13 @@ void DbFile::RemoveDuplicates()
             nodeCur.referencedIdx = nodeRemapping[nodeCur.referencedIdx];
     }
     m_dbNodes = newNodes;
+}
+
+
+// Can you implement this.
+void FixNodeOrdering(std::vector<DbNode> &nodes)
+{
+    
 }
 
 void DbFile::Merge(const DbFile& other)
@@ -562,8 +581,8 @@ void DbFile::Merge(const DbFile& other)
         }
     }
 
-    #ifdef WARN_SELFREFERENCED
     std::vector<DbNode> otherNodes = other.m_dbNodes;
+    #ifdef WARN_SELFREFERENCED
     {
         size_t idx = 0;
         for (const DbNode& node : otherNodes)
@@ -577,6 +596,18 @@ void DbFile::Merge(const DbFile& other)
         }
     }
     #endif
+
+    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+    {
+        if (m_dbNodes[idx].key != idx)
+            throw;
+    }
+
+    for (size_t idx = 0; idx < other.m_dbNodes.size(); ++idx)
+    {
+        if (other.m_dbNodes[idx].key != idx)
+            throw;
+    }
 
     for (auto& dbNode : otherNodes)
     {
@@ -638,8 +669,7 @@ void DbFile::Merge(const DbFile& other)
         {
             DbNode& nodeCur = otherNodes[idx];
             size_t hash_val = nodesTreeHash0[idx];
-//            if (idx == 369906)
-                //__debugbreak();
+
             if (nodeCur.referencedIdx != nullnode)
             {
                 size_t hash0 = nodesTreeHash0[nodeCur.referencedIdx];
@@ -667,6 +697,8 @@ void DbFile::Merge(const DbFile& other)
             }
         }
     }
+
+    FixNodeOrdering(m_dbNodes);
 
     size_t nullnodes = 0;
     for (DbNode& node : m_dbNodes)
