@@ -8,7 +8,7 @@
       "projectTarget": "cppsymbols.exe",
       "name": "cppsymbols.exe",
       "args": [
-        "-merge -o D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/WxKernelShared/merged_round_0_pair_15.osy D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/WxKernelShared/WxParkingLot.cpp.osy D:/vq/CMake/Azure/CMakeVQMaster/build/x64-release-clg/WxKernelShared/WxProcessStatics.cpp.osy"
+        "-to-sqlite D:\\\\vq\\\\CMake\\\\Azure\\\\CMakeVQMaster\\\\build\\\\x64-release-clg\\\\Max.osy D:\\vq\\CMake\\Azure\\CMakeVQMaster\\build\\x64-release-clg\\Max.sqlite"
       ]
     }
   ]
