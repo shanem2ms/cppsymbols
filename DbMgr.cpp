@@ -170,39 +170,10 @@ void DbFile::CommitSourceFiles()
 
 void DbFile::Save(const std::string& dbfile)
 {
-    // Sort nodes by key to ensure consistent order
-    std::sort(m_dbNodes.begin(), m_dbNodes.end(), [](const DbNode& a, const DbNode& b) {
-        return a.key < b.key;
-    });
-
-    // Create a map from old key to new index
-    std::unordered_map<int64_t, int64_t> key_to_new_index;
-    for (size_t i = 0; i < m_dbNodes.size(); ++i)
-    {
-        key_to_new_index[m_dbNodes[i].key] = i;
-    }
-
-    // Remap parent and reference indices and update keys
-    for (size_t i = 0; i < m_dbNodes.size(); ++i)
-    {
-        if (m_dbNodes[i].parentNodeIdx != nullnode)
-        {
-            m_dbNodes[i].parentNodeIdx = key_to_new_index[m_dbNodes[i].parentNodeIdx];
-        }
-        if (m_dbNodes[i].referencedIdx != nullnode)
-        {
-            m_dbNodes[i].referencedIdx = key_to_new_index[m_dbNodes[i].referencedIdx];
-        }
-        m_dbNodes[i].key = i;
-    }
-
     for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
     {
-        if (m_dbNodes[idx].parentNodeIdx != nullnode &&
-            m_dbNodes[idx].parentNodeIdx >= idx)
-        {
+        if (m_dbNodes[idx].key != idx)
             throw;
-        }
     }
 
     std::vector<uint8_t> data;
@@ -468,6 +439,7 @@ void DbFile::RemoveDuplicates()
     for (size_t idx = 0; idx < newNodes.size(); ++idx)
     {
         DbNode& nodeCur = newNodes[idx];
+        nodeCur.key = idx;
         if (nodeCur.parentNodeIdx != nullnode)
         {
             size_t remapped = nodeRemapping[nodeCur.parentNodeIdx];
@@ -479,13 +451,6 @@ void DbFile::RemoveDuplicates()
             nodeCur.referencedIdx = nodeRemapping[nodeCur.referencedIdx];
     }
     m_dbNodes = newNodes;
-}
-
-
-// Can you implement this.
-void FixNodeOrdering(std::vector<DbNode> &nodes)
-{
-    
 }
 
 void DbFile::Merge(const DbFile& other)
@@ -597,18 +562,6 @@ void DbFile::Merge(const DbFile& other)
     }
     #endif
 
-    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
-    {
-        if (m_dbNodes[idx].key != idx)
-            throw;
-    }
-
-    for (size_t idx = 0; idx < other.m_dbNodes.size(); ++idx)
-    {
-        if (other.m_dbNodes[idx].key != idx)
-            throw;
-    }
-
     for (auto& dbNode : otherNodes)
     {
         dbNode.compilingFile = srcFileRemapping[dbNode.compilingFile];
@@ -622,15 +575,6 @@ void DbFile::Merge(const DbFile& other)
             typeRemapping[dbNode.typeIdx] : nullnode;
         if (dbNode.typeIdx >= (int64_t)m_dbTypes.size())
             throw;
-    }
-
-    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
-    {
-        if (m_dbNodes[idx].parentNodeIdx != nullnode &&
-            m_dbNodes[idx].parentNodeIdx >= idx)
-        {
-            throw;
-        }
     }
 
     std::unordered_map<size_t, int64_t> nodesMap;
@@ -657,6 +601,7 @@ void DbFile::Merge(const DbFile& other)
                 nodesMap.insert(std::make_pair(hash_val, idx));
         }
     }
+
     {
         std::vector<size_t> nodesTreeHash0(otherNodes.size());
         std::vector<size_t> nodesTreeHash1(otherNodes.size());
@@ -692,13 +637,12 @@ void DbFile::Merge(const DbFile& other)
                     newNode.referencedIdx = nodesMap[refHash];
                 }
                 size_t newIdx = m_dbNodes.size();
+                newNode.key = newIdx;
                 m_dbNodes.push_back(newNode);
                 nodesMap.insert(std::make_pair(hash_val, newIdx));
             }
         }
     }
-
-    FixNodeOrdering(m_dbNodes);
 
     size_t nullnodes = 0;
     for (DbNode& node : m_dbNodes)
@@ -706,7 +650,18 @@ void DbFile::Merge(const DbFile& other)
         if (node.parentNodeIdx == nullnode)
             nullnodes++;
     }
+    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+    {
+        if (m_dbNodes[idx].key != idx)
+            throw;
+    }
+
     RemoveDuplicates();
+    for (size_t idx = 0; idx < m_dbNodes.size(); ++idx)
+    {
+        if (m_dbNodes[idx].key != idx)
+            throw;
+    }
 }
 
 inline std::string tolower(const std::string& src)

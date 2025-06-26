@@ -124,21 +124,21 @@ namespace symlib
                 sortedNodes.Sort();
                 nodesArray = nodes.ToArray();
                 topNodes = nodesArray.Where(n => n.parent == null).ToList();
-            }
 
-            cursorKindCounts = new Dictionary<CXCursorKind, int>();
-            foreach (Node node in nodesArray)
-            {
-                if (!cursorKindCounts.ContainsKey(node.Kind))
+                cursorKindCounts = new Dictionary<CXCursorKind, int>();
+                foreach (Node node in nodesArray)
                 {
-                    cursorKindCounts.Add(node.Kind, 1);
+                    if (!cursorKindCounts.ContainsKey(node.Kind))
+                    {
+                        cursorKindCounts.Add(node.Kind, 1);
+                    }
+                    else
+                        cursorKindCounts[node.Kind]++;
                 }
-                else
-                    cursorKindCounts[node.Kind]++;
-            }
 
-            var sortedCursorKinds = cursorKindCounts.ToList();
-            sortedCursorKinds.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+                var sortedCursorKinds = cursorKindCounts.ToList();
+                sortedCursorKinds.Sort((a, b) => { return b.Value.CompareTo(a.Value); });
+            }
 
             MergeNamespaces(topNodes);
         }

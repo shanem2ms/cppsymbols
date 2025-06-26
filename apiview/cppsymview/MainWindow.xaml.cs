@@ -80,7 +80,7 @@ namespace cppsymview
             
             //ConnectTcp();
             //engine.Init(root, root + @"\build\debugclg\clouds\Particle.cpp.osy");        
-            engine.Init("", @"D:\vq\CMake\Azure\CMakeVQMaster\build\x64-releasenoopt\WxKernelShared.osy");
+            engine.Init("", @"D:\vq\CMake\Azure\CMakeVQMaster\build\x64-release-clg\Max.osy");
             folderView.BuildSourceFileTree(engine);
             this.nodesTreeView.SelectedItemChanged += NodesTreeView_SelectedItemChanged;
             this.nodesListView.SelectionChanged += NodesListView_SelectionChanged;
