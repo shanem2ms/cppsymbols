@@ -44,16 +44,22 @@ The tool supports several modes of operation:
 
 ```bash
 # Generate OSY file from C++ source
-symbols -c input.cpp -o output.osy -Iinclude_path -DMACRO_DEFINE
+symbols --compile input.cpp --output output.osy --include-directory include_path --define MACRO_DEFINE
 
 # Merge multiple OSY files
-symbols -merge file1.osy file2.osy -o merged.osy
+symbols --merge file1.osy file2.osy --output merged.osy
 
 # Dump OSY file contents for debugging
-symbols -dump file.osy
+symbols --dump file.osy
 
 # Convert OSY file to a SQLite database
-symbols -to-sqlite file.osy file.sqlite
+symbols --to-sqlite file.osy file.sqlite
+
+# Validate OSY file structure
+symbols --validate file.osy
+
+# Show help information
+symbols --help
 ```
 
 ## OSY File Format Specification
