@@ -54,8 +54,10 @@ bool OsyToSqlite::CreateTables()
         "Id INTEGER PRIMARY KEY,"
         "Hash INTEGER NOT NULL,"
         "TokenId INTEGER,"
-        "Kind TEXT,"
-        "IsConst INTEGER);";
+        "Kind INTEGER,"
+        "IsConst INTEGER,"
+        "FOREIGN KEY(TokenId) REFERENCES Tokens(Id),"
+        "FOREIGN KEY(Kind) REFERENCES Kinds(Id));";
 
     const char* createTypeChildrenTable =
         "CREATE TABLE IF NOT EXISTS TypeChildren ("
@@ -166,6 +168,7 @@ bool OsyToSqlite::InsertKinds()
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(m_db, insertSql, -1, &stmt, nullptr) != SQLITE_OK) return false;
 
+    // Insert cursor kinds
     for (const auto& pair : sCursorKindMap)
     {
         sqlite3_bind_int64(stmt, 1, pair.first);
@@ -175,13 +178,32 @@ bool OsyToSqlite::InsertKinds()
         {
             const char* error_message = sqlite3_errmsg(m_db);
             int extended_code = sqlite3_extended_errcode(m_db);
-            std::cerr << "Failed to insert kind." << std::endl;
+            std::cerr << "Failed to insert cursor kind." << std::endl;
             std::cout << "Constraint violation: " << error_message << ", " << extended_code << std::endl;
             sqlite3_finalize(stmt);
             return false;
         }
         sqlite3_reset(stmt);
     }
+
+    // Insert type kinds
+    for (const auto& pair : sTypeKindMap)
+    {
+        sqlite3_bind_int64(stmt, 1, pair.first);
+        sqlite3_bind_text(stmt, 2, pair.second.c_str(), -1, SQLITE_STATIC);
+        int stepResult = sqlite3_step(stmt);
+        if (stepResult != SQLITE_DONE)
+        {
+            const char* error_message = sqlite3_errmsg(m_db);
+            int extended_code = sqlite3_extended_errcode(m_db);
+            std::cerr << "Failed to insert type kind." << std::endl;
+            std::cout << "Constraint violation: " << error_message << ", " << extended_code << std::endl;
+            sqlite3_finalize(stmt);
+            return false;
+        }
+        sqlite3_reset(stmt);
+    }
+
     sqlite3_finalize(stmt);
     return true;
 }
@@ -204,7 +226,7 @@ bool OsyToSqlite::InsertTypes()
         sqlite3_bind_int64(typeStmt, 1, type.key);
         sqlite3_bind_int64(typeStmt, 2, type.hash);
         if (type.token != -1) sqlite3_bind_int64(typeStmt, 3, type.token); else sqlite3_bind_null(typeStmt, 3);
-        sqlite3_bind_text(typeStmt, 4, GetTypeKindName(type.kind).c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_int64(typeStmt, 4, type.kind);
         sqlite3_bind_int(typeStmt, 5, type.isconst);
 
         if (sqlite3_step(typeStmt) != SQLITE_DONE)
