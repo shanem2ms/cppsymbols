@@ -181,6 +181,24 @@ Stores all unique identifier and literal strings from the source code.
 | `Id`   | INTEGER | The primary key of the token.             |
 | `Text` | TEXT    | The text of the token string.             |
 
+### `TypeKinds` Table
+
+Stores the different types of `CXTypeKind` enum values used by libClang for type classification.
+
+| Column | Type    | Description                                                                 |
+|:-------|:--------|:----------------------------------------------------------------------------|
+| `Id`   | INTEGER | The primary key, corresponding to the `CXTypeKind` enum value.              |
+| `Name` | TEXT    | The `libClang` kind name of the type (e.g., `CXType_Pointer`, `CXType_Record`). |
+
+### `CursorKinds` Table
+
+Stores the different types of `CXCursorKind` enum values used by libClang for cursor classification.
+
+| Column | Type    | Description                                                                 |
+|:-------|:--------|:----------------------------------------------------------------------------|
+| `Id`   | INTEGER | The primary key, corresponding to the `CXCursorKind` enum value.            |
+| `Name` | TEXT    | The `libClang` kind name of the cursor (e.g., `CXCursor_FunctionDecl`, `CXCursor_VarDecl`). |
+
 ### `Types` Table
 
 Defines all types encountered in the source code.
@@ -190,7 +208,7 @@ Defines all types encountered in the source code.
 | `Id`      | INTEGER | The primary key of the type.                                                |
 | `Hash`    | INTEGER | A hash of the type's properties for quick comparison.                       |
 | `TokenId` | INTEGER | A foreign key to the `Tokens` table, representing the type's name.          |
-| `Kind`    | TEXT    | The `libClang` kind of the type (e.g., `CXType_Pointer`, `CXType_Record`).    |
+| `Kind`    | INTEGER | A foreign key to the `TypeKinds` table, representing the type's kind.       |
 | `IsConst` | INTEGER | A boolean flag (0 or 1) indicating if the type has a `const` qualifier.     |
 
 ### `TypeChildren` Table
@@ -202,13 +220,6 @@ A linking table to represent the parent-child relationships between types (e.g.,
 | `TypeId`  | INTEGER | A foreign key to the `Types` table (the parent). |
 | `ChildId` | INTEGER | A foreign key to the `Types` table (the child).  |
 
-### `Kinds` Table
-| Column    | Type    | Description                                      |
-|:----------|:--------|:-------------------------------------------------|
-| `Id`  | INTEGER | the primary key and also value in code of CXKind enum.               |
-| `Name` | INTEGER | The `libClang` kind of the cursor (e.g., `CXCursor_FunctionDecl`).  |
-
-
 ### `Nodes` Table
 
 This is the main table, containing the serialized AST nodes.
@@ -219,7 +230,7 @@ This is the main table, containing the serialized AST nodes.
 | `CompilingFileId`| INTEGER | A foreign key to the `SourceFiles` table.                                   |
 | `ParentId`      | INTEGER | A foreign key to this table, representing the parent node.                  |
 | `ReferencedId`  | INTEGER | A foreign key to this table, representing a referenced node.                |
-| `Kind`          | INTEGER | A foreign key to the `Kinds` table.                                         |
+| `KindId`        | INTEGER | A foreign key to the `CursorKinds` table, representing the cursor kind.     |
 | `Flags`         | INTEGER | A bitfield for various node properties.                                     |
 | `TypeId`        | INTEGER | A foreign key to the `Types` table.                                         |
 | `TokenId`       | INTEGER | A foreign key to the `Tokens` table.                                        |

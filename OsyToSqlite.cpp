@@ -44,8 +44,13 @@ bool OsyToSqlite::CreateTables()
         "Id INTEGER PRIMARY KEY,"
         "Text TEXT NOT NULL);";
 
-    const char* createKindsTable =
-        "CREATE TABLE IF NOT EXISTS Kinds ("
+    const char* createTypeKindsTable =
+        "CREATE TABLE IF NOT EXISTS TypeKinds ("
+        "Id INTEGER PRIMARY KEY,"
+        "Name TEXT NOT NULL UNIQUE);";
+
+    const char* createCursorKindsTable =
+        "CREATE TABLE IF NOT EXISTS CursorKinds ("
         "Id INTEGER PRIMARY KEY,"
         "Name TEXT NOT NULL UNIQUE);";
 
@@ -57,7 +62,7 @@ bool OsyToSqlite::CreateTables()
         "Kind INTEGER,"
         "IsConst INTEGER,"
         "FOREIGN KEY(TokenId) REFERENCES Tokens(Id),"
-        "FOREIGN KEY(Kind) REFERENCES Kinds(Id));";
+        "FOREIGN KEY(Kind) REFERENCES TypeKinds(Id));";
 
     const char* createTypeChildrenTable =
         "CREATE TABLE IF NOT EXISTS TypeChildren ("
@@ -84,7 +89,7 @@ bool OsyToSqlite::CreateTables()
         "FOREIGN KEY(CompilingFileId) REFERENCES SourceFiles(Id),"
         "FOREIGN KEY(ParentId) REFERENCES Nodes(Id),"
         "FOREIGN KEY(ReferencedId) REFERENCES Nodes(Id),"
-        "FOREIGN KEY(KindId) REFERENCES Kinds(Id),"
+        "FOREIGN KEY(KindId) REFERENCES CursorKinds(Id),"
         "FOREIGN KEY(TypeId) REFERENCES Types(Id),"
         "FOREIGN KEY(TokenId) REFERENCES Tokens(Id),"
         "FOREIGN KEY(SourceFileId) REFERENCES SourceFiles(Id));";
@@ -92,7 +97,8 @@ bool OsyToSqlite::CreateTables()
     char* errMsg = nullptr;
     if (sqlite3_exec(m_db, createSourceFilesTable, 0, 0, &errMsg) != SQLITE_OK ||
         sqlite3_exec(m_db, createTokensTable, 0, 0, &errMsg) != SQLITE_OK ||
-        sqlite3_exec(m_db, createKindsTable, 0, 0, &errMsg) != SQLITE_OK ||
+        sqlite3_exec(m_db, createTypeKindsTable, 0, 0, &errMsg) != SQLITE_OK ||
+        sqlite3_exec(m_db, createCursorKindsTable, 0, 0, &errMsg) != SQLITE_OK ||
         sqlite3_exec(m_db, createTypesTable, 0, 0, &errMsg) != SQLITE_OK ||
         sqlite3_exec(m_db, createTypeChildrenTable, 0, 0, &errMsg) != SQLITE_OK ||
         sqlite3_exec(m_db, createNodesTable, 0, 0, &errMsg) != SQLITE_OK)
@@ -164,47 +170,52 @@ void OsyToSqlite::BuildKindMapping()
 
 bool OsyToSqlite::InsertKinds()
 {
-    const char* insertSql = "INSERT INTO Kinds (Id, Name) VALUES (?, ?);";
-    sqlite3_stmt* stmt;
-    if (sqlite3_prepare_v2(m_db, insertSql, -1, &stmt, nullptr) != SQLITE_OK) return false;
-
     // Insert cursor kinds
+    const char* insertCursorSql = "INSERT INTO CursorKinds (Id, Name) VALUES (?, ?);";
+    sqlite3_stmt* cursorStmt;
+    if (sqlite3_prepare_v2(m_db, insertCursorSql, -1, &cursorStmt, nullptr) != SQLITE_OK) return false;
+
     for (const auto& pair : sCursorKindMap)
     {
-        sqlite3_bind_int64(stmt, 1, pair.first);
-        sqlite3_bind_text(stmt, 2, pair.second.c_str(), -1, SQLITE_STATIC);
-        int stepResult = sqlite3_step(stmt);
+        sqlite3_bind_int64(cursorStmt, 1, pair.first);
+        sqlite3_bind_text(cursorStmt, 2, pair.second.c_str(), -1, SQLITE_STATIC);
+        int stepResult = sqlite3_step(cursorStmt);
         if (stepResult != SQLITE_DONE)
         {
             const char* error_message = sqlite3_errmsg(m_db);
             int extended_code = sqlite3_extended_errcode(m_db);
             std::cerr << "Failed to insert cursor kind." << std::endl;
             std::cout << "Constraint violation: " << error_message << ", " << extended_code << std::endl;
-            sqlite3_finalize(stmt);
+            sqlite3_finalize(cursorStmt);
             return false;
         }
-        sqlite3_reset(stmt);
+        sqlite3_reset(cursorStmt);
     }
+    sqlite3_finalize(cursorStmt);
 
     // Insert type kinds
+    const char* insertTypeSql = "INSERT INTO TypeKinds (Id, Name) VALUES (?, ?);";
+    sqlite3_stmt* typeStmt;
+    if (sqlite3_prepare_v2(m_db, insertTypeSql, -1, &typeStmt, nullptr) != SQLITE_OK) return false;
+
     for (const auto& pair : sTypeKindMap)
     {
-        sqlite3_bind_int64(stmt, 1, pair.first);
-        sqlite3_bind_text(stmt, 2, pair.second.c_str(), -1, SQLITE_STATIC);
-        int stepResult = sqlite3_step(stmt);
+        sqlite3_bind_int64(typeStmt, 1, pair.first);
+        sqlite3_bind_text(typeStmt, 2, pair.second.c_str(), -1, SQLITE_STATIC);
+        int stepResult = sqlite3_step(typeStmt);
         if (stepResult != SQLITE_DONE)
         {
             const char* error_message = sqlite3_errmsg(m_db);
             int extended_code = sqlite3_extended_errcode(m_db);
             std::cerr << "Failed to insert type kind." << std::endl;
             std::cout << "Constraint violation: " << error_message << ", " << extended_code << std::endl;
-            sqlite3_finalize(stmt);
+            sqlite3_finalize(typeStmt);
             return false;
         }
-        sqlite3_reset(stmt);
+        sqlite3_reset(typeStmt);
     }
+    sqlite3_finalize(typeStmt);
 
-    sqlite3_finalize(stmt);
     return true;
 }
 
